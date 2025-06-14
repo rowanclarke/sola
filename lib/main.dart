@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:rust/rust.dart';
 import 'dart:async';
+import 'dart:ffi';
+import 'package:ffi/ffi.dart';
 
 void main() {
   runApp(MyApp());
@@ -13,7 +15,9 @@ class MyApp extends StatelessWidget {
       home: Scaffold(
         body: Center(
           child: FutureBuilder<String>(
-            future: Future(() => sum(2, 3).toString()),
+            future: Future(
+              () => length("Hi".toNativeUtf8().cast<Char>()).toString(),
+            ),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return CircularProgressIndicator();

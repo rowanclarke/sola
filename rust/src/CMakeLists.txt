@@ -3,20 +3,36 @@
 # the plugin to fail to compile for some customers of the plugin.
 cmake_minimum_required(VERSION 3.10)
 
-project(rust_library VERSION 0.0.1 LANGUAGES C)
+project(rust_library LANGUAGES C)
 
-add_library(rust SHARED
-  "rust.c"
+if (WIN32)
+  set(RUST_LIB_NAME "rust.dll")
+elseif(APPLE)
+  set(RUST_LIB_NAME "librust.dylib")
+else()
+  set(RUST_LIB_NAME "librust.so")
+endif()
+
+set(RUST_OUTPUT "${PROJECT_BINARY_DIR}/release/${RUST_LIB_NAME}")
+
+add_custom_command(
+  OUTPUT ${RUST_OUTPUT}
+  COMMAND cargo build --release --target-dir ${PROJECT_BINARY_DIR}
+  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+  COMMENT "Building Rust library"
+  VERBATIM
 )
 
+add_custom_target(rust_build ALL
+  DEPENDS ${RUST_OUTPUT}
+)
+
+add_library(rust SHARED IMPORTED GLOBAL)
+
 set_target_properties(rust PROPERTIES
-  PUBLIC_HEADER rust.h
+  IMPORTED_LOCATION ${RUST_OUTPUT}
   OUTPUT_NAME "rust"
 )
 
-target_compile_definitions(rust PUBLIC DART_SHARED_LIB)
+target_compile_definitions(rust INTERFACE DART_SHARED_LIB)
 
-if (ANDROID)
-  # Support Android 15 16k page size
-  target_link_options(rust PRIVATE "-Wl,-z,max-page-size=16384")
-endif()
