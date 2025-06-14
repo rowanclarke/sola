@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:rust/rust.dart';
 import 'dart:async';
 
 void main() {
@@ -12,7 +13,7 @@ class MyApp extends StatelessWidget {
       home: Scaffold(
         body: Center(
           child: FutureBuilder<String>(
-            future: Future(() => "Hello World"),
+            future: Future(() => sum(2, 3).toString()),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return CircularProgressIndicator();
