@@ -30,7 +30,8 @@ CharsMapResponse charsMap(String usfm) {
   );
 }
 
-// int insert(Pointer<Char> a) => _bindings.length(a);
+void insert(Pointer<Void> map, int chr, double width, double height) =>
+    _bindings.insert(map, chr, width, height);
 
 /// A longer lived native function, which occupies the thread calling it.
 ///

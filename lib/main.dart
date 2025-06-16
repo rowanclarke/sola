@@ -35,11 +35,35 @@ class BibleCache extends GenericCache<Map<String, String>> {
 
 class MyApp extends StatelessWidget {
   final bibleCache = BibleCache();
+  final style = TextStyle(fontSize: 32, letterSpacing: 0);
 
   Future<String> text() async {
     final web = await bibleCache.load('http://0.0.0.0:8000/engwebpb_usfm.zip');
-    final chars = charsMap(web['02-GENengwebpb.usfm']!).chars;
-    return String.fromCharCodes(chars);
+    final response = charsMap(web['02-GENengwebpb.usfm']!);
+    final map = response.map;
+    final chars = response.chars;
+    final text = String.fromCharCodes(chars);
+
+    final TextPainter textPainter = TextPainter(
+      text: TextSpan(text: text, style: style),
+      maxLines: 1,
+      textDirection: TextDirection.ltr,
+    )..layout();
+
+    for (int i = 0; i < text.length; i++) {
+      final caretStart = textPainter.getOffsetForCaret(
+        TextPosition(offset: i),
+        Rect.zero,
+      );
+      final caretEnd = textPainter.getOffsetForCaret(
+        TextPosition(offset: i + 1),
+        Rect.zero,
+      );
+      final width = caretEnd.dx - caretStart.dx;
+      insert(map, chars[i], width, 0);
+    }
+
+    return "Hi";
   }
 
   @override
