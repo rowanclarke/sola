@@ -14,11 +14,13 @@ else()
 endif()
 
 set(RUST_OUTPUT "${PROJECT_BINARY_DIR}/release/${RUST_LIB_NAME}")
+file(GLOB_RECURSE RUST_SOURCES "${PROJECT_SOURCE_DIR}/*.rs")
 
 add_custom_command(
   OUTPUT ${RUST_OUTPUT}
   COMMAND cargo build --release --target-dir ${PROJECT_BINARY_DIR}
   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+  DEPENDS ${RUST_SOURCES}
   COMMENT "Building Rust library"
   VERBATIM
 )
