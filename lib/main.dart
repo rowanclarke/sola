@@ -1,13 +1,10 @@
+import 'dart:convert';
+
 import 'package:asset_cache/asset_cache.dart';
 import 'package:flutter/material.dart';
 import 'package:rust/rust.dart';
 import 'dart:async';
-import 'dart:ffi';
-import 'package:ffi/ffi.dart';
-import 'package:flutter/services.dart';
-import 'dart:typed_data';
 import 'package:archive/archive.dart';
-import 'package:asset_cache/asset_cache.dart';
 import 'package:http/http.dart' as http;
 
 void main() {
@@ -20,6 +17,7 @@ class BibleCache extends GenericCache<Map<String, String>> {
   @override
   Future<Map<String, String>> loadAsset(String key) async {
     final response = await http.get(Uri.parse(key));
+
     if (response.statusCode != 200) {
       throw Exception('Failed to download ZIP file');
     }
@@ -28,7 +26,7 @@ class BibleCache extends GenericCache<Map<String, String>> {
     for (final file in archive) {
       final book = file.name;
       final bytes = file.content as List<int>;
-      final contents = String.fromCharCodes(bytes);
+      final contents = utf8.decode(bytes);
       bible[book] = contents;
     }
     return bible;
@@ -39,10 +37,9 @@ class MyApp extends StatelessWidget {
   final bibleCache = BibleCache();
 
   Future<String> text() async {
-    final web = await bibleCache.load(
-      'https://ebible.org/Scriptures/engwebpb_usfm.zip',
-    );
-    return web['02-GENengwebpb.usfm']!.substring(0, 100);
+    final web = await bibleCache.load('http://0.0.0.0:8000/engwebpb_usfm.zip');
+    final chars = charsMap(web['02-GENengwebpb.usfm']!).chars;
+    return String.fromCharCodes(chars);
   }
 
   @override

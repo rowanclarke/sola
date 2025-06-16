@@ -1,16 +1,36 @@
-import 'dart:async';
 import 'dart:ffi';
 import 'dart:io';
-import 'dart:isolate';
-
+import 'dart:typed_data';
+import 'package:ffi/ffi.dart';
 import 'rust_bindings_generated.dart';
 
-/// A very short-lived native function.
-///
-/// For very short-lived functions, it is fine to call them on the main isolate.
-/// They will block the Dart execution while running the native function, so
-/// only do this for native functions which are guaranteed to be short-lived.
-int length(Pointer<Char> a) => _bindings.length(a);
+class CharsMapResponse {
+  final Pointer<Void> map;
+  final Uint32List chars;
+
+  CharsMapResponse(this.map, this.chars);
+}
+
+CharsMapResponse charsMap(String usfm) {
+  final out = malloc<Pointer<UnsignedInt>>();
+  final outLen = malloc<Size>();
+
+  final native = usfm.toNativeUtf8();
+
+  final map = _bindings.chars_map(
+    native.cast<UnsignedChar>(),
+    native.length,
+    out,
+    outLen,
+  );
+
+  return CharsMapResponse(
+    map,
+    out.value.cast<Uint32>().asTypedList(outLen.value),
+  );
+}
+
+// int insert(Pointer<Char> a) => _bindings.length(a);
 
 /// A longer lived native function, which occupies the thread calling it.
 ///

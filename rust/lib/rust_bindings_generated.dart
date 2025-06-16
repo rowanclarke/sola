@@ -26,19 +26,51 @@ class RustBindings {
     ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName) lookup,
   ) : _lookup = lookup;
 
-  /// A very short-lived native function.
-  ///
-  /// For very short-lived functions, it is fine to call them on the main isolate.
-  /// They will block the Dart execution while running the native function, so
-  /// only do this for native functions which are guaranteed to be short-lived.
-  int length(ffi.Pointer<ffi.Char> s) {
-    return _length(s);
+  ffi.Pointer<ffi.Void> chars_map(
+    ffi.Pointer<ffi.UnsignedChar> usfm,
+    int len,
+    ffi.Pointer<ffi.Pointer<ffi.UnsignedInt>> out,
+    ffi.Pointer<ffi.Size> out_len,
+  ) {
+    return _chars_map(usfm, len, out, out_len);
   }
 
-  late final _lengthPtr =
-      _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<ffi.Char>)>>(
-        'length',
-      );
-  late final _length = _lengthPtr
-      .asFunction<int Function(ffi.Pointer<ffi.Char>)>();
+  late final _chars_mapPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<ffi.Void> Function(
+            ffi.Pointer<ffi.UnsignedChar>,
+            ffi.Size,
+            ffi.Pointer<ffi.Pointer<ffi.UnsignedInt>>,
+            ffi.Pointer<ffi.Size>,
+          )
+        >
+      >('chars_map');
+  late final _chars_map = _chars_mapPtr
+      .asFunction<
+        ffi.Pointer<ffi.Void> Function(
+          ffi.Pointer<ffi.UnsignedChar>,
+          int,
+          ffi.Pointer<ffi.Pointer<ffi.UnsignedInt>>,
+          ffi.Pointer<ffi.Size>,
+        )
+      >();
+
+  void insert(ffi.Pointer<ffi.Void> map, int chr, double width, double height) {
+    return _insert(map, chr, width, height);
+  }
+
+  late final _insertPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(
+            ffi.Pointer<ffi.Void>,
+            ffi.UnsignedInt,
+            ffi.Float,
+            ffi.Float,
+          )
+        >
+      >('insert');
+  late final _insert = _insertPtr
+      .asFunction<void Function(ffi.Pointer<ffi.Void>, int, double, double)>();
 }
