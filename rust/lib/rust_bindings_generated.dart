@@ -100,4 +100,61 @@ class RustBindings {
           int,
         )
       >();
+
+  void page(
+    ffi.Pointer<ffi.Void> layout,
+    ffi.Pointer<ffi.Pointer<Text>> out,
+    ffi.Pointer<ffi.Size> out_len,
+  ) {
+    return _page(layout, out, out_len);
+  }
+
+  late final _pagePtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(
+            ffi.Pointer<ffi.Void>,
+            ffi.Pointer<ffi.Pointer<Text>>,
+            ffi.Pointer<ffi.Size>,
+          )
+        >
+      >('page');
+  late final _page = _pagePtr
+      .asFunction<
+        void Function(
+          ffi.Pointer<ffi.Void>,
+          ffi.Pointer<ffi.Pointer<Text>>,
+          ffi.Pointer<ffi.Size>,
+        )
+      >();
+}
+
+final class Rectangle extends ffi.Struct {
+  @ffi.Float()
+  external double top;
+
+  @ffi.Float()
+  external double left;
+
+  @ffi.Float()
+  external double width;
+
+  @ffi.Float()
+  external double height;
+}
+
+final class Style extends ffi.Struct {
+  @ffi.Float()
+  external double word_spacing;
+}
+
+final class Text extends ffi.Struct {
+  external ffi.Pointer<ffi.Char> text;
+
+  @ffi.Size()
+  external int len;
+
+  external Rectangle rect;
+
+  external Style style;
 }

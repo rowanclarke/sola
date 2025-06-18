@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:ffi';
 
 import 'package:asset_cache/asset_cache.dart';
+import 'package:ffi/ffi.dart';
 import 'package:flutter/material.dart';
 import 'package:rust/rust.dart';
 import 'dart:async';
@@ -35,9 +37,9 @@ class BibleCache extends GenericCache<Map<String, String>> {
 
 class MyApp extends StatelessWidget {
   final bibleCache = BibleCache();
-  final style = TextStyle(fontSize: 32, letterSpacing: 0);
+  final style = TextStyle(fontSize: 32, letterSpacing: 0, wordSpacing: 0);
 
-  Future<String> text() async {
+  Future<Widget> text() async {
     final web = await bibleCache.load('http://0.0.0.0:8000/engwebpb_usfm.zip');
     final gen = web['02-GENengwebpb.usfm']!;
     final response = charsMap(gen);
@@ -64,9 +66,34 @@ class MyApp extends StatelessWidget {
       insert(map, chars[i], width, 0);
     }
 
-    layout(map, gen);
+    final l = layout(map, gen);
+    final texts = page(l);
 
-    return "Hi";
+    return SizedBox(
+      width: 500,
+      height: 800,
+      child: Stack(
+        children:
+            texts.map((text) {
+              final s = text.text.cast<Utf8>().toDartString(length: text.len);
+              final rect = text.rect;
+              final spacing = text.style.word_spacing;
+              print(spacing);
+
+              return Positioned(
+                left: rect.left,
+                top: rect.top,
+                width: rect.width + 50,
+                height: rect.height,
+                child: Text(
+                  s,
+                  style: style.copyWith(wordSpacing: spacing, letterSpacing: 0),
+                  softWrap: false,
+                ),
+              );
+            }).toList(),
+      ),
+    );
   }
 
   @override
@@ -74,7 +101,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       home: Scaffold(
         body: Center(
-          child: FutureBuilder<String>(
+          child: FutureBuilder<Widget>(
             future: text(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
@@ -82,10 +109,8 @@ class MyApp extends StatelessWidget {
               } else if (snapshot.hasError) {
                 return SelectableText('Error: ${snapshot.error}');
               } else {
-                return Text(
-                  snapshot.data ?? 'Done',
-                  style: TextStyle(fontSize: 24),
-                );
+                return snapshot.data ??
+                    Text('Done', style: TextStyle(fontSize: 24));
               }
             },
           ),

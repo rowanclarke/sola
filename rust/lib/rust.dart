@@ -38,6 +38,15 @@ Pointer<Void> layout(Pointer<Void> map, String usfm) {
   return _bindings.layout(map, native.cast<UnsignedChar>(), native.length);
 }
 
+List<Text> page(Pointer<Void> layout) {
+  final out = malloc<Pointer<Text>>();
+  final outLen = malloc<Size>();
+
+  _bindings.page(layout, out, outLen);
+
+  return List.generate(outLen.value, (i) => (out.value + i).ref);
+}
+
 const String _libName = 'rust';
 
 final DynamicLibrary _dylib = () {

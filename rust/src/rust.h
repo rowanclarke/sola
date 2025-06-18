@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,6 +15,24 @@
 #else
 #define FFI_PLUGIN_EXPORT
 #endif
+
+typedef struct {
+    float top;
+    float left;
+    float width;
+    float height;
+} Rectangle;
+
+typedef struct {
+    float word_spacing;
+} Style;
+
+typedef struct {
+    const char* text;
+    size_t len;
+    Rectangle rect;
+    Style style;
+} Text;
 
 void* chars_map(
   const unsigned char* usfm,
@@ -33,4 +52,10 @@ void* layout(
   void* map,
   const unsigned char* usfm,
   size_t len
+);
+
+void page(
+  void* layout,
+  const Text** out,
+  size_t* out_len
 );

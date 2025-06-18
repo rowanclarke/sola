@@ -1,6 +1,7 @@
 use std::collections::{HashMap, VecDeque};
-use std::ffi::c_void;
+use std::ffi::{CString, c_void};
 use std::mem;
+use std::os::raw::c_char;
 use std::slice::from_raw_parts;
 use std::str::from_utf8_unchecked;
 use usfm::{BookContents, CharacterContents, ParagraphContents, parse};
@@ -17,7 +18,7 @@ pub extern "C" fn chars_map(
     let usfm = unsafe { from_utf8_unchecked(from_raw_parts(usfm, len)) };
     let map: Box<CharsMap> = Box::new(
         usfm.chars()
-            .filter(|c| !"\n\r\t ".contains(*c))
+            .filter(|c| !"\n\r\t".contains(*c))
             .map(|c| (c as u32, (0.0, 0.0)))
             .collect(),
     );
@@ -40,7 +41,6 @@ pub extern "C" fn insert(map: *mut c_void, chr: u32, width: f32, height: f32) {
 #[unsafe(no_mangle)]
 pub extern "C" fn layout(map: *const c_void, usfm: *const u8, len: usize) -> *mut c_void {
     let map = unsafe { &*(map as *const CharsMap) };
-    println!("{:?}", map);
     let usfm = unsafe { from_utf8_unchecked(from_raw_parts(usfm, len)) };
     let usfm = parse(&usfm);
     let mut paragraphs = usfm
@@ -55,8 +55,8 @@ pub extern "C" fn layout(map: *const c_void, usfm: *const u8, len: usize) -> *mu
         map,
         Dimensions {
             width: 500.0,
-            height: 200.0,
-            line_height: 10.0,
+            height: 800.0,
+            line_height: 40.0,
         },
     ));
     let paragraph = paragraphs.next().unwrap();
@@ -64,26 +64,45 @@ pub extern "C" fn layout(map: *const c_void, usfm: *const u8, len: usize) -> *mu
     Box::into_raw(layout) as *mut c_void
 }
 
+#[unsafe(no_mangle)]
+pub extern "C" fn page(layout: *const c_void, out: *mut *const Text, out_len: *mut usize) {
+    let layout = unsafe { &*(layout as *const Layout) };
+    unsafe {
+        *out = layout.page.as_ptr();
+        *out_len = layout.page.len();
+    }
+}
+
 pub type Book = Vec<Page>;
 pub type Page = Vec<Text>;
-pub type Text = (String, Rectangle, Style);
+
 #[derive(Debug)]
+#[repr(C)]
+pub struct Text(pub *const c_char, pub usize, pub Rectangle, pub Style);
+
+#[derive(Debug)]
+#[repr(C)]
 pub struct Rectangle {
     pub top: f32,
     pub left: f32,
     pub width: f32,
     pub height: f32,
 }
+
 #[derive(Debug)]
+#[repr(C)]
 pub struct Style {
     pub word_spacing: f32,
 }
+
 #[derive(Debug)]
+#[repr(C)]
 pub struct Dimensions {
     pub width: f32,
     pub height: f32,
     pub line_height: f32,
 }
+
 #[derive(Debug)]
 pub struct Layout<'a> {
     dim: Dimensions,
@@ -93,6 +112,7 @@ pub struct Layout<'a> {
     queue: VecDeque<Inline>,
     map: &'a CharsMap,
 }
+
 #[derive(Debug)]
 pub struct Line {
     start: bool,
@@ -101,10 +121,11 @@ pub struct Line {
     width: f32,
     rem: f32,
 }
+
 #[derive(Debug)]
 pub enum Inline {
     Word(String, f32),
-    Space,
+    Space(f32),
 }
 
 impl<'a> Layout<'a> {
@@ -130,7 +151,7 @@ impl<'a> Layout<'a> {
             use ParagraphContents::*;
             match contents {
                 Verse(n) => {
-                    self.queue.push_back(Inline::Space);
+                    self.queue.push_back(self.space());
                     self.queue.push_back(self.word(&n.to_string()));
                 }
                 Line(s) => self.line(s),
@@ -155,7 +176,7 @@ impl<'a> Layout<'a> {
         let words = words(s);
         for w in words {
             match w {
-                " " => self.queue.push_back(Inline::Space),
+                " " => self.queue.push_back(self.space()),
                 w => {
                     self.queue.push_back(self.word(w));
                     self.commit_or_else();
@@ -167,6 +188,10 @@ impl<'a> Layout<'a> {
     pub fn word(&self, s: &str) -> Inline {
         let width = s.chars().map(|c| self.map[&(c as u32)].0).sum::<f32>();
         Inline::Word(s.to_string(), width)
+    }
+
+    pub fn space(&self) -> Inline {
+        Inline::Space(self.map[&(' ' as u32)].0)
     }
 
     pub fn commit_or_else(&mut self) {
@@ -187,18 +212,21 @@ impl<'a> Layout<'a> {
             .iter()
             .fold((String::new(), 0.0), |(s, n), i| match i {
                 Inline::Word(text, _) => (s + text, n),
-                Inline::Space => (s + " ", n + 1.0),
+                Inline::Space(_) => (s + " ", n + 1.0),
             });
         self.text = Vec::new();
         let style = Style {
-            word_spacing: 1.0
-                + if justified {
-                    self.line.rem / spaces
-                } else {
-                    0.0
-                },
+            word_spacing: if justified {
+                self.line.rem / spaces
+            } else {
+                0.0
+            },
         };
-        self.page.push((text, rect, style));
+        let text = text.into_bytes();
+        let len = text.len();
+        let ptr = text.as_ptr() as *const c_char;
+        std::mem::forget(text);
+        self.page.push(Text(ptr, len, rect, style));
         if self.new_line().is_err() {
             println!("End");
         }
@@ -209,14 +237,13 @@ impl<'a> Layout<'a> {
             .queue
             .iter()
             .map(|i| match i {
-                Inline::Word(_, width) => width,
-                Inline::Space => &1.0,
+                Inline::Word(_, width) | Inline::Space(width) => width,
             })
             .sum();
         if width <= self.line.rem {
             self.line.rem -= width;
             let mut queue = mem::replace(&mut self.queue, VecDeque::new());
-            if self.line.start && matches!(queue[0], Inline::Space) {
+            if self.line.start && matches!(queue[0], Inline::Space(_)) {
                 queue.pop_front();
             }
             self.text.extend(queue);
