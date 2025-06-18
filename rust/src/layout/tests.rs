@@ -1,8 +1,6 @@
-extern crate rust;
-
 use std::{fs::read_to_string, path::PathBuf, slice::from_raw_parts, str::from_utf8_unchecked};
 
-use rust::{CharsMap, Dimensions, Layout};
+use crate::{CharsMap, Dimensions, Layout};
 use usfm::{BookContents, parse};
 
 static MANIFEST_DIR: &str = env!("CARGO_MANIFEST_DIR");
@@ -30,7 +28,7 @@ fn layout() {
         Dimensions {
             width: 500.0,
             height: 500.0,
-            line_height: 30.0,
+            line_height: 32.0,
         },
     );
 
