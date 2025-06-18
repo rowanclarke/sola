@@ -213,7 +213,6 @@ impl<'a> Layout<'a> {
                     Inline::Word(text, width) => (s + text, n, w + width),
                     Inline::Space(width) => (s + " ", n + 1.0, w + width),
                 });
-        println!("{}", width + self.line.rem);
         self.text = Vec::new();
         let style = Style {
             word_spacing: if justified {
