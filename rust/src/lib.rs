@@ -9,7 +9,7 @@ use usfm::{BookContents, parse};
 
 pub type CharsMap = HashMap<(u32, Style), f32>;
 
-#[derive(Debug, Hash, PartialEq, Eq)]
+#[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
 #[repr(i32)]
 pub enum Style {
     Verse = 0,

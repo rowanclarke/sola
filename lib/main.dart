@@ -87,8 +87,9 @@ class MyApp extends StatelessWidget {
     final gen = web['02-GENengwebpb.usfm']!;
     final response = charsMap(gen);
     final map = response.map;
-    measure(map, response.chars, Style.NORMAL);
-
+    for (final style in Style.values) {
+      measure(map, response.chars, style);
+    }
     final rendered = layout(map, gen, Dimensions(width, height, lineHeight));
     final texts = page(rendered);
 

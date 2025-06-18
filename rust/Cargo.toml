@@ -7,4 +7,5 @@ edition = "2024"
 crate-type = ["lib", "cdylib"]
 
 [dependencies]
+itertools = "0.14.0"
 usfm = { path = "../../usfm" }

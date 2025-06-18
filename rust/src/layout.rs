@@ -3,6 +3,7 @@ mod tests;
 
 use std::{collections::VecDeque, ffi::c_char, mem};
 
+use itertools::Itertools;
 use usfm::{CharacterContents, ParagraphContents};
 
 use crate::{CharsMap, Style, words::words};
@@ -26,11 +27,7 @@ pub struct Line {
     rem: f32,
 }
 
-#[derive(Debug)]
-pub enum Inline {
-    Word(String, f32),
-    Space(f32),
-}
+type Inline = (String, Style, f32);
 
 impl<'a> Layout<'a> {
     pub fn new(map: &'a CharsMap, dim: Dimensions) -> Self {
@@ -55,8 +52,9 @@ impl<'a> Layout<'a> {
             use ParagraphContents::*;
             match contents {
                 Verse(n) => {
-                    self.queue.push_back(self.space());
-                    self.queue.push_back(self.word(&n.to_string()));
+                    self.queue.push_back(self.space(Style::Normal));
+                    self.queue
+                        .push_back(self.word(&n.to_string(), Style::Verse));
                 }
                 Line(s) => self.line(s),
                 Character { contents, .. } => self.character(contents),
@@ -80,25 +78,23 @@ impl<'a> Layout<'a> {
         let words = words(s);
         for w in words {
             match w {
-                " " => self.queue.push_back(self.space()),
+                " " => self.queue.push_back(self.space(Style::Normal)),
                 w => {
-                    self.queue.push_back(self.word(w));
+                    self.queue.push_back(self.word(w, Style::Normal));
                     self.commit_or_else();
                 }
             }
         }
     }
 
-    pub fn word(&self, s: &str) -> Inline {
-        let width = s
-            .chars()
-            .map(|c| self.map[&(c as u32, Style::Normal)])
-            .sum::<f32>();
-        Inline::Word(s.to_string(), width)
+    pub fn word(&self, s: &str, style: Style) -> Inline {
+        let width = s.chars().map(|c| self.map[&(c as u32, style)]).sum::<f32>();
+        (s.to_string(), style, width)
     }
 
-    pub fn space(&self) -> Inline {
-        Inline::Space(self.map[&(' ' as u32, Style::Normal)])
+    pub fn space(&self, style: Style) -> Inline {
+        let width = self.map[&(' ' as u32, Style::Normal)];
+        (" ".to_string(), style, width)
     }
 
     pub fn commit_or_else(&mut self) {
@@ -108,49 +104,62 @@ impl<'a> Layout<'a> {
     }
 
     pub fn write_line(&mut self, justified: bool) {
-        let rect = Rectangle {
-            top: self.line.top,
-            left: self.line.left,
-            width: self.line.width,
-            height: self.dim.height,
-        };
-        let (text, spaces) = self
+        let whitespace: f32 = self
             .text
             .iter()
-            .fold((String::new(), 0.0), |(s, n), i| match i {
-                Inline::Word(text, _) => (s + text, n),
-                Inline::Space(_) => (s + " ", n + 1.0),
-            });
+            .filter(|(text, _, _)| text == " ")
+            .map(|(_, _, width)| width)
+            .sum();
+        let ratio = self.line.rem / whitespace;
+        let mut left = self.line.left;
+        for (style, group) in self.text.iter().chunk_by(|(_, style, _)| style).into_iter() {
+            let (text, whitespace, spaces, width) = group.fold(
+                (String::new(), 0.0, 0.0, 0.0),
+                |(acc, whitespace, spaces, total), (text, _, width)| {
+                    (
+                        acc + text,
+                        match text.as_str() {
+                            " " => whitespace + width,
+                            _ => whitespace,
+                        },
+                        match text.as_str() {
+                            " " => spaces + 1.0,
+                            _ => spaces,
+                        },
+                        total + width,
+                    )
+                },
+            );
+            let spacing = ratio * whitespace;
+            let width = width + spacing;
+            let rect = Rectangle {
+                top: self.line.top,
+                left,
+                width,
+                height: self.dim.line_height,
+            };
+            left += width;
+            let style = TextStyle {
+                style: style.clone(),
+                word_spacing: if justified { spacing / spaces } else { 0.0 },
+            };
+            let text = text.into_bytes();
+            let len = text.len();
+            let ptr = text.as_ptr() as *const c_char;
+            std::mem::forget(text);
+            self.page.push(Text(ptr, len, rect, style));
+        }
         self.text = Vec::new();
-        let style = TextStyle {
-            style: Style::Normal,
-            word_spacing: if justified {
-                self.line.rem / spaces
-            } else {
-                0.0
-            },
-        };
-        let text = text.into_bytes();
-        let len = text.len();
-        let ptr = text.as_ptr() as *const c_char;
-        std::mem::forget(text);
-        self.page.push(Text(ptr, len, rect, style));
         if self.new_line().is_err() {
             println!("End");
         }
     }
 
     pub fn commit(&mut self) -> Result<(), ()> {
-        if self.line.start && matches!(self.queue[0], Inline::Space(_)) {
+        if self.line.start && self.queue[0].0 == " " {
             self.queue.pop_front();
         }
-        let width: f32 = self
-            .queue
-            .iter()
-            .map(|i| match i {
-                Inline::Word(_, width) | Inline::Space(width) => width,
-            })
-            .sum();
+        let width: f32 = self.queue.iter().map(|i| i.2).sum();
         if width <= self.line.rem {
             self.line.rem -= width;
             let queue = mem::replace(&mut self.queue, VecDeque::new());
