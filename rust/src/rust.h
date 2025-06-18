@@ -17,22 +17,28 @@
 #endif
 
 typedef struct {
-    float top;
-    float left;
-    float width;
-    float height;
+  float top;
+  float left;
+  float width;
+  float height;
 } Rectangle;
 
 typedef struct {
-    float word_spacing;
+  float word_spacing;
 } Style;
 
 typedef struct {
-    const char* text;
-    size_t len;
-    Rectangle rect;
-    Style style;
+  const char* text;
+  size_t len;
+  Rectangle rect;
+  Style style;
 } Text;
+
+typedef struct {
+  float width;
+  float height;
+  float line_height;
+} Dimensions;
 
 void* chars_map(
   const unsigned char* usfm,
@@ -51,7 +57,8 @@ void insert(
 void* layout(
   void* map,
   const unsigned char* usfm,
-  size_t len
+  size_t len,
+  Dimensions* dim
 );
 
 void page(

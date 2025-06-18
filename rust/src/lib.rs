@@ -39,9 +39,15 @@ pub extern "C" fn insert(map: *mut c_void, chr: u32, width: f32, height: f32) {
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn layout(map: *const c_void, usfm: *const u8, len: usize) -> *mut c_void {
+pub extern "C" fn layout(
+    map: *const c_void,
+    usfm: *const u8,
+    len: usize,
+    dim: *mut Dimensions,
+) -> *mut c_void {
     let map = unsafe { &*(map as *const CharsMap) };
     let usfm = unsafe { from_utf8_unchecked(from_raw_parts(usfm, len)) };
+    let dim = unsafe { Box::from_raw(dim) };
     let usfm = parse(&usfm);
     let mut paragraphs = usfm
         .contents
@@ -51,14 +57,7 @@ pub extern "C" fn layout(map: *const c_void, usfm: *const u8, len: usize) -> *mu
             _ => None,
         })
         .take(1);
-    let mut layout = Box::new(Layout::new(
-        map,
-        Dimensions {
-            width: 500.0,
-            height: 800.0,
-            line_height: 40.0,
-        },
-    ));
+    let mut layout = Box::new(Layout::new(map, *dim));
     let paragraph = paragraphs.next().unwrap();
     layout.layout(paragraph);
     Box::into_raw(layout) as *mut c_void
@@ -207,13 +206,14 @@ impl<'a> Layout<'a> {
             width: self.line.width,
             height: self.dim.height,
         };
-        let (text, spaces) = self
-            .text
-            .iter()
-            .fold((String::new(), 0.0), |(s, n), i| match i {
-                Inline::Word(text, _) => (s + text, n),
-                Inline::Space(_) => (s + " ", n + 1.0),
-            });
+        let (text, spaces, width) =
+            self.text
+                .iter()
+                .fold((String::new(), 0.0, 0.0), |(s, n, w), i| match i {
+                    Inline::Word(text, width) => (s + text, n, w + width),
+                    Inline::Space(width) => (s + " ", n + 1.0, w + width),
+                });
+        println!("{}", width + self.line.rem);
         self.text = Vec::new();
         let style = Style {
             word_spacing: if justified {
@@ -233,6 +233,9 @@ impl<'a> Layout<'a> {
     }
 
     pub fn commit(&mut self) -> Result<(), ()> {
+        if self.line.start && matches!(self.queue[0], Inline::Space(_)) {
+            self.queue.pop_front();
+        }
         let width: f32 = self
             .queue
             .iter()
@@ -242,10 +245,7 @@ impl<'a> Layout<'a> {
             .sum();
         if width <= self.line.rem {
             self.line.rem -= width;
-            let mut queue = mem::replace(&mut self.queue, VecDeque::new());
-            if self.line.start && matches!(queue[0], Inline::Space(_)) {
-                queue.pop_front();
-            }
+            let queue = mem::replace(&mut self.queue, VecDeque::new());
             self.text.extend(queue);
             self.line.start = false;
             Ok(())

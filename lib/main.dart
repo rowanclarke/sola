@@ -37,9 +37,16 @@ class BibleCache extends GenericCache<Map<String, String>> {
 
 class MyApp extends StatelessWidget {
   final bibleCache = BibleCache();
-  final style = TextStyle(fontSize: 32, letterSpacing: 0, wordSpacing: 0);
+  final lineHeight = 32.0;
+  final fontSize = 32.0;
+  late final style = TextStyle(
+    fontSize: fontSize,
+    height: lineHeight / fontSize,
+    letterSpacing: 0,
+    wordSpacing: 0,
+  );
 
-  Future<Widget> text() async {
+  Future<Widget> pages(double width, double height) async {
     final web = await bibleCache.load('http://0.0.0.0:8000/engwebpb_usfm.zip');
     final gen = web['02-GENengwebpb.usfm']!;
     final response = charsMap(gen);
@@ -66,28 +73,25 @@ class MyApp extends StatelessWidget {
       insert(map, chars[i], width, 0);
     }
 
-    final l = layout(map, gen);
-    final texts = page(l);
+    final rendered = layout(map, gen, Dimensions(width, height, lineHeight));
+    final texts = page(rendered);
 
     return SizedBox(
-      width: 500,
-      height: 800,
+      width: width,
+      height: height,
       child: Stack(
         children:
             texts.map((text) {
-              final s = text.text.cast<Utf8>().toDartString(length: text.len);
               final rect = text.rect;
               final spacing = text.style.word_spacing;
-              print(spacing);
-
               return Positioned(
                 left: rect.left,
                 top: rect.top,
-                width: rect.width + 50,
+                width: rect.width,
                 height: rect.height,
                 child: Text(
-                  s,
-                  style: style.copyWith(wordSpacing: spacing, letterSpacing: 0),
+                  text.text.cast<Utf8>().toDartString(length: text.len),
+                  style: style.copyWith(wordSpacing: spacing),
                   softWrap: false,
                 ),
               );
@@ -100,20 +104,24 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        body: Center(
-          child: FutureBuilder<Widget>(
-            future: text(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return CircularProgressIndicator();
-              } else if (snapshot.hasError) {
-                return SelectableText('Error: ${snapshot.error}');
-              } else {
-                return snapshot.data ??
-                    Text('Done', style: TextStyle(fontSize: 24));
-              }
-            },
-          ),
+        body: LayoutBuilder(
+          builder: (context, constraints) {
+            final width = constraints.maxWidth;
+            final height = constraints.maxHeight;
+            return FutureBuilder<Widget>(
+              future: pages(width, height),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return CircularProgressIndicator();
+                } else if (snapshot.hasError) {
+                  return SelectableText('Error: ${snapshot.error}');
+                } else {
+                  return snapshot.data ??
+                      Text('Done', style: TextStyle(fontSize: 24));
+                }
+              },
+            );
+          },
         ),
       ),
     );

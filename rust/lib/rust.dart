@@ -2,13 +2,21 @@ import 'dart:ffi';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:ffi/ffi.dart';
-import 'rust_bindings_generated.dart';
+import 'rust_bindings_generated.dart' as bind;
 
 class CharsMapResponse {
   final Pointer<Void> map;
   final Uint32List chars;
 
   CharsMapResponse(this.map, this.chars);
+}
+
+class Dimensions {
+  final double width;
+  final double height;
+  final double line_height;
+
+  Dimensions(this.width, this.height, this.line_height);
 }
 
 CharsMapResponse charsMap(String usfm) {
@@ -33,13 +41,22 @@ CharsMapResponse charsMap(String usfm) {
 void insert(Pointer<Void> map, int chr, double width, double height) =>
     _bindings.insert(map, chr, width, height);
 
-Pointer<Void> layout(Pointer<Void> map, String usfm) {
+Pointer<Void> layout(Pointer<Void> map, String usfm, Dimensions dim) {
   final native = usfm.toNativeUtf8();
-  return _bindings.layout(map, native.cast<UnsignedChar>(), native.length);
+  final cdim = calloc<bind.Dimensions>();
+  cdim.ref.width = dim.width;
+  cdim.ref.height = dim.height;
+  cdim.ref.line_height = dim.line_height;
+  return _bindings.layout(
+    map,
+    native.cast<UnsignedChar>(),
+    native.length,
+    cdim,
+  );
 }
 
-List<Text> page(Pointer<Void> layout) {
-  final out = malloc<Pointer<Text>>();
+List<bind.Text> page(Pointer<Void> layout) {
+  final out = malloc<Pointer<bind.Text>>();
   final outLen = malloc<Size>();
 
   _bindings.page(layout, out, outLen);
@@ -62,4 +79,4 @@ final DynamicLibrary _dylib = () {
   throw UnsupportedError('Unknown platform: ${Platform.operatingSystem}');
 }();
 
-final RustBindings _bindings = RustBindings(_dylib);
+final bind.RustBindings _bindings = bind.RustBindings(_dylib);

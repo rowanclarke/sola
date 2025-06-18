@@ -78,8 +78,9 @@ class RustBindings {
     ffi.Pointer<ffi.Void> map,
     ffi.Pointer<ffi.UnsignedChar> usfm,
     int len,
+    ffi.Pointer<Dimensions> dim,
   ) {
-    return _layout(map, usfm, len);
+    return _layout(map, usfm, len, dim);
   }
 
   late final _layoutPtr =
@@ -89,6 +90,7 @@ class RustBindings {
             ffi.Pointer<ffi.Void>,
             ffi.Pointer<ffi.UnsignedChar>,
             ffi.Size,
+            ffi.Pointer<Dimensions>,
           )
         >
       >('layout');
@@ -98,6 +100,7 @@ class RustBindings {
           ffi.Pointer<ffi.Void>,
           ffi.Pointer<ffi.UnsignedChar>,
           int,
+          ffi.Pointer<Dimensions>,
         )
       >();
 
@@ -157,4 +160,15 @@ final class Text extends ffi.Struct {
   external Rectangle rect;
 
   external Style style;
+}
+
+final class Dimensions extends ffi.Struct {
+  @ffi.Float()
+  external double width;
+
+  @ffi.Float()
+  external double height;
+
+  @ffi.Float()
+  external double line_height;
 }
