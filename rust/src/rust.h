@@ -16,6 +16,11 @@
 #define FFI_PLUGIN_EXPORT
 #endif
 
+typedef enum {
+  VERSE = 0,
+  NORMAL = 1,
+} Style;
+
 typedef struct {
   float top;
   float left;
@@ -24,14 +29,15 @@ typedef struct {
 } Rectangle;
 
 typedef struct {
+  Style style;
   float word_spacing;
-} Style;
+} TextStyle;
 
 typedef struct {
   const char* text;
   size_t len;
   Rectangle rect;
-  Style style;
+  TextStyle style;
 } Text;
 
 typedef struct {
@@ -50,8 +56,8 @@ void* chars_map(
 void insert(
   void* map,
   unsigned int chr,
-  float width,
-  float height
+  Style style,
+  float width
 );
 
 void* layout(

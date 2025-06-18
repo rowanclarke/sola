@@ -7,7 +7,14 @@ use std::str::from_utf8_unchecked;
 use std::{collections::HashMap, ffi::c_void};
 use usfm::{BookContents, parse};
 
-pub type CharsMap = HashMap<u32, (f32, f32)>;
+pub type CharsMap = HashMap<(u32, Style), f32>;
+
+#[derive(Debug, Hash, PartialEq, Eq)]
+#[repr(i32)]
+pub enum Style {
+    Verse = 0,
+    Normal = 1,
+}
 
 #[unsafe(no_mangle)]
 pub extern "C" fn chars_map(
@@ -20,10 +27,10 @@ pub extern "C" fn chars_map(
     let map: Box<CharsMap> = Box::new(
         usfm.chars()
             .filter(|c| !"\n\r\t".contains(*c))
-            .map(|c| (c as u32, (0.0, 0.0)))
+            .map(|c| ((c as u32, Style::Normal), 0.0))
             .collect(),
     );
-    let mut chars: Vec<u32> = map.keys().cloned().collect();
+    let mut chars: Vec<u32> = map.keys().map(|(c, _)| c).cloned().collect();
     chars.sort();
     let chars = chars.leak();
     unsafe {
@@ -34,9 +41,9 @@ pub extern "C" fn chars_map(
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn insert(map: *mut c_void, chr: u32, width: f32, height: f32) {
+pub extern "C" fn insert(map: *mut c_void, chr: u32, style: Style, width: f32) {
     let map = unsafe { &mut *(map as *mut CharsMap) };
-    map.insert(chr, (width, height));
+    map.insert((chr, style), width);
 }
 
 #[unsafe(no_mangle)]

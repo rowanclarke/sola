@@ -56,8 +56,8 @@ class RustBindings {
         )
       >();
 
-  void insert(ffi.Pointer<ffi.Void> map, int chr, double width, double height) {
-    return _insert(map, chr, width, height);
+  void insert(ffi.Pointer<ffi.Void> map, int chr, Style style, double width) {
+    return _insert(map, chr, style.value, width);
   }
 
   late final _insertPtr =
@@ -66,13 +66,13 @@ class RustBindings {
           ffi.Void Function(
             ffi.Pointer<ffi.Void>,
             ffi.UnsignedInt,
-            ffi.Float,
+            ffi.UnsignedInt,
             ffi.Float,
           )
         >
       >('insert');
   late final _insert = _insertPtr
-      .asFunction<void Function(ffi.Pointer<ffi.Void>, int, double, double)>();
+      .asFunction<void Function(ffi.Pointer<ffi.Void>, int, int, double)>();
 
   ffi.Pointer<ffi.Void> layout(
     ffi.Pointer<ffi.Void> map,
@@ -132,6 +132,20 @@ class RustBindings {
       >();
 }
 
+enum Style {
+  VERSE(0),
+  NORMAL(1);
+
+  final int value;
+  const Style(this.value);
+
+  static Style fromValue(int value) => switch (value) {
+    0 => VERSE,
+    1 => NORMAL,
+    _ => throw ArgumentError("Unknown value for Style: $value"),
+  };
+}
+
 final class Rectangle extends ffi.Struct {
   @ffi.Float()
   external double top;
@@ -146,7 +160,10 @@ final class Rectangle extends ffi.Struct {
   external double height;
 }
 
-final class Style extends ffi.Struct {
+final class TextStyle extends ffi.Struct {
+  @ffi.UnsignedInt()
+  external int style;
+
   @ffi.Float()
   external double word_spacing;
 }
@@ -159,7 +176,7 @@ final class Text extends ffi.Struct {
 
   external Rectangle rect;
 
-  external Style style;
+  external TextStyle style;
 }
 
 final class Dimensions extends ffi.Struct {

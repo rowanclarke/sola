@@ -5,7 +5,7 @@ use std::{collections::VecDeque, ffi::c_char, mem};
 
 use usfm::{CharacterContents, ParagraphContents};
 
-use crate::{CharsMap, words::words};
+use crate::{CharsMap, Style, words::words};
 
 #[derive(Debug)]
 pub struct Layout<'a> {
@@ -90,12 +90,15 @@ impl<'a> Layout<'a> {
     }
 
     pub fn word(&self, s: &str) -> Inline {
-        let width = s.chars().map(|c| self.map[&(c as u32)].0).sum::<f32>();
+        let width = s
+            .chars()
+            .map(|c| self.map[&(c as u32, Style::Normal)])
+            .sum::<f32>();
         Inline::Word(s.to_string(), width)
     }
 
     pub fn space(&self) -> Inline {
-        Inline::Space(self.map[&(' ' as u32)].0)
+        Inline::Space(self.map[&(' ' as u32, Style::Normal)])
     }
 
     pub fn commit_or_else(&mut self) {
@@ -119,7 +122,8 @@ impl<'a> Layout<'a> {
                 Inline::Space(_) => (s + " ", n + 1.0),
             });
         self.text = Vec::new();
-        let style = Style {
+        let style = TextStyle {
+            style: Style::Normal,
             word_spacing: if justified {
                 self.line.rem / spaces
             } else {
@@ -179,7 +183,7 @@ pub type Page = Vec<Text>;
 
 #[derive(Debug)]
 #[repr(C)]
-pub struct Text(*const c_char, usize, Rectangle, Style);
+pub struct Text(*const c_char, usize, Rectangle, TextStyle);
 
 #[derive(Debug)]
 #[repr(C)]
@@ -192,7 +196,8 @@ pub struct Rectangle {
 
 #[derive(Debug)]
 #[repr(C)]
-pub struct Style {
+pub struct TextStyle {
+    style: Style,
     word_spacing: f32,
 }
 

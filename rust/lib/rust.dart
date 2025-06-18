@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:ffi/ffi.dart';
 import 'rust_bindings_generated.dart' as bind;
+export 'rust_bindings_generated.dart' show Style;
 
 class CharsMapResponse {
   final Pointer<Void> map;
@@ -38,8 +39,8 @@ CharsMapResponse charsMap(String usfm) {
   );
 }
 
-void insert(Pointer<Void> map, int chr, double width, double height) =>
-    _bindings.insert(map, chr, width, height);
+void insert(Pointer<Void> map, int chr, bind.Style style, double width) =>
+    _bindings.insert(map, chr, style, width);
 
 Pointer<Void> layout(Pointer<Void> map, String usfm, Dimensions dim) {
   final native = usfm.toNativeUtf8();

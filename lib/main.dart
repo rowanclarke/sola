@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:ffi';
+import 'dart:typed_data';
 
 import 'package:asset_cache/asset_cache.dart';
 import 'package:ffi/ffi.dart';
@@ -38,23 +40,30 @@ class MyApp extends StatelessWidget {
   final bibleCache = BibleCache();
   final lineHeight = 32.0;
   final fontSize = 32.0;
-  late final style = TextStyle(
-    fontSize: fontSize,
-    height: lineHeight / fontSize,
-    letterSpacing: 0,
-    wordSpacing: 0,
-  );
 
-  Future<Widget> pages(double width, double height) async {
-    final web = await bibleCache.load('http://0.0.0.0:8000/engwebpb_usfm.zip');
-    final gen = web['02-GENengwebpb.usfm']!;
-    final response = charsMap(gen);
-    final map = response.map;
-    final chars = response.chars;
+  TextStyle styled(Style style) {
+    switch (style) {
+      case Style.VERSE:
+        return TextStyle(
+          fontSize: fontSize / 2,
+          height: lineHeight / fontSize,
+          letterSpacing: 0,
+          wordSpacing: 0,
+        );
+      case Style.NORMAL:
+        return TextStyle(
+          fontSize: fontSize,
+          height: lineHeight / fontSize,
+          letterSpacing: 0,
+          wordSpacing: 0,
+        );
+    }
+  }
+
+  void measure(Pointer<Void> map, Uint32List chars, Style style) {
     final text = String.fromCharCodes(chars);
-
     final TextPainter textPainter = TextPainter(
-      text: TextSpan(text: text, style: style),
+      text: TextSpan(text: text, style: styled(style)),
       maxLines: 1,
       textDirection: TextDirection.ltr,
     )..layout();
@@ -69,8 +78,16 @@ class MyApp extends StatelessWidget {
         Rect.zero,
       );
       final width = caretEnd.dx - caretStart.dx;
-      insert(map, chars[i], width, 0);
+      insert(map, chars[i], style, width);
     }
+  }
+
+  Future<Widget> pages(double width, double height) async {
+    final web = await bibleCache.load('http://0.0.0.0:8000/engwebpb_usfm.zip');
+    final gen = web['02-GENengwebpb.usfm']!;
+    final response = charsMap(gen);
+    final map = response.map;
+    measure(map, response.chars, Style.NORMAL);
 
     final rendered = layout(map, gen, Dimensions(width, height, lineHeight));
     final texts = page(rendered);
@@ -83,6 +100,7 @@ class MyApp extends StatelessWidget {
             texts.map((text) {
               final rect = text.rect;
               final spacing = text.style.word_spacing;
+              final style = styled(Style.fromValue(text.style.style));
               return Positioned(
                 left: rect.left,
                 top: rect.top,
