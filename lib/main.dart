@@ -39,7 +39,8 @@ class MyApp extends StatelessWidget {
 
   Future<String> text() async {
     final web = await bibleCache.load('http://0.0.0.0:8000/engwebpb_usfm.zip');
-    final response = charsMap(web['02-GENengwebpb.usfm']!);
+    final gen = web['02-GENengwebpb.usfm']!;
+    final response = charsMap(gen);
     final map = response.map;
     final chars = response.chars;
     final text = String.fromCharCodes(chars);
@@ -62,6 +63,8 @@ class MyApp extends StatelessWidget {
       final width = caretEnd.dx - caretStart.dx;
       insert(map, chars[i], width, 0);
     }
+
+    layout(map, gen);
 
     return "Hi";
   }

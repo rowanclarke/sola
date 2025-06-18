@@ -29,3 +29,8 @@ void insert(
   float height
 );
 
+void* layout(
+  void* map,
+  const unsigned char* usfm,
+  size_t len
+);

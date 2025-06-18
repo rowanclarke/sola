@@ -73,4 +73,31 @@ class RustBindings {
       >('insert');
   late final _insert = _insertPtr
       .asFunction<void Function(ffi.Pointer<ffi.Void>, int, double, double)>();
+
+  ffi.Pointer<ffi.Void> layout(
+    ffi.Pointer<ffi.Void> map,
+    ffi.Pointer<ffi.UnsignedChar> usfm,
+    int len,
+  ) {
+    return _layout(map, usfm, len);
+  }
+
+  late final _layoutPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<ffi.Void> Function(
+            ffi.Pointer<ffi.Void>,
+            ffi.Pointer<ffi.UnsignedChar>,
+            ffi.Size,
+          )
+        >
+      >('layout');
+  late final _layout = _layoutPtr
+      .asFunction<
+        ffi.Pointer<ffi.Void> Function(
+          ffi.Pointer<ffi.Void>,
+          ffi.Pointer<ffi.UnsignedChar>,
+          int,
+        )
+      >();
 }
