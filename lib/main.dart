@@ -38,8 +38,14 @@ class BibleCache extends GenericCache<Map<String, String>> {
 
 class MyApp extends StatelessWidget {
   final bibleCache = BibleCache();
-  final lineHeight = 32.0;
-  final fontSize = 32.0;
+  final lineHeight = 26.0;
+  final headerHeight = 32.0;
+  final fontSize = 16.0;
+  final fontSizeSuperscript = 10.0;
+  final fontSizeHeader = 32.0;
+  final fontSizeChapter = 64.0;
+  final headerPadding = 10.0;
+
   late final defaultStyle = TextStyle(
     fontFamily: 'AveriaSerifLibre',
     fontWeight: FontWeight.w400,
@@ -51,9 +57,16 @@ class MyApp extends StatelessWidget {
   TextStyle styled(Style style) {
     switch (style) {
       case Style.VERSE:
-        return defaultStyle.copyWith(fontSize: fontSize / 2);
+        return defaultStyle.copyWith(fontSize: fontSizeSuperscript, height: 1);
       case Style.NORMAL:
         return defaultStyle.copyWith(fontSize: fontSize);
+      case Style.HEADER:
+        return defaultStyle.copyWith(fontSize: fontSizeHeader, height: 1);
+      case Style.CHAPTER:
+        return defaultStyle.copyWith(
+          fontSize: fontSizeChapter,
+          height: 2 * lineHeight / fontSizeChapter,
+        );
     }
   }
 
@@ -87,7 +100,11 @@ class MyApp extends StatelessWidget {
     for (final style in Style.values) {
       measure(map, response.chars, style);
     }
-    final rendered = layout(map, gen, Dimensions(width, height, lineHeight));
+    final rendered = layout(
+      map,
+      gen,
+      Dimensions(width, height, lineHeight, headerHeight, headerPadding),
+    );
     final texts = page(rendered);
 
     return SizedBox(

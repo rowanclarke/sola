@@ -14,6 +14,8 @@ pub type CharsMap = HashMap<(u32, Style), f32>;
 pub enum Style {
     Verse = 0,
     Normal = 1,
+    Header = 2,
+    Chapter = 3,
 }
 
 #[unsafe(no_mangle)]
@@ -66,7 +68,7 @@ pub extern "C" fn layout(
 pub extern "C" fn page(layout: *const c_void, out: *mut *const Text, out_len: *mut usize) {
     let layout = unsafe { &*(layout as *const Layout) };
     unsafe {
-        *out = layout.page(1).as_ptr();
-        *out_len = layout.page(1).len();
+        *out = layout.page(0).as_ptr();
+        *out_len = layout.page(0).len();
     }
 }

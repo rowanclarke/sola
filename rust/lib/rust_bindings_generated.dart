@@ -134,7 +134,9 @@ class RustBindings {
 
 enum Style {
   VERSE(0),
-  NORMAL(1);
+  NORMAL(1),
+  HEADER(2),
+  CHAPTER(3);
 
   final int value;
   const Style(this.value);
@@ -142,6 +144,8 @@ enum Style {
   static Style fromValue(int value) => switch (value) {
     0 => VERSE,
     1 => NORMAL,
+    2 => HEADER,
+    3 => CHAPTER,
     _ => throw ArgumentError("Unknown value for Style: $value"),
   };
 }
@@ -188,4 +192,10 @@ final class Dimensions extends ffi.Struct {
 
   @ffi.Float()
   external double line_height;
+
+  @ffi.Float()
+  external double header_height;
+
+  @ffi.Float()
+  external double header_padding;
 }

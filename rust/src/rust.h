@@ -19,6 +19,8 @@
 typedef enum {
   VERSE = 0,
   NORMAL = 1,
+  HEADER = 2,
+  CHAPTER = 3,
 } Style;
 
 typedef struct {
@@ -44,6 +46,8 @@ typedef struct {
   float width;
   float height;
   float line_height;
+  float header_height;
+  float header_padding;
 } Dimensions;
 
 void* chars_map(

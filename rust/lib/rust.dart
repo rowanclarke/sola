@@ -15,9 +15,17 @@ class CharsMapResponse {
 class Dimensions {
   final double width;
   final double height;
-  final double line_height;
+  final double lineHeight;
+  final double headerHeight;
+  final double headerPadding;
 
-  Dimensions(this.width, this.height, this.line_height);
+  Dimensions(
+    this.width,
+    this.height,
+    this.lineHeight,
+    this.headerHeight,
+    this.headerPadding,
+  );
 }
 
 CharsMapResponse charsMap(String usfm) {
@@ -47,7 +55,9 @@ Pointer<Void> layout(Pointer<Void> map, String usfm, Dimensions dim) {
   final cdim = calloc<bind.Dimensions>();
   cdim.ref.width = dim.width;
   cdim.ref.height = dim.height;
-  cdim.ref.line_height = dim.line_height;
+  cdim.ref.line_height = dim.lineHeight;
+  cdim.ref.header_height = dim.headerHeight;
+  cdim.ref.header_padding = dim.headerPadding;
   return _bindings.layout(
     map,
     native.cast<UnsignedChar>(),
