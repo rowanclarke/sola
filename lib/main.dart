@@ -40,23 +40,20 @@ class MyApp extends StatelessWidget {
   final bibleCache = BibleCache();
   final lineHeight = 32.0;
   final fontSize = 32.0;
+  late final defaultStyle = TextStyle(
+    fontFamily: 'AveriaSerifLibre',
+    fontWeight: FontWeight.w400,
+    letterSpacing: 0,
+    wordSpacing: 0,
+    height: lineHeight / fontSize,
+  );
 
   TextStyle styled(Style style) {
     switch (style) {
       case Style.VERSE:
-        return TextStyle(
-          fontSize: fontSize / 2,
-          height: lineHeight / fontSize,
-          letterSpacing: 0,
-          wordSpacing: 0,
-        );
+        return defaultStyle.copyWith(fontSize: fontSize / 2);
       case Style.NORMAL:
-        return TextStyle(
-          fontSize: fontSize,
-          height: lineHeight / fontSize,
-          letterSpacing: 0,
-          wordSpacing: 0,
-        );
+        return defaultStyle.copyWith(fontSize: fontSize);
     }
   }
 
@@ -122,6 +119,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      theme: ThemeData(fontFamily: 'AveriaSerifLibre'),
       home: Scaffold(
         body: LayoutBuilder(
           builder: (context, constraints) {
