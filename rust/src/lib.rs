@@ -57,17 +57,8 @@ pub extern "C" fn layout(
     let usfm = unsafe { from_utf8_unchecked(from_raw_parts(usfm, len)) };
     let dim = unsafe { Box::from_raw(dim) };
     let usfm = parse(&usfm);
-    let mut paragraphs = usfm
-        .contents
-        .iter()
-        .filter_map(|c| match c {
-            BookContents::Paragraph { contents, .. } => Some(contents),
-            _ => None,
-        })
-        .take(1);
     let mut layout = Box::new(Layout::new(map, *dim));
-    let paragraph = paragraphs.next().unwrap();
-    layout.layout(paragraph);
+    layout.layout(&usfm.contents);
     Box::into_raw(layout) as *mut c_void
 }
 
@@ -75,7 +66,7 @@ pub extern "C" fn layout(
 pub extern "C" fn page(layout: *const c_void, out: *mut *const Text, out_len: *mut usize) {
     let layout = unsafe { &*(layout as *const Layout) };
     unsafe {
-        *out = layout.page.as_ptr();
-        *out_len = layout.page.len();
+        *out = layout.page(1).as_ptr();
+        *out_len = layout.page(1).len();
     }
 }

@@ -4,16 +4,16 @@ mod tests;
 use std::{collections::VecDeque, ffi::c_char, mem};
 
 use itertools::Itertools;
-use usfm::{CharacterContents, ParagraphContents};
+use usfm::{BookContents, CharacterContents, ParagraphContents};
 
 use crate::{CharsMap, Style, words::words};
 
 #[derive(Debug)]
 pub struct Layout<'a> {
     dim: Dimensions,
-    pub page: Page,
+    pages: Vec<Page>,
     line: Line,
-    pub text: Vec<Inline>,
+    text: Vec<Inline>,
     queue: VecDeque<Inline>,
     map: &'a CharsMap,
 }
@@ -41,15 +41,29 @@ impl<'a> Layout<'a> {
                 rem: dim.width,
             },
             dim,
-            page: Page::new(),
+            pages: vec![Page::new()],
             text: Vec::new(),
             queue: VecDeque::new(),
         }
     }
 
-    pub fn layout(&mut self, paragraph: &Vec<ParagraphContents>) {
-        for contents in paragraph {
-            use ParagraphContents::*;
+    pub fn layout(&mut self, contents: &Vec<BookContents>) {
+        use BookContents::*;
+        for contents in contents.into_iter().take(18) {
+            match contents {
+                Paragraph { contents, .. } => self.paragraph(contents),
+                _ => (),
+            }
+        }
+    }
+
+    pub fn page(&self, n: usize) -> &Page {
+        &self.pages[n]
+    }
+
+    fn paragraph(&mut self, contents: &Vec<ParagraphContents>) {
+        use ParagraphContents::*;
+        for contents in contents {
             match contents {
                 Verse(n) => {
                     self.queue.push_back(self.space(Style::Normal));
@@ -61,6 +75,7 @@ impl<'a> Layout<'a> {
                 _ => (),
             }
         }
+        self.commit().unwrap();
         self.write_line(false);
     }
 
@@ -78,11 +93,11 @@ impl<'a> Layout<'a> {
         let words = words(s);
         for w in words {
             match w {
-                " " => self.queue.push_back(self.space(Style::Normal)),
-                w => {
-                    self.queue.push_back(self.word(w, Style::Normal));
+                " " => {
                     self.commit_or_else();
+                    self.queue.push_back(self.space(Style::Normal));
                 }
+                w => self.queue.push_back(self.word(w, Style::Normal)),
             }
         }
     }
@@ -104,6 +119,7 @@ impl<'a> Layout<'a> {
     }
 
     pub fn write_line(&mut self, justified: bool) {
+        let current = self.pages.last_mut().unwrap();
         let whitespace: f32 = self
             .text
             .iter()
@@ -147,11 +163,18 @@ impl<'a> Layout<'a> {
             let len = text.len();
             let ptr = text.as_ptr() as *const c_char;
             std::mem::forget(text);
-            self.page.push(Text(ptr, len, rect, style));
+            current.push(Text(ptr, len, rect, style));
         }
         self.text = Vec::new();
         if self.new_line().is_err() {
-            println!("End");
+            self.line = Line {
+                start: true,
+                top: 0.0,
+                left: 0.0,
+                width: self.dim.width,
+                rem: self.dim.width,
+            };
+            self.pages.push(Page::new());
         }
     }
 
@@ -187,7 +210,6 @@ impl<'a> Layout<'a> {
     }
 }
 
-pub type Book = Vec<Page>;
 pub type Page = Vec<Text>;
 
 #[derive(Debug)]
