@@ -72,3 +72,40 @@ pub extern "C" fn page(layout: *const c_void, out: *mut *const Text, out_len: *m
         *out_len = layout.page(0).len();
     }
 }
+
+#[cfg(target_os = "android")]
+use std::os::raw::c_char;
+
+#[cfg(target_os = "android")]
+#[link(name = "log")]
+unsafe extern "C" {
+    fn __android_log_print(prio: i32, tag: *const c_char, fmt: *const c_char, ...) -> i32;
+}
+
+#[cfg(target_os = "android")]
+#[macro_export]
+macro_rules! log {
+    ($($arg:tt)*) => {{
+        use std::ffi::CString;
+        use std::os::raw::c_char;
+        let message = CString::new(format!($($arg)*)).unwrap();
+
+        const ANDROID_LOG_INFO: i32 = 4;
+        unsafe {
+            crate::__android_log_print(
+                ANDROID_LOG_INFO,
+                b"bible\0".as_ptr() as *const c_char,
+                b"%s\0".as_ptr() as *const c_char,
+                message.as_ptr()
+            );
+        }
+    }};
+}
+
+#[cfg(not(target_os = "android"))]
+#[macro_export]
+macro_rules! log {
+    ($($arg:tt)*) => {{
+        println!($($arg)*);
+    }}
+}
