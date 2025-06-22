@@ -93,7 +93,9 @@ class MyApp extends StatelessWidget {
   }
 
   Future<Widget> pages(double width, double height) async {
-    final web = await bibleCache.load('http://0.0.0.0:8000/engwebpb_usfm.zip');
+    final web = await bibleCache.load(
+      'http://192.168.1.42:8000/engwebpb_usfm.zip',
+    );
     final gen = web['02-GENengwebpb.usfm']!;
     final response = charsMap(gen);
     final map = response.map;
@@ -142,6 +144,9 @@ class MyApp extends StatelessWidget {
           builder: (context, constraints) {
             final width = constraints.maxWidth;
             final height = constraints.maxHeight;
+            if (width < 10 || height < 10) {
+              return Container();
+            }
             return FutureBuilder<Widget>(
               future: pages(width, height),
               builder: (context, snapshot) {
