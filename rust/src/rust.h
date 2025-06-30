@@ -1,20 +1,13 @@
-#include <stddef.h>
-#include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
 
-#if _WIN32
-#include <windows.h>
-#else
-#include <pthread.h>
-#include <unistd.h>
-#endif
-
-#if _WIN32
-#define FFI_PLUGIN_EXPORT __declspec(dllexport)
-#else
-#define FFI_PLUGIN_EXPORT
-#endif
+typedef struct {
+  const char* font_family;
+  size_t font_family_len;
+  float font_size;
+  float height;
+  float letter_spacing;
+  float word_spacing;
+} TextStyle;
 
 typedef enum {
   VERSE = 0,
@@ -31,11 +24,6 @@ typedef struct {
 } Rectangle;
 
 typedef struct {
-  Style style;
-  float word_spacing;
-} TextStyle;
-
-typedef struct {
   const char* text;
   size_t len;
   Rectangle rect;
@@ -45,28 +33,17 @@ typedef struct {
 typedef struct {
   float width;
   float height;
-  float line_height;
   float header_height;
   float header_padding;
 } Dimensions;
 
-void* chars_map(
-  const unsigned char* usfm,
-  size_t len,
-  const unsigned int** out,
-  size_t* out_len
-);
-
-void insert(
-  void* map,
-  unsigned int chr,
-  Style style,
-  float width
-);
+void* renderer();
+void register_font_family(void* renderer, char* family, size_t family_len, char* data, size_t len);
+void register_style(void* renderer, Style style, TextStyle* textStyle);
 
 void* layout(
-  void* map,
-  const unsigned char* usfm,
+  void* renderer,
+  const char* usfm,
   size_t len,
   Dimensions* dim
 );

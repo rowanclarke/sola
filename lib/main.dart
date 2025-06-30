@@ -9,6 +9,8 @@ import 'package:rust/rust.dart';
 import 'dart:async';
 import 'package:archive/archive.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter/services.dart';
+import 'package:rust/rust.dart';
 
 void main() {
   runApp(MyApp());
@@ -38,74 +40,33 @@ class BibleCache extends GenericCache<Map<String, String>> {
 
 class MyApp extends StatelessWidget {
   final bibleCache = BibleCache();
-  final lineHeight = 26.0;
-  final headerHeight = 32.0;
-  final fontSize = 16.0;
-  final fontSizeSuperscript = 10.0;
-  final fontSizeHeader = 32.0;
-  final fontSizeChapter = 64.0;
-  final headerPadding = 10.0;
-
-  late final defaultStyle = TextStyle(
-    fontFamily: 'AveriaSerifLibre',
-    fontWeight: FontWeight.w400,
-    letterSpacing: 0,
-    wordSpacing: 0,
-    height: lineHeight / fontSize,
-  );
-
-  TextStyle styled(Style style) {
-    switch (style) {
-      case Style.VERSE:
-        return defaultStyle.copyWith(fontSize: fontSizeSuperscript, height: 1);
-      case Style.NORMAL:
-        return defaultStyle.copyWith(fontSize: fontSize);
-      case Style.HEADER:
-        return defaultStyle.copyWith(fontSize: fontSizeHeader, height: 1);
-      case Style.CHAPTER:
-        return defaultStyle.copyWith(
-          fontSize: fontSizeChapter,
-          height: 2 * lineHeight / fontSizeChapter,
-        );
-    }
-  }
-
-  void measure(Pointer<Void> map, Uint32List chars, Style style) {
-    final text = String.fromCharCodes(chars);
-    final TextPainter textPainter = TextPainter(
-      text: TextSpan(text: text, style: styled(style)),
-      maxLines: 1,
-      textDirection: TextDirection.ltr,
-    )..layout();
-
-    for (int i = 0; i < text.length; i++) {
-      final caretStart = textPainter.getOffsetForCaret(
-        TextPosition(offset: i),
-        Rect.zero,
-      );
-      final caretEnd = textPainter.getOffsetForCaret(
-        TextPosition(offset: i + 1),
-        Rect.zero,
-      );
-      final width = caretEnd.dx - caretStart.dx;
-      insert(map, chars[i], style, width);
-    }
-  }
 
   Future<Widget> pages(double width, double height) async {
     final web = await bibleCache.load(
       'http://192.168.1.42:8000/engwebpb_usfm.zip',
     );
     final gen = web['02-GENengwebpb.usfm']!;
-    final response = charsMap(gen);
-    final map = response.map;
-    for (final style in Style.values) {
-      measure(map, response.chars, style);
-    }
+
+    final renderer = getRenderer();
+    final font = await rootBundle
+        .load('assets/fonts/AveriaSerifLibre-Regular.ttf')
+        .then((b) => b.buffer.asUint8List());
+    registerFontFamily(renderer, 'AveriaSerifLibre', font);
+    registerStyle(
+      renderer,
+      Style.NORMAL,
+      TextStyle(
+        fontFamily: 'AveriaSerifLibre',
+        fontSize: 16,
+        height: 1,
+        letterSpacing: 0,
+        wordSpacing: 0,
+      ),
+    );
     final rendered = layout(
-      map,
+      renderer,
       gen,
-      Dimensions(width, height, lineHeight, headerHeight, headerPadding),
+      Dimensions(width, height, headerHeight: 30, headerPadding: 10),
     );
     final texts = page(rendered);
 
@@ -116,8 +77,6 @@ class MyApp extends StatelessWidget {
         children:
             texts.map((text) {
               final rect = text.rect;
-              final spacing = text.style.word_spacing;
-              final style = styled(Style.fromValue(text.style.style));
               return Positioned(
                 left: rect.left,
                 top: rect.top,
@@ -125,7 +84,7 @@ class MyApp extends StatelessWidget {
                 height: rect.height,
                 child: Text(
                   text.text.cast<Utf8>().toDartString(length: text.len),
-                  style: style.copyWith(wordSpacing: spacing),
+                  style: toTextStyle(text.style),
                   softWrap: false,
                 ),
               );
@@ -134,11 +93,25 @@ class MyApp extends StatelessWidget {
     );
   }
 
+  // Future<Widget> text() async {
+  //   final font = await rootBundle
+  //       .load('assets/fonts/AveriaSerifLibre-Regular.ttf')
+  //       .then((b) => b.buffer.asUint8List());
+  //   final ptr = malloc<Uint8>(font.length);
+  //   ptr.asTypedList(font.length).setAll(0, font);
+  //   width(ptr, font.length);
+  //   return Text("Hello!", style: textStyle);
+  // final textStyle = const TextStyle(
+  //   fontFamily: 'AveriaSerifLibre',
+  //   fontSize: 16,
+  //   height: 1,
+  //   letterSpacing: 0,
+  // );
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(fontFamily: 'AveriaSerifLibre'),
       home: Scaffold(
         body: LayoutBuilder(
           builder: (context, constraints) {

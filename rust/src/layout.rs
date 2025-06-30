@@ -1,22 +1,31 @@
 #[cfg(test)]
 mod tests;
 
-use std::{collections::VecDeque, ffi::c_char, mem};
+use std::{
+    collections::VecDeque, ffi::c_char, mem, slice::from_raw_parts, str::from_utf8_unchecked,
+};
 
 use itertools::Itertools;
+use skia_safe::{
+    Font, GlyphId, Point, Shaper,
+    shaper::{
+        AsRunHandler, RunHandler,
+        run_handler::{Buffer, RunInfo},
+    },
+};
 use usfm::{BookContents, CharacterContents, ElementContents, ElementType, ParagraphContents};
 
-use crate::{CharsMap, Style, words::words};
+use crate::{Renderer, Style, TextStyle, log, words::words};
 
 #[derive(Debug)]
 pub struct Layout<'a> {
+    renderer: &'a Renderer,
     dim: Dimensions,
     region: Rectangle,
     lines: VecDeque<Line>,
     pages: Vec<Page>,
     text: Vec<Inline>,
     queue: VecDeque<Inline>,
-    map: &'a CharsMap,
 }
 
 #[derive(Debug)]
@@ -24,14 +33,13 @@ pub struct Line {
     start: bool,
     top: f32,
     left: f32,
-    width: f32,
     rem: f32,
 }
 
 type Inline = (String, Style, f32);
 
 impl<'a> Layout<'a> {
-    pub fn new(map: &'a CharsMap, dim: Dimensions) -> Self {
+    pub fn new(renderer: &'a Renderer, dim: Dimensions) -> Self {
         let region = Rectangle {
             top: 0.0,
             left: 0.0,
@@ -39,78 +47,84 @@ impl<'a> Layout<'a> {
             height: dim.height,
         };
         Self {
+            renderer,
             dim,
             region,
             lines: VecDeque::new(),
             pages: vec![Page::new()],
             text: Vec::new(),
             queue: VecDeque::new(),
-            map,
         }
     }
 
     pub fn layout(&mut self, contents: &Vec<BookContents>) {
         use BookContents::*;
-        for contents in contents.into_iter().take(18) {
+        for contents in contents.into_iter().take(11) {
             match contents {
-                Chapter(n) => {
-                    let height = self.dim.line_height * 2.0;
-                    self.request(height);
-                    let (text, style, width) = self.word(&n.to_string(), Style::Chapter);
-                    let width = width + self.dim.header_padding;
-                    let page = self.pages.last_mut().unwrap();
-                    Self::write_text(
-                        page,
-                        text,
-                        Rectangle {
-                            top: self.region.top,
-                            left: self.region.left,
-                            width,
-                            height,
-                        },
-                        TextStyle {
-                            style,
-                            word_spacing: 0.0,
-                        },
-                    );
-                    self.lines.push_back(Line {
-                        start: true,
-                        top: self.region.top,
-                        left: self.region.left + width,
-                        width: self.region.width - width,
-                        rem: self.region.width - width,
-                    });
-                    self.lines.push_back(Line {
-                        start: true,
-                        top: self.region.top + self.dim.line_height,
-                        left: self.region.left + width,
-                        width: self.region.width - width,
-                        rem: self.region.width - width,
-                    });
-                    self.region.top += height;
-                }
-                Element { ty, contents } => self.element(ty, contents),
+                // Chapter(n) => {
+                //     let text = n.to_string();
+                //     let (width, height) = self.renderer.measure_str(&text, &Style::Chapter);
+                //     self.request(height);
+                //     let width = width + self.dim.header_padding;
+                //     let page = self.pages.last_mut().unwrap();
+                //     Self::write_text(
+                //         page,
+                //         text,
+                //         Rectangle {
+                //             top: self.region.top,
+                //             left: self.region.left,
+                //             width,
+                //             height,
+                //         },
+                //         Style::Chapter,
+                //         0.0,
+                //     );
+                //     self.lines.push_back(Line {
+                //         start: true,
+                //         top: self.region.top,
+                //         left: self.region.left + width,
+                //         rem: self.region.width - width,
+                //     });
+                //     self.lines.push_back(Line {
+                //         start: true,
+                //         top: self.region.top + self.renderer.line_height(&Style::Normal),
+                //         left: self.region.left + width,
+                //         rem: self.region.width - width,
+                //     });
+                //     self.region.top += height;
+                // }
+                // Element { ty, contents } => self.element(ty, contents),
                 Paragraph { contents, .. } => self.paragraph(contents),
                 _ => (),
             }
         }
     }
 
-    pub fn page(&self, n: usize) -> &Page {
-        &self.pages[n]
+    pub fn page(&self, n: usize) -> Vec<Text> {
+        self.pages[n]
+            .iter()
+            .map(|PartialText(text, rect, style, word_spacing)| {
+                let mut style = self.renderer.style_collection[&style];
+                style.word_spacing += word_spacing;
+                let text = text.as_bytes();
+                let len = text.len();
+                let ptr = text.as_ptr() as *const c_char;
+                Text(ptr, len, *rect, style)
+            })
+            .collect()
     }
 
     fn paragraph(&mut self, contents: &Vec<ParagraphContents>) {
         use ParagraphContents::*;
-        self.next_line();
+        self.next_line(&Style::Normal);
         for contents in contents {
             match contents {
                 Verse(n) => {
-                    self.queue.push_back(self.space(Style::Normal));
+                    self.queue.push_back(self.inline(" ", Style::Normal));
                     self.queue
-                        .push_back(self.word(&n.to_string(), Style::Verse));
+                        .push_back(self.inline(n.to_string(), Style::Normal));
                 }
-                Line(s) => self.write(s),
+                Line(s) => self.write(s, Style::Normal),
                 Character { contents, .. } => self.character(contents),
                 _ => (),
             }
@@ -126,7 +140,7 @@ impl<'a> Layout<'a> {
             match (ty, contents) {
                 (Header, Line(s)) => {
                     let height = self.dim.height / 5.0;
-                    let (text, style, width) = self.word(&s, Style::Header);
+                    let (text, _, width) = self.inline(s, Style::Header);
                     let page = self.pages.last_mut().unwrap();
                     Self::write_text(
                         page,
@@ -137,10 +151,8 @@ impl<'a> Layout<'a> {
                             width,
                             height: self.dim.header_height,
                         },
-                        TextStyle {
-                            style,
-                            word_spacing: 0.0,
-                        },
+                        Style::Header,
+                        0.0,
                     );
                     self.region.top = height;
                 }
@@ -153,33 +165,28 @@ impl<'a> Layout<'a> {
         use CharacterContents::*;
         for contents in contents {
             match contents {
-                Line(s) => self.write(s),
+                Line(s) => self.write(s, Style::Normal),
                 Character { contents, .. } => self.character(contents),
             }
         }
     }
 
-    fn write(&mut self, s: &str) {
-        let words = words(s);
-        for w in words {
-            match w {
+    fn inline(&self, text: impl Into<String>, style: Style) -> Inline {
+        let text = text.into();
+        let width = self.renderer.measure_str(&text, &style);
+        (text, style, width)
+    }
+
+    fn write(&mut self, s: &str, style: Style) {
+        for word in words(s) {
+            match word {
                 " " => {
                     self.commit_or_else();
-                    self.queue.push_back(self.space(Style::Normal));
+                    self.queue.push_back(self.inline(" ", style));
                 }
-                w => self.queue.push_back(self.word(w, Style::Normal)),
+                _ => self.queue.push_back(self.inline(word, style)),
             }
         }
-    }
-
-    fn word(&self, s: &str, style: Style) -> Inline {
-        let width = s.chars().map(|c| self.map[&(c as u32, style)]).sum::<f32>();
-        (s.to_string(), style, width)
-    }
-
-    fn space(&self, style: Style) -> Inline {
-        let width = self.map[&(' ' as u32, Style::Normal)];
-        (" ".to_string(), style, width)
     }
 
     fn commit_or_else(&mut self) {
@@ -200,14 +207,10 @@ impl<'a> Layout<'a> {
                 top: self.lines[0].top,
                 left,
                 width,
-                height: self.dim.line_height,
+                height: self.renderer.line_height(style),
             };
             left += width;
-            let style = TextStyle {
-                style: style.clone(),
-                word_spacing: 0.0,
-            };
-            Self::write_text(page, text, rect, style);
+            Self::write_text(page, text, rect, style.clone(), 0.0);
         }
         self.pop_line();
     }
@@ -246,17 +249,13 @@ impl<'a> Layout<'a> {
                 top: self.lines[0].top,
                 left,
                 width,
-                height: self.dim.line_height,
+                height: self.renderer.line_height(style),
             };
             left += width;
-            let style = TextStyle {
-                style: style.clone(),
-                word_spacing: spacing / spaces,
-            };
-            Self::write_text(page, text, rect, style);
+            Self::write_text(page, text, rect, style.clone(), spacing / spaces);
         }
         self.pop_line();
-        self.next_line();
+        self.next_line(&Style::Normal);
     }
 
     fn commit(&mut self) -> Result<(), ()> {
@@ -264,6 +263,10 @@ impl<'a> Layout<'a> {
             self.queue.pop_front();
         }
         let width: f32 = self.queue.iter().map(|i| i.2).sum();
+        println!(
+            "{:?} + {:?} with {} remaining",
+            self.text, self.queue, self.lines[0].rem
+        );
         if width <= self.lines[0].rem {
             self.lines[0].rem -= width;
             let queue = mem::replace(&mut self.queue, VecDeque::new());
@@ -275,12 +278,9 @@ impl<'a> Layout<'a> {
         }
     }
 
-    fn write_text(page: &mut Page, text: String, rect: Rectangle, style: TextStyle) {
-        let text = text.into_bytes();
-        let len = text.len();
-        let ptr = text.as_ptr() as *const c_char;
-        std::mem::forget(text);
-        page.push(Text(ptr, len, rect, style));
+    fn write_text(page: &mut Page, text: String, rect: Rectangle, style: Style, word_spacing: f32) {
+        println!("{} ({})", text, word_spacing);
+        page.push(PartialText(text, rect, style, word_spacing));
     }
 
     fn pop_line(&mut self) {
@@ -288,17 +288,17 @@ impl<'a> Layout<'a> {
         self.lines.pop_front();
     }
 
-    fn next_line(&mut self) {
+    fn next_line(&mut self, style: &Style) {
+        let height = self.renderer.line_height(style);
         if self.lines.is_empty() {
-            self.request(self.dim.line_height);
+            self.request(height);
             self.lines.push_back(Line {
                 start: true,
                 top: self.region.top,
                 left: self.region.left,
-                width: self.region.width,
                 rem: self.region.width,
             });
-            self.region.top += self.dim.line_height;
+            self.region.top += height;
         }
     }
 
@@ -320,13 +320,80 @@ impl<'a> Layout<'a> {
     }
 }
 
-pub type Page = Vec<Text>;
+impl Renderer {
+    fn line_height(&self, style: &Style) -> f32 {
+        let text_style = &self.style_collection[style];
+        text_style.height * text_style.font_size
+    }
+
+    pub fn measure_str(&self, text: &str, style: &Style) -> f32 {
+        let text_style = &self.style_collection[style];
+        let typeface = &self.font_collection[text_style.font_family()];
+        let font = Font::new(typeface, text_style.font_size);
+
+        let mut width = WidthCollector {
+            total_advance: 0.0,
+            glyphs: vec![],
+            positions: vec![],
+        };
+        Shaper::default().shape(text, &font, true, f32::INFINITY, &mut width);
+        width.total_advance
+    }
+}
+
+impl TextStyle {
+    fn font_family(&self) -> &str {
+        unsafe {
+            from_utf8_unchecked(from_raw_parts(
+                self.font_family as *const u8,
+                self.font_family_len,
+            ))
+        }
+    }
+}
+
+struct WidthCollector {
+    total_advance: f32,
+    glyphs: Vec<GlyphId>,
+    positions: Vec<Point>,
+}
+
+impl RunHandler for WidthCollector {
+    fn begin_line(&mut self) {}
+    fn run_info(&mut self, _info: &RunInfo) {}
+    fn commit_run_info(&mut self) {}
+    fn commit_line(&mut self) {}
+
+    fn run_buffer(&mut self, info: &RunInfo) -> skia_safe::shaper::run_handler::Buffer {
+        let count = info.glyph_count;
+
+        self.glyphs.resize(count, 0);
+        self.positions.resize(count, Point::new(0.0, 0.0));
+
+        skia_safe::shaper::run_handler::Buffer {
+            glyphs: &mut self.glyphs,
+            positions: &mut self.positions,
+            offsets: None,
+            clusters: None,
+            point: Point::new(0.0, 0.0),
+        }
+    }
+
+    fn commit_run_buffer(&mut self, info: &RunInfo) {
+        self.total_advance = info.advance.x;
+    }
+}
+
+pub type Page = Vec<PartialText>;
+
+#[derive(Debug)]
+pub struct PartialText(String, Rectangle, Style, f32);
 
 #[derive(Debug)]
 #[repr(C)]
 pub struct Text(*const c_char, usize, Rectangle, TextStyle);
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 #[repr(C)]
 pub struct Rectangle {
     top: f32,
@@ -337,17 +404,9 @@ pub struct Rectangle {
 
 #[derive(Debug)]
 #[repr(C)]
-pub struct TextStyle {
-    style: Style,
-    word_spacing: f32,
-}
-
-#[derive(Debug)]
-#[repr(C)]
 pub struct Dimensions {
     width: f32,
     height: f32,
-    line_height: f32,
     header_height: f32,
     header_padding: f32,
 }

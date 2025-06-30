@@ -1,69 +1,85 @@
+import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:ffi/ffi.dart';
+import 'package:flutter/painting.dart' show TextStyle;
 import 'rust_bindings_generated.dart' as bind;
 export 'rust_bindings_generated.dart' show Style;
-
-class CharsMapResponse {
-  final Pointer<Void> map;
-  final Uint32List chars;
-
-  CharsMapResponse(this.map, this.chars);
-}
 
 class Dimensions {
   final double width;
   final double height;
-  final double lineHeight;
   final double headerHeight;
   final double headerPadding;
 
   Dimensions(
     this.width,
-    this.height,
-    this.lineHeight,
-    this.headerHeight,
-    this.headerPadding,
-  );
+    this.height, {
+    required this.headerHeight,
+    required this.headerPadding,
+  });
 }
 
-CharsMapResponse charsMap(String usfm) {
-  final out = malloc<Pointer<UnsignedInt>>();
-  final outLen = malloc<Size>();
+Pointer<Void> getRenderer() {
+  return _bindings.renderer();
+}
 
-  final native = usfm.toNativeUtf8();
-
-  final map = _bindings.chars_map(
-    native.cast<UnsignedChar>(),
+void registerFontFamily(
+  Pointer<Void> renderer,
+  String family,
+  Uint8List bytes,
+) {
+  final native = family.toNativeUtf8();
+  final ptr = malloc<Uint8>(bytes.length);
+  final bytePtr = ptr.asTypedList(bytes.length);
+  bytePtr.setAll(0, bytes);
+  return _bindings.register_font_family(
+    renderer,
+    native.cast<Char>(),
     native.length,
-    out,
-    outLen,
-  );
-
-  return CharsMapResponse(
-    map,
-    out.value.cast<Uint32>().asTypedList(outLen.value),
+    ptr.cast<Char>(),
+    bytes.length,
   );
 }
 
-void insert(Pointer<Void> map, int chr, bind.Style style, double width) =>
-    _bindings.insert(map, chr, style, width);
+void registerStyle(
+  Pointer<Void> renderer,
+  bind.Style style,
+  TextStyle textStyle,
+) {
+  final native = textStyle.fontFamily!.toNativeUtf8();
+  final ctextStyle = calloc<bind.TextStyle>();
+  ctextStyle.ref.font_family = native.cast<Char>();
+  ctextStyle.ref.font_family_len = native.length;
+  ctextStyle.ref.font_size = textStyle.fontSize!;
+  ctextStyle.ref.height = textStyle.height!;
+  ctextStyle.ref.letter_spacing = textStyle.letterSpacing!;
+  ctextStyle.ref.word_spacing = textStyle.wordSpacing!;
+  _bindings.register_style(renderer, style, ctextStyle);
+}
+
+TextStyle toTextStyle(bind.TextStyle textStyle) {
+  final fontFamily = utf8.decode(
+    textStyle.font_family.cast<Uint8>().asTypedList(textStyle.font_family_len),
+  );
+  return TextStyle(
+    fontFamily: fontFamily,
+    fontSize: textStyle.font_size,
+    height: textStyle.height,
+    letterSpacing: textStyle.letter_spacing,
+    wordSpacing: textStyle.word_spacing,
+  );
+}
 
 Pointer<Void> layout(Pointer<Void> map, String usfm, Dimensions dim) {
   final native = usfm.toNativeUtf8();
   final cdim = calloc<bind.Dimensions>();
   cdim.ref.width = dim.width;
   cdim.ref.height = dim.height;
-  cdim.ref.line_height = dim.lineHeight;
   cdim.ref.header_height = dim.headerHeight;
   cdim.ref.header_padding = dim.headerPadding;
-  return _bindings.layout(
-    map,
-    native.cast<UnsignedChar>(),
-    native.length,
-    cdim,
-  );
+  return _bindings.layout(map, native.cast<Char>(), native.length, cdim);
 }
 
 List<bind.Text> page(Pointer<Void> layout) {

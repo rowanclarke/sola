@@ -26,61 +26,78 @@ class RustBindings {
     ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName) lookup,
   ) : _lookup = lookup;
 
-  ffi.Pointer<ffi.Void> chars_map(
-    ffi.Pointer<ffi.UnsignedChar> usfm,
-    int len,
-    ffi.Pointer<ffi.Pointer<ffi.UnsignedInt>> out,
-    ffi.Pointer<ffi.Size> out_len,
-  ) {
-    return _chars_map(usfm, len, out, out_len);
+  ffi.Pointer<ffi.Void> renderer() {
+    return _renderer();
   }
 
-  late final _chars_mapPtr =
+  late final _rendererPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Void> Function()>>('renderer');
+  late final _renderer = _rendererPtr
+      .asFunction<ffi.Pointer<ffi.Void> Function()>();
+
+  void register_font_family(
+    ffi.Pointer<ffi.Void> renderer,
+    ffi.Pointer<ffi.Char> family,
+    int family_len,
+    ffi.Pointer<ffi.Char> data,
+    int len,
+  ) {
+    return _register_font_family(renderer, family, family_len, data, len);
+  }
+
+  late final _register_font_familyPtr =
       _lookup<
         ffi.NativeFunction<
-          ffi.Pointer<ffi.Void> Function(
-            ffi.Pointer<ffi.UnsignedChar>,
+          ffi.Void Function(
+            ffi.Pointer<ffi.Void>,
+            ffi.Pointer<ffi.Char>,
             ffi.Size,
-            ffi.Pointer<ffi.Pointer<ffi.UnsignedInt>>,
-            ffi.Pointer<ffi.Size>,
+            ffi.Pointer<ffi.Char>,
+            ffi.Size,
           )
         >
-      >('chars_map');
-  late final _chars_map = _chars_mapPtr
+      >('register_font_family');
+  late final _register_font_family = _register_font_familyPtr
       .asFunction<
-        ffi.Pointer<ffi.Void> Function(
-          ffi.Pointer<ffi.UnsignedChar>,
+        void Function(
+          ffi.Pointer<ffi.Void>,
+          ffi.Pointer<ffi.Char>,
           int,
-          ffi.Pointer<ffi.Pointer<ffi.UnsignedInt>>,
-          ffi.Pointer<ffi.Size>,
+          ffi.Pointer<ffi.Char>,
+          int,
         )
       >();
 
-  void insert(ffi.Pointer<ffi.Void> map, int chr, Style style, double width) {
-    return _insert(map, chr, style.value, width);
+  void register_style(
+    ffi.Pointer<ffi.Void> renderer,
+    Style style,
+    ffi.Pointer<TextStyle> textStyle,
+  ) {
+    return _register_style(renderer, style.value, textStyle);
   }
 
-  late final _insertPtr =
+  late final _register_stylePtr =
       _lookup<
         ffi.NativeFunction<
           ffi.Void Function(
             ffi.Pointer<ffi.Void>,
             ffi.UnsignedInt,
-            ffi.UnsignedInt,
-            ffi.Float,
+            ffi.Pointer<TextStyle>,
           )
         >
-      >('insert');
-  late final _insert = _insertPtr
-      .asFunction<void Function(ffi.Pointer<ffi.Void>, int, int, double)>();
+      >('register_style');
+  late final _register_style = _register_stylePtr
+      .asFunction<
+        void Function(ffi.Pointer<ffi.Void>, int, ffi.Pointer<TextStyle>)
+      >();
 
   ffi.Pointer<ffi.Void> layout(
-    ffi.Pointer<ffi.Void> map,
-    ffi.Pointer<ffi.UnsignedChar> usfm,
+    ffi.Pointer<ffi.Void> renderer,
+    ffi.Pointer<ffi.Char> usfm,
     int len,
     ffi.Pointer<Dimensions> dim,
   ) {
-    return _layout(map, usfm, len, dim);
+    return _layout(renderer, usfm, len, dim);
   }
 
   late final _layoutPtr =
@@ -88,7 +105,7 @@ class RustBindings {
         ffi.NativeFunction<
           ffi.Pointer<ffi.Void> Function(
             ffi.Pointer<ffi.Void>,
-            ffi.Pointer<ffi.UnsignedChar>,
+            ffi.Pointer<ffi.Char>,
             ffi.Size,
             ffi.Pointer<Dimensions>,
           )
@@ -98,7 +115,7 @@ class RustBindings {
       .asFunction<
         ffi.Pointer<ffi.Void> Function(
           ffi.Pointer<ffi.Void>,
-          ffi.Pointer<ffi.UnsignedChar>,
+          ffi.Pointer<ffi.Char>,
           int,
           ffi.Pointer<Dimensions>,
         )
@@ -130,6 +147,25 @@ class RustBindings {
           ffi.Pointer<ffi.Size>,
         )
       >();
+}
+
+final class TextStyle extends ffi.Struct {
+  external ffi.Pointer<ffi.Char> font_family;
+
+  @ffi.Size()
+  external int font_family_len;
+
+  @ffi.Float()
+  external double font_size;
+
+  @ffi.Float()
+  external double height;
+
+  @ffi.Float()
+  external double letter_spacing;
+
+  @ffi.Float()
+  external double word_spacing;
 }
 
 enum Style {
@@ -164,14 +200,6 @@ final class Rectangle extends ffi.Struct {
   external double height;
 }
 
-final class TextStyle extends ffi.Struct {
-  @ffi.UnsignedInt()
-  external int style;
-
-  @ffi.Float()
-  external double word_spacing;
-}
-
 final class Text extends ffi.Struct {
   external ffi.Pointer<ffi.Char> text;
 
@@ -189,9 +217,6 @@ final class Dimensions extends ffi.Struct {
 
   @ffi.Float()
   external double height;
-
-  @ffi.Float()
-  external double line_height;
 
   @ffi.Float()
   external double header_height;

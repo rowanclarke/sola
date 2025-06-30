@@ -2,12 +2,13 @@ mod layout;
 mod words;
 
 use layout::{Dimensions, Layout, Text};
+use skia_safe::{Font, FontMgr, Typeface};
+use std::collections::HashMap;
+use std::ffi::{CStr, c_char, c_void};
+use std::slice;
 use std::slice::from_raw_parts;
 use std::str::from_utf8_unchecked;
-use std::{collections::HashMap, ffi::c_void};
-use usfm::{BookContents, parse};
-
-pub type CharsMap = HashMap<(u32, Style), f32>;
+use usfm::parse;
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
 #[repr(i32)]
@@ -18,48 +19,79 @@ pub enum Style {
     Chapter = 3,
 }
 
-#[unsafe(no_mangle)]
-pub extern "C" fn chars_map(
-    usfm: *const u8,
-    len: usize,
-    out: *mut *const u32,
-    out_len: *mut usize,
-) -> *mut c_void {
-    let usfm = unsafe { from_utf8_unchecked(from_raw_parts(usfm, len)) };
-    let map: Box<CharsMap> = Box::new(
-        usfm.chars()
-            .filter(|c| !"\n\r\t".contains(*c))
-            .map(|c| ((c as u32, Style::Normal), 0.0))
-            .collect(),
-    );
-    let mut chars: Vec<u32> = map.keys().map(|(c, _)| c).cloned().collect();
-    chars.sort();
-    let chars = chars.leak();
-    unsafe {
-        *out = chars.as_ptr();
-        *out_len = chars.len();
-    }
-    Box::into_raw(map) as *mut c_void
+#[derive(Debug, Clone, Copy)]
+#[repr(C)]
+pub struct TextStyle {
+    font_family: *const c_char,
+    font_family_len: usize,
+    font_size: f32,
+    height: f32,
+    letter_spacing: f32,
+    word_spacing: f32,
+}
+
+#[derive(Debug)]
+struct Renderer {
+    font_collection: HashMap<String, Typeface>,
+    style_collection: HashMap<Style, TextStyle>,
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn insert(map: *mut c_void, chr: u32, style: Style, width: f32) {
-    let map = unsafe { &mut *(map as *mut CharsMap) };
-    map.insert((chr, style), width);
+pub extern "C" fn renderer() -> *mut c_void {
+    Box::into_raw(Box::new(Renderer {
+        font_collection: HashMap::new(),
+        style_collection: HashMap::new(),
+    })) as *mut c_void
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn register_font_family(
+    renderer: *mut c_void,
+    family: *const c_char,
+    family_len: usize,
+    data: *mut u8,
+    len: usize,
+) {
+    let renderer = unsafe { &mut *(renderer as *mut Renderer) };
+    let bytes: &[u8] = unsafe { slice::from_raw_parts(data, len) };
+    let typeface = FontMgr::new()
+        .new_from_data(bytes, None)
+        .expect("Invalid font");
+    let family =
+        unsafe { from_utf8_unchecked(slice::from_raw_parts(family as *const u8, family_len)) };
+    renderer
+        .font_collection
+        .insert(family.to_string(), typeface);
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn register_style(renderer: *mut c_void, style: Style, text_style: *mut TextStyle) {
+    let renderer = unsafe { &mut *(renderer as *mut Renderer) };
+    let text_style = unsafe { &*text_style };
+    renderer.style_collection.insert(style, text_style.clone());
+    match style {
+        Style::Normal => {
+            let width = renderer.measure_str("1In the beginning, God created the heavens and the earth. 2The earth was formless and empty. Darkness was", &style);
+            log!("{}", width);
+            let mut header_style = text_style.clone();
+            header_style.font_size *= 2.0;
+        }
+        _ => (),
+    }
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn layout(
-    map: *const c_void,
+    renderer: *const c_void,
     usfm: *const u8,
     len: usize,
     dim: *mut Dimensions,
 ) -> *mut c_void {
-    let map = unsafe { &*(map as *const CharsMap) };
+    let renderer = unsafe { &*(renderer as *const Renderer) };
     let usfm = unsafe { from_utf8_unchecked(from_raw_parts(usfm, len)) };
     let dim = unsafe { Box::from_raw(dim) };
     let usfm = parse(&usfm);
-    let mut layout = Box::new(Layout::new(map, *dim));
+    let mut layout = Box::new(Layout::new(renderer, *dim));
     layout.layout(&usfm.contents);
     Box::into_raw(layout) as *mut c_void
 }
@@ -67,9 +99,11 @@ pub extern "C" fn layout(
 #[unsafe(no_mangle)]
 pub extern "C" fn page(layout: *const c_void, out: *mut *const Text, out_len: *mut usize) {
     let layout = unsafe { &*(layout as *const Layout) };
+    let page = layout.page(0);
+    let page = page.leak();
     unsafe {
-        *out = layout.page(0).as_ptr();
-        *out_len = layout.page(0).len();
+        *out = page.as_ptr();
+        *out_len = page.len();
     }
 }
 
