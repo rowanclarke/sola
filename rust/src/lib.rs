@@ -2,6 +2,7 @@ mod layout;
 mod words;
 
 use layout::{Dimensions, Layout, Text};
+use skia_safe::textlayout::{FontCollection, TypefaceFontProvider};
 use skia_safe::{Font, FontMgr, Typeface};
 use std::collections::HashMap;
 use std::ffi::{CStr, c_char, c_void};
@@ -32,14 +33,14 @@ pub struct TextStyle {
 
 #[derive(Debug)]
 struct Renderer {
-    font_collection: HashMap<String, Typeface>,
+    font_provider: TypefaceFontProvider,
     style_collection: HashMap<Style, TextStyle>,
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn renderer() -> *mut c_void {
     Box::into_raw(Box::new(Renderer {
-        font_collection: HashMap::new(),
+        font_provider: TypefaceFontProvider::new(),
         style_collection: HashMap::new(),
     })) as *mut c_void
 }
@@ -59,9 +60,7 @@ pub extern "C" fn register_font_family(
         .expect("Invalid font");
     let family =
         unsafe { from_utf8_unchecked(slice::from_raw_parts(family as *const u8, family_len)) };
-    renderer
-        .font_collection
-        .insert(family.to_string(), typeface);
+    renderer.font_provider.register_typeface(typeface, family);
 }
 
 #[unsafe(no_mangle)]

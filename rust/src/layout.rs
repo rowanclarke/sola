@@ -7,10 +7,13 @@ use std::{
 
 use itertools::Itertools;
 use skia_safe::{
-    Font, GlyphId, Point, Shaper,
+    Font, FontMgr, GlyphId, Point, Shaper,
     shaper::{
         AsRunHandler, RunHandler,
         run_handler::{Buffer, RunInfo},
+    },
+    textlayout::{
+        FontCollection, ParagraphBuilder, ParagraphStyle, TextStyle as ParagraphTextStyle,
     },
 };
 use usfm::{BookContents, CharacterContents, ElementContents, ElementType, ParagraphContents};
@@ -59,7 +62,7 @@ impl<'a> Layout<'a> {
 
     pub fn layout(&mut self, contents: &Vec<BookContents>) {
         use BookContents::*;
-        for contents in contents.into_iter().take(11) {
+        for contents in contents.into_iter().take(18) {
             match contents {
                 // Chapter(n) => {
                 //     let text = n.to_string();
@@ -328,16 +331,23 @@ impl Renderer {
 
     pub fn measure_str(&self, text: &str, style: &Style) -> f32 {
         let text_style = &self.style_collection[style];
-        let typeface = &self.font_collection[text_style.font_family()];
-        let font = Font::new(typeface, text_style.font_size);
-
-        let mut width = WidthCollector {
-            total_advance: 0.0,
-            glyphs: vec![],
-            positions: vec![],
-        };
-        Shaper::default().shape(text, &font, true, f32::INFINITY, &mut width);
-        width.total_advance
+        let mut font_collection = FontCollection::new();
+        let font_mgr: FontMgr = self.font_provider.clone().into();
+        font_collection.set_default_font_manager(Some(font_mgr), None);
+        let paragraph_style = ParagraphStyle::new();
+        let mut builder = ParagraphBuilder::new(&paragraph_style, font_collection);
+        let mut paragraph_text_style = ParagraphTextStyle::new();
+        paragraph_text_style
+            .set_font_size(text_style.font_size)
+            .set_font_families(&[text_style.font_family()])
+            .set_height(text_style.height)
+            .set_letter_spacing(text_style.letter_spacing)
+            .set_word_spacing(text_style.word_spacing);
+        builder.push_style(&paragraph_text_style);
+        builder.add_text(text);
+        let mut paragraph = builder.build();
+        paragraph.layout(f32::INFINITY);
+        paragraph.max_intrinsic_width()
     }
 }
 
