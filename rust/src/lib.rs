@@ -70,10 +70,11 @@ pub extern "C" fn register_style(renderer: *mut c_void, style: Style, text_style
     renderer.style_collection.insert(style, text_style.clone());
     match style {
         Style::Normal => {
-            let width = renderer.measure_str("1In the beginning, God created the heavens and the earth. 2The earth was formless and empty. Darkness was", &style);
-            log!("{}", width);
-            let mut header_style = text_style.clone();
-            header_style.font_size *= 2.0;
+            let mut chapter_style = text_style.clone();
+            chapter_style.font_size *= 2.0;
+            renderer
+                .style_collection
+                .insert(Style::Chapter, chapter_style);
         }
         _ => (),
     }

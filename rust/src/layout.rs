@@ -64,39 +64,40 @@ impl<'a> Layout<'a> {
         use BookContents::*;
         for contents in contents.into_iter().take(18) {
             match contents {
-                // Chapter(n) => {
-                //     let text = n.to_string();
-                //     let (width, height) = self.renderer.measure_str(&text, &Style::Chapter);
-                //     self.request(height);
-                //     let width = width + self.dim.header_padding;
-                //     let page = self.pages.last_mut().unwrap();
-                //     Self::write_text(
-                //         page,
-                //         text,
-                //         Rectangle {
-                //             top: self.region.top,
-                //             left: self.region.left,
-                //             width,
-                //             height,
-                //         },
-                //         Style::Chapter,
-                //         0.0,
-                //     );
-                //     self.lines.push_back(Line {
-                //         start: true,
-                //         top: self.region.top,
-                //         left: self.region.left + width,
-                //         rem: self.region.width - width,
-                //     });
-                //     self.lines.push_back(Line {
-                //         start: true,
-                //         top: self.region.top + self.renderer.line_height(&Style::Normal),
-                //         left: self.region.left + width,
-                //         rem: self.region.width - width,
-                //     });
-                //     self.region.top += height;
-                // }
-                // Element { ty, contents } => self.element(ty, contents),
+                Chapter(n) => {
+                    let text = n.to_string();
+                    let width = self.renderer.measure_str(&text, &Style::Chapter);
+                    let height = self.renderer.line_height(&Style::Chapter);
+                    self.request(height);
+                    let width = width + self.dim.header_padding;
+                    let page = self.pages.last_mut().unwrap();
+                    Self::write_text(
+                        page,
+                        text,
+                        Rectangle {
+                            top: self.region.top,
+                            left: self.region.left,
+                            width,
+                            height,
+                        },
+                        Style::Chapter,
+                        0.0,
+                    );
+                    self.lines.push_back(Line {
+                        start: true,
+                        top: self.region.top,
+                        left: self.region.left + width,
+                        rem: self.region.width - width,
+                    });
+                    self.lines.push_back(Line {
+                        start: true,
+                        top: self.region.top + self.renderer.line_height(&Style::Normal),
+                        left: self.region.left + width,
+                        rem: self.region.width - width,
+                    });
+                    self.region.top += height;
+                }
+                Element { ty, contents } => self.element(ty, contents),
                 Paragraph { contents, .. } => self.paragraph(contents),
                 _ => (),
             }
@@ -125,7 +126,7 @@ impl<'a> Layout<'a> {
                 Verse(n) => {
                     self.queue.push_back(self.inline(" ", Style::Normal));
                     self.queue
-                        .push_back(self.inline(n.to_string(), Style::Normal));
+                        .push_back(self.inline(n.to_string(), Style::Verse));
                 }
                 Line(s) => self.write(s, Style::Normal),
                 Character { contents, .. } => self.character(contents),
@@ -142,14 +143,14 @@ impl<'a> Layout<'a> {
         for contents in contents {
             match (ty, contents) {
                 (Header, Line(s)) => {
-                    let height = self.dim.height / 5.0;
+                    let height = self.renderer.line_height(&Style::Header);
                     let (text, _, width) = self.inline(s, Style::Header);
                     let page = self.pages.last_mut().unwrap();
                     Self::write_text(
                         page,
                         text,
                         Rectangle {
-                            top: (height - self.dim.header_height) / 2.0,
+                            top: (self.dim.header_height - height) / 2.0,
                             left: (self.dim.width - width) / 2.0,
                             width,
                             height: self.dim.header_height,
@@ -157,7 +158,7 @@ impl<'a> Layout<'a> {
                         Style::Header,
                         0.0,
                     );
-                    self.region.top = height;
+                    self.region.top = self.dim.header_height;
                 }
                 _ => (),
             }

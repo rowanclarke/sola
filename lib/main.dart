@@ -63,10 +63,32 @@ class MyApp extends StatelessWidget {
         wordSpacing: 0,
       ),
     );
+    registerStyle(
+      renderer,
+      Style.HEADER,
+      TextStyle(
+        fontFamily: 'AveriaSerifLibre',
+        fontSize: 24,
+        height: 1,
+        letterSpacing: 0,
+        wordSpacing: 0,
+      ),
+    );
+    registerStyle(
+      renderer,
+      Style.VERSE,
+      TextStyle(
+        fontFamily: 'AveriaSerifLibre',
+        fontSize: 8,
+        height: 1,
+        letterSpacing: 0,
+        wordSpacing: 0,
+      ),
+    );
     final rendered = layout(
       renderer,
       gen,
-      Dimensions(width, height, headerHeight: 30, headerPadding: 10),
+      Dimensions(width, height, headerHeight: height / 5, headerPadding: 10),
     );
     final texts = page(rendered);
 
