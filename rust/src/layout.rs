@@ -7,18 +7,14 @@ use std::{
 
 use itertools::Itertools;
 use skia_safe::{
-    Font, FontMgr, GlyphId, Point, Shaper,
-    shaper::{
-        AsRunHandler, RunHandler,
-        run_handler::{Buffer, RunInfo},
-    },
+    Font, FontMetrics, FontMgr, FontStyle,
     textlayout::{
         FontCollection, ParagraphBuilder, ParagraphStyle, TextStyle as ParagraphTextStyle,
     },
 };
 use usfm::{BookContents, CharacterContents, ElementContents, ElementType, ParagraphContents};
 
-use crate::{Renderer, Style, TextStyle, log, words::words};
+use crate::{Renderer, Style, TextStyle, words::words};
 
 #[derive(Debug)]
 pub struct Layout<'a> {
@@ -153,7 +149,7 @@ impl<'a> Layout<'a> {
                             top: (self.dim.header_height - height) / 2.0,
                             left: (self.dim.width - width) / 2.0,
                             width,
-                            height: self.dim.header_height,
+                            height,
                         },
                         Style::Header,
                         0.0,
@@ -267,10 +263,6 @@ impl<'a> Layout<'a> {
             self.queue.pop_front();
         }
         let width: f32 = self.queue.iter().map(|i| i.2).sum();
-        println!(
-            "{:?} + {:?} with {} remaining",
-            self.text, self.queue, self.lines[0].rem
-        );
         if width <= self.lines[0].rem {
             self.lines[0].rem -= width;
             let queue = mem::replace(&mut self.queue, VecDeque::new());
@@ -283,7 +275,6 @@ impl<'a> Layout<'a> {
     }
 
     fn write_text(page: &mut Page, text: String, rect: Rectangle, style: Style, word_spacing: f32) {
-        println!("{} ({})", text, word_spacing);
         page.push(PartialText(text, rect, style, word_spacing));
     }
 
@@ -325,7 +316,7 @@ impl<'a> Layout<'a> {
 }
 
 impl Renderer {
-    fn line_height(&self, style: &Style) -> f32 {
+    pub fn line_height(&self, style: &Style) -> f32 {
         let text_style = &self.style_collection[style];
         text_style.height * text_style.font_size
     }
@@ -350,6 +341,16 @@ impl Renderer {
         paragraph.layout(f32::INFINITY);
         paragraph.max_intrinsic_width()
     }
+
+    pub fn get_metrics(&self, style: &Style) -> FontMetrics {
+        let text_style = &self.style_collection[style];
+        let font_mgr: FontMgr = self.font_provider.clone().into();
+        let typeface = font_mgr
+            .match_family_style(text_style.font_family(), FontStyle::normal())
+            .unwrap();
+        let font = Font::from_typeface(typeface, text_style.font_size);
+        font.metrics().1
+    }
 }
 
 impl TextStyle {
@@ -360,38 +361,6 @@ impl TextStyle {
                 self.font_family_len,
             ))
         }
-    }
-}
-
-struct WidthCollector {
-    total_advance: f32,
-    glyphs: Vec<GlyphId>,
-    positions: Vec<Point>,
-}
-
-impl RunHandler for WidthCollector {
-    fn begin_line(&mut self) {}
-    fn run_info(&mut self, _info: &RunInfo) {}
-    fn commit_run_info(&mut self) {}
-    fn commit_line(&mut self) {}
-
-    fn run_buffer(&mut self, info: &RunInfo) -> skia_safe::shaper::run_handler::Buffer {
-        let count = info.glyph_count;
-
-        self.glyphs.resize(count, 0);
-        self.positions.resize(count, Point::new(0.0, 0.0));
-
-        skia_safe::shaper::run_handler::Buffer {
-            glyphs: &mut self.glyphs,
-            positions: &mut self.positions,
-            offsets: None,
-            clusters: None,
-            point: Point::new(0.0, 0.0),
-        }
-    }
-
-    fn commit_run_buffer(&mut self, info: &RunInfo) {
-        self.total_advance = info.advance.x;
     }
 }
 

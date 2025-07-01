@@ -1,7 +1,4 @@
 import 'dart:convert';
-import 'dart:ffi';
-import 'dart:typed_data';
-
 import 'package:asset_cache/asset_cache.dart';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/material.dart';
@@ -10,7 +7,6 @@ import 'dart:async';
 import 'package:archive/archive.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart';
-import 'package:rust/rust.dart';
 
 void main() {
   runApp(MyApp());
@@ -99,6 +95,7 @@ class MyApp extends StatelessWidget {
         children:
             texts.map((text) {
               final rect = text.rect;
+              final style = toTextStyle(text.style);
               return Positioned(
                 left: rect.left,
                 top: rect.top,
@@ -106,7 +103,7 @@ class MyApp extends StatelessWidget {
                 height: rect.height,
                 child: Text(
                   text.text.cast<Utf8>().toDartString(length: text.len),
-                  style: toTextStyle(text.style),
+                  style: style,
                   softWrap: false,
                 ),
               );
@@ -114,21 +111,6 @@ class MyApp extends StatelessWidget {
       ),
     );
   }
-
-  // Future<Widget> text() async {
-  //   final font = await rootBundle
-  //       .load('assets/fonts/AveriaSerifLibre-Regular.ttf')
-  //       .then((b) => b.buffer.asUint8List());
-  //   final ptr = malloc<Uint8>(font.length);
-  //   ptr.asTypedList(font.length).setAll(0, font);
-  //   width(ptr, font.length);
-  //   return Text("Hello!", style: textStyle);
-  // final textStyle = const TextStyle(
-  //   fontFamily: 'AveriaSerifLibre',
-  //   fontSize: 16,
-  //   height: 1,
-  //   letterSpacing: 0,
-  // );
 
   @override
   Widget build(BuildContext context) {
