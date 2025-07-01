@@ -114,30 +114,33 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        body: LayoutBuilder(
-          builder: (context, constraints) {
-            final width = constraints.maxWidth;
-            final height = constraints.maxHeight;
-            if (width < 10 || height < 10) {
-              return Container();
-            }
-            return FutureBuilder<Widget>(
-              future: pages(width, height),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return CircularProgressIndicator();
-                } else if (snapshot.hasError) {
-                  return SelectableText('Error: ${snapshot.error}');
-                } else {
-                  return snapshot.data ??
-                      Text('Done', style: TextStyle(fontSize: 24));
-                }
-              },
-            );
-          },
+    return MediaQuery(
+      data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: Scaffold(
+          body: LayoutBuilder(
+            builder: (context, constraints) {
+              final width = constraints.maxWidth;
+              final height = constraints.maxHeight;
+              if (width < 10 || height < 10) {
+                return Container();
+              }
+              return FutureBuilder<Widget>(
+                future: pages(width, height),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return CircularProgressIndicator();
+                  } else if (snapshot.hasError) {
+                    return SelectableText('Error: ${snapshot.error}');
+                  } else {
+                    return snapshot.data ??
+                        Text('Done', style: TextStyle(fontSize: 24));
+                  }
+                },
+              );
+            },
+          ),
         ),
       ),
     );

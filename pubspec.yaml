@@ -81,18 +81,7 @@ flutter:
     - family: AveriaSerifLibre
       fonts:
         - asset: assets/fonts/AveriaSerifLibre-Regular.ttf
-        - asset: assets/fonts/AveriaSerifLibre-Bold.ttf
-          weight: 700
-        - asset: assets/fonts/AveriaSerifLibre-Light.ttf
-          weight: 300
-        - asset: assets/fonts/AveriaSerifLibre-Italic.ttf
-          style: italic
-        - asset: assets/fonts/AveriaSerifLibre-BoldItalic.ttf
-          weight: 700
-          style: italic
-        - asset: assets/fonts/AveriaSerifLibre-LightItalic.ttf
-          weight: 300
-          style: italic
+
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
