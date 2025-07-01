@@ -14,7 +14,7 @@ use skia_safe::{
 };
 use usfm::{BookContents, CharacterContents, ElementContents, ElementType, ParagraphContents};
 
-use crate::{Renderer, Style, TextStyle, words::words};
+use crate::{Renderer, Style, TextStyle, log, words::words};
 
 #[derive(Debug)]
 pub struct Layout<'a> {
@@ -129,7 +129,7 @@ impl<'a> Layout<'a> {
                 _ => (),
             }
         }
-        self.commit().unwrap();
+        self.commit_or_else();
         self.write_unjustified();
     }
 
@@ -192,6 +192,8 @@ impl<'a> Layout<'a> {
     fn commit_or_else(&mut self) {
         if self.commit().is_err() {
             self.write_justified();
+            self.commit()
+                .expect("Not enough space for the longest word.");
         }
     }
 
