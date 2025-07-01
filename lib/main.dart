@@ -54,7 +54,7 @@ class MyApp extends StatelessWidget {
       TextStyle(
         fontFamily: 'AveriaSerifLibre',
         fontSize: 16,
-        height: 1,
+        height: 1.5,
         letterSpacing: 0,
         wordSpacing: 0,
       ),
@@ -75,7 +75,7 @@ class MyApp extends StatelessWidget {
       Style.VERSE,
       TextStyle(
         fontFamily: 'AveriaSerifLibre',
-        fontSize: 8,
+        fontSize: 10,
         height: 1,
         letterSpacing: 0,
         wordSpacing: 0,
@@ -84,7 +84,7 @@ class MyApp extends StatelessWidget {
     final rendered = layout(
       renderer,
       gen,
-      Dimensions(width, height, headerHeight: height / 5, headerPadding: 10),
+      Dimensions(width, height, headerHeight: height / 5, headerPadding: 20),
     );
     final texts = page(rendered);
 
@@ -119,27 +119,30 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         home: Scaffold(
-          body: LayoutBuilder(
-            builder: (context, constraints) {
-              final width = constraints.maxWidth;
-              final height = constraints.maxHeight;
-              if (width < 10 || height < 10) {
-                return Container();
-              }
-              return FutureBuilder<Widget>(
-                future: pages(width, height),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return CircularProgressIndicator();
-                  } else if (snapshot.hasError) {
-                    return SelectableText('Error: ${snapshot.error}');
-                  } else {
-                    return snapshot.data ??
-                        Text('Done', style: TextStyle(fontSize: 24));
-                  }
-                },
-              );
-            },
+          body: Padding(
+            padding: EdgeInsets.all(MediaQuery.of(context).padding.top),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final width = constraints.maxWidth;
+                final height = constraints.maxHeight;
+                if (width < 10 || height < 10) {
+                  return Container();
+                }
+                return FutureBuilder<Widget>(
+                  future: pages(width, height),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return CircularProgressIndicator();
+                    } else if (snapshot.hasError) {
+                      return SelectableText('Error: ${snapshot.error}');
+                    } else {
+                      return snapshot.data ??
+                          Text('Done', style: TextStyle(fontSize: 24));
+                    }
+                  },
+                );
+              },
+            ),
           ),
         ),
       ),

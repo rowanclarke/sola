@@ -116,7 +116,7 @@ impl<'a> Layout<'a> {
 
     fn paragraph(&mut self, contents: &Vec<ParagraphContents>) {
         use ParagraphContents::*;
-        self.next_line(&Style::Normal);
+        self.next_line(&Style::Normal, 1);
         for contents in contents {
             match contents {
                 Verse(n) => {
@@ -204,7 +204,7 @@ impl<'a> Layout<'a> {
                     (acc + text, total + width)
                 });
             let rect = Rectangle {
-                top: self.lines[0].top,
+                top: self.lines[0].top + self.renderer.top_offset(&style),
                 left,
                 width,
                 height: self.renderer.line_height(style),
@@ -246,7 +246,7 @@ impl<'a> Layout<'a> {
             let spacing = ratio * whitespace;
             let width = width + spacing;
             let rect = Rectangle {
-                top: self.lines[0].top,
+                top: self.lines[0].top + self.renderer.top_offset(&style),
                 left,
                 width,
                 height: self.renderer.line_height(style),
@@ -255,7 +255,7 @@ impl<'a> Layout<'a> {
             Self::write_text(page, text, rect, style.clone(), spacing / spaces);
         }
         self.pop_line();
-        self.next_line(&Style::Normal);
+        self.next_line(&Style::Normal, 0);
     }
 
     fn commit(&mut self) -> Result<(), ()> {
@@ -283,7 +283,7 @@ impl<'a> Layout<'a> {
         self.lines.pop_front();
     }
 
-    fn next_line(&mut self, style: &Style) {
+    fn next_line(&mut self, style: &Style, n: usize) {
         let height = self.renderer.line_height(style);
         if self.lines.is_empty() {
             self.request(height);
@@ -294,7 +294,14 @@ impl<'a> Layout<'a> {
                 rem: self.region.width,
             });
             self.region.top += height;
+            self.indent_line(n);
         }
+    }
+
+    fn indent_line(&mut self, n: usize) {
+        let indent = n as f32 * 20.0;
+        self.lines[0].left += indent;
+        self.lines[0].rem -= indent;
     }
 
     fn next_page(&mut self) {
@@ -319,6 +326,19 @@ impl Renderer {
     pub fn line_height(&self, style: &Style) -> f32 {
         let text_style = &self.style_collection[style];
         text_style.height * text_style.font_size
+    }
+
+    pub fn line_padding(&self, style: &Style) -> f32 {
+        let height = self.line_height(style);
+        let metrics = self.get_metrics(style);
+        height + metrics.ascent - metrics.descent
+    }
+
+    pub fn top_offset(&self, style: &Style) -> f32 {
+        match style {
+            Style::Verse => self.line_padding(&Style::Normal) / 2.0,
+            _ => 0.0,
+        }
     }
 
     pub fn measure_str(&self, text: &str, style: &Style) -> f32 {

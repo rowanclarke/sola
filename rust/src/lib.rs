@@ -70,10 +70,9 @@ pub extern "C" fn register_style(renderer: *mut c_void, style: Style, text_style
     renderer.style_collection.insert(style, text_style.clone());
     match style {
         Style::Normal => {
-            let metrics = renderer.get_metrics(&Style::Normal);
+            let height = renderer.line_height(&Style::Normal);
             let mut chapter_style = text_style.clone();
-            chapter_style.font_size += metrics.leading;
-            chapter_style.font_size *= 2.0;
+            chapter_style.font_size = 2.0 * height;
             chapter_style.height =
                 2.0 * renderer.line_height(&Style::Normal) / chapter_style.font_size;
             renderer
