@@ -1,0 +1,65 @@
+name: Feature request
+description: Suggest an idea or enhancement for this project
+labels: [enhancement]
+assignees: []
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Is your feature request related to a problem?
+      description: Describe the problem you're facing, if any. This helps give context.
+      placeholder: "I'm always frustrated when..."
+    validations:
+      required: false
+  - type: textarea
+    id: solution
+    attributes:
+      label: Describe the solution you'd like
+      description: A clear and concise description of what you want to happen.
+      placeholder: "I want it to do..."
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Describe alternatives you've considered
+      description: Include any alternative solutions or features you've thought about.
+      placeholder: "I've also considered..."
+    validations:
+      required: false
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Add any other context, screenshots, or mockups that help explain your idea.
+      placeholder: "For example: screenshots, diagrams, links..."
+    validations:
+      required: false
+  - type: dropdown
+    id: difficulty
+    attributes:
+      label: Difficulty
+      description: How hard do you think this is to implement?
+      options:
+        - Easy
+        - Medium
+        - Hard
+        - Very Hard
+    validations:
+      required: true
+  - type: input
+    id: estimated_time
+    attributes:
+      label: Estimated time to implement
+      description: How long might this feature take to develop?
+      placeholder: "e.g. 1 day, 3–5 days, 2 weeks"
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependent features
+      description: List any other features or tasks this depends on (if any).
+      placeholder: "E.g. Requires authentication system, API endpoint, UI redesign..."
+    validations:
+      required: false
