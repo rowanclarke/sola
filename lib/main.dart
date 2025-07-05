@@ -86,28 +86,28 @@ class MyApp extends StatelessWidget {
       gen,
       Dimensions(width, height, headerHeight: height / 5, headerPadding: 20),
     );
-    final texts = page(rendered);
+    final pages = serializePages(rendered);
+    final texts = page(renderer, pages, 0);
 
     return SizedBox(
       width: width,
       height: height,
       child: Stack(
-        children:
-            texts.map((text) {
-              final rect = text.rect;
-              final style = toTextStyle(text.style);
-              return Positioned(
-                left: rect.left,
-                top: rect.top,
-                width: rect.width,
-                height: rect.height,
-                child: Text(
-                  text.text.cast<Utf8>().toDartString(length: text.len),
-                  style: style,
-                  softWrap: false,
-                ),
-              );
-            }).toList(),
+        children: texts.map((text) {
+          final rect = text.rect;
+          final style = toTextStyle(text.style);
+          return Positioned(
+            left: rect.left,
+            top: rect.top,
+            width: rect.width,
+            height: rect.height,
+            child: Text(
+              text.text.cast<Utf8>().toDartString(length: text.len),
+              style: style,
+              softWrap: false,
+            ),
+          );
+        }).toList(),
       ),
     );
   }

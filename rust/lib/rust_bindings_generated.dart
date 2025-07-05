@@ -121,12 +121,42 @@ class RustBindings {
         )
       >();
 
-  void page(
+  void serialize_pages(
     ffi.Pointer<ffi.Void> layout,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> out,
+    ffi.Pointer<ffi.Size> out_len,
+  ) {
+    return _serialize_pages(layout, out, out_len);
+  }
+
+  late final _serialize_pagesPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(
+            ffi.Pointer<ffi.Void>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+            ffi.Pointer<ffi.Size>,
+          )
+        >
+      >('serialize_pages');
+  late final _serialize_pages = _serialize_pagesPtr
+      .asFunction<
+        void Function(
+          ffi.Pointer<ffi.Void>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          ffi.Pointer<ffi.Size>,
+        )
+      >();
+
+  void page(
+    ffi.Pointer<ffi.Void> renderer,
+    ffi.Pointer<ffi.Char> pages,
+    int pages_t,
+    int n,
     ffi.Pointer<ffi.Pointer<Text>> out,
     ffi.Pointer<ffi.Size> out_len,
   ) {
-    return _page(layout, out, out_len);
+    return _page(renderer, pages, pages_t, n, out, out_len);
   }
 
   late final _pagePtr =
@@ -134,6 +164,9 @@ class RustBindings {
         ffi.NativeFunction<
           ffi.Void Function(
             ffi.Pointer<ffi.Void>,
+            ffi.Pointer<ffi.Char>,
+            ffi.Size,
+            ffi.Size,
             ffi.Pointer<ffi.Pointer<Text>>,
             ffi.Pointer<ffi.Size>,
           )
@@ -143,6 +176,9 @@ class RustBindings {
       .asFunction<
         void Function(
           ffi.Pointer<ffi.Void>,
+          ffi.Pointer<ffi.Char>,
+          int,
+          int,
           ffi.Pointer<ffi.Pointer<Text>>,
           ffi.Pointer<ffi.Size>,
         )

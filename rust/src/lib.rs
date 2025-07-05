@@ -1,17 +1,20 @@
 mod layout;
 mod words;
 
-use layout::{Dimensions, Layout, Text};
+use layout::{ArchivedPage, ArchivedPartialText, Dimensions, Layout, Page, Text};
+use rkyv::rancor::Error;
+use rkyv::vec::ArchivedVec;
+use rkyv::{Archive, Deserialize, Serialize};
 use skia_safe::FontMgr;
 use skia_safe::textlayout::TypefaceFontProvider;
 use std::collections::HashMap;
 use std::ffi::{c_char, c_void};
-use std::slice;
 use std::slice::from_raw_parts;
 use std::str::from_utf8_unchecked;
+use std::{mem, slice};
 use usfm::parse;
 
-#[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
+#[derive(Archive, Serialize, Deserialize, Debug, Hash, PartialEq, Eq, Clone, Copy)]
 #[repr(i32)]
 pub enum Style {
     Verse = 0,
@@ -100,14 +103,33 @@ pub extern "C" fn layout(
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn page(layout: *const c_void, out: *mut *const Text, out_len: *mut usize) {
-    let layout = unsafe { &*(layout as *const Layout) };
-    let page = layout.page(0);
-    let page = page.leak();
+pub extern "C" fn page(
+    renderer: *const c_void,
+    pages: *const u8,
+    pages_len: usize,
+    n: usize,
+    out: *mut *const Text,
+    out_len: *mut usize,
+) {
+    let renderer = unsafe { &*(renderer as *const Renderer) };
+    let bytes = unsafe { from_raw_parts(pages, pages_len) };
+    let archived_pages: &ArchivedVec<ArchivedPage> = rkyv::access::<_, Error>(bytes).unwrap();
+    let page = renderer.page(&archived_pages[n]).leak();
     unsafe {
         *out = page.as_ptr();
         *out_len = page.len();
     }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn serialize_pages(layout: *const c_void, out: *mut *const u8, out_len: *mut usize) {
+    let layout = unsafe { &*(layout as *const Layout) };
+    let pages = layout.serialised_pages();
+    unsafe {
+        *out = pages.as_ptr();
+        *out_len = pages.len()
+    }
+    mem::forget(pages);
 }
 
 #[cfg(target_os = "android")]

@@ -10,3 +10,4 @@ crate-type = ["lib", "cdylib"]
 itertools = "0.14.0"
 usfm = { path = "../../usfm" }
 skia-safe = { version = "0.86.1", features = ["textlayout"] }
+rkyv = "0.8.10"

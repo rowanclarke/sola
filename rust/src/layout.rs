@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests;
 
+use rkyv::{Archive, Deserialize, Serialize, deserialize, rancor::Error, util::AlignedVec};
 use std::{
     collections::VecDeque, ffi::c_char, mem, slice::from_raw_parts, str::from_utf8_unchecked,
 };
@@ -100,18 +101,8 @@ impl<'a> Layout<'a> {
         }
     }
 
-    pub fn page(&self, n: usize) -> Vec<Text> {
-        self.pages[n]
-            .iter()
-            .map(|PartialText(text, rect, style, word_spacing)| {
-                let mut style = self.renderer.style_collection[&style];
-                style.word_spacing += word_spacing;
-                let text = text.as_bytes();
-                let len = text.len();
-                let ptr = text.as_ptr() as *const c_char;
-                Text(ptr, len, *rect, style)
-            })
-            .collect()
+    pub fn serialised_pages(&self) -> AlignedVec {
+        rkyv::to_bytes::<Error>(&self.pages).unwrap()
     }
 
     fn paragraph(&mut self, contents: &Vec<ParagraphContents>) {
@@ -373,6 +364,19 @@ impl Renderer {
         let font = Font::from_typeface(typeface, text_style.font_size);
         font.metrics().1
     }
+
+    pub fn page(&self, page: &ArchivedPage) -> Vec<Text> {
+        page.iter()
+            .map(|ArchivedPartialText(text, rect, style, word_spacing)| {
+                let mut style = self.style_collection[&deserialize::<_, Error>(style).unwrap()];
+                style.word_spacing += word_spacing.to_native();
+                let text = text.as_bytes();
+                let len = text.len();
+                let ptr = text.as_ptr() as *const c_char;
+                Text(ptr, len, deserialize::<_, Error>(rect).unwrap(), style)
+            })
+            .collect()
+    }
 }
 
 impl TextStyle {
@@ -386,16 +390,17 @@ impl TextStyle {
     }
 }
 
+pub type ArchivedPage = <Page as Archive>::Archived;
 pub type Page = Vec<PartialText>;
 
-#[derive(Debug)]
+#[derive(Archive, Serialize, Debug)]
 pub struct PartialText(String, Rectangle, Style, f32);
 
 #[derive(Debug)]
 #[repr(C)]
 pub struct Text(*const c_char, usize, Rectangle, TextStyle);
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Archive, Serialize, Deserialize, Debug, Clone, Copy)]
 #[repr(C)]
 pub struct Rectangle {
     top: f32,

@@ -48,8 +48,17 @@ void* layout(
   Dimensions* dim
 );
 
-void page(
+void serialize_pages(
   void* layout,
+  const char** out,
+  size_t* out_len
+);
+
+void page(
+  void* renderer,
+  const char* pages,
+  size_t pages_len,
+  size_t n,
   const Text** out,
   size_t* out_len
 );

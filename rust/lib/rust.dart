@@ -82,11 +82,22 @@ Pointer<Void> layout(Pointer<Void> map, String usfm, Dimensions dim) {
   return _bindings.layout(map, native.cast<Char>(), native.length, cdim);
 }
 
-List<bind.Text> page(Pointer<Void> layout) {
+Uint8List serializePages(Pointer<Void> layout) {
+  final out = malloc<Pointer<Uint8>>();
+  final outLen = malloc<Size>();
+
+  _bindings.serialize_pages(layout, out.cast<Pointer<Char>>(), outLen);
+  return out.value.asTypedList(outLen.value);
+}
+
+List<bind.Text> page(Pointer<Void> renderer, Uint8List pages, int n) {
+  final ptr = malloc<Uint8>(pages.length);
+  final bytePtr = ptr.asTypedList(pages.length);
+  bytePtr.setAll(0, pages);
   final out = malloc<Pointer<bind.Text>>();
   final outLen = malloc<Size>();
 
-  _bindings.page(layout, out, outLen);
+  _bindings.page(renderer, ptr.cast<Char>(), pages.length, n, out, outLen);
 
   return List.generate(outLen.value, (i) => (out.value + i).ref);
 }
