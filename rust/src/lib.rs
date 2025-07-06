@@ -1,7 +1,7 @@
 mod layout;
 mod words;
 
-use layout::{ArchivedPage, ArchivedPartialText, Dimensions, Layout, Page, Text};
+use layout::{ArchivedPage, Dimensions, Layout, Text};
 use rkyv::rancor::Error;
 use rkyv::vec::ArchivedVec;
 use rkyv::{Archive, Deserialize, Serialize};

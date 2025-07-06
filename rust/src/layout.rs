@@ -245,7 +245,8 @@ impl<'a> Layout<'a> {
                 height: self.renderer.line_height(style),
             };
             left += width;
-            Self::write_text(page, text, rect, style.clone(), spacing / spaces);
+            let word_spacing = if spaces == 0.0 { 0.0 } else { spacing / spaces };
+            Self::write_text(page, text, rect, style.clone(), word_spacing);
         }
         self.pop_line();
         self.next_line(&Style::Normal, 0);
