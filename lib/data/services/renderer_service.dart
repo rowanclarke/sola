@@ -1,5 +1,3 @@
-import 'package:ffi/ffi.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart' show TextStyle;
 import 'package:flutter/services.dart';
 import 'package:rust/rust.dart' as rust;
@@ -16,7 +14,6 @@ class RendererService {
         .load('assets/fonts/AveriaSerifLibre-Regular.ttf')
         .then((b) => b.buffer.asUint8List());
     rust.registerFontFamily(renderer, 'AveriaSerifLibre', font);
-    print("Register fonts");
   }
 
   Future<void> registerStyles() async {
@@ -53,7 +50,6 @@ class RendererService {
         wordSpacing: 0,
       ),
     );
-    print("Registered styles");
   }
 
   Future<Uint8List> render(String usfm, double width, double height) async {
@@ -64,38 +60,15 @@ class RendererService {
       headerPadding: 20,
     );
     final rendered = rust.layout(renderer, usfm, dimensions);
-    print("Serialised pages");
     return rust.serializePages(rendered);
   }
 
   Uint8List? _rendered;
   set rendered(Uint8List rendered) {
-    print("Set rendered");
     _rendered = rendered;
   }
 
-  Future<Widget> getPage(int n, double width, double height) async {
-    print("Getting page");
-    return SizedBox(
-      width: width,
-      height: height,
-      child: Stack(
-        children: rust.page(renderer, _rendered!, n).map((text) {
-          final rect = text.rect;
-          final style = rust.toTextStyle(text.style);
-          return Positioned(
-            left: rect.left,
-            top: rect.top,
-            width: rect.width,
-            height: rect.height,
-            child: Text(
-              text.text.cast<Utf8>().toDartString(length: text.len),
-              style: style,
-              softWrap: false,
-            ),
-          );
-        }).toList(),
-      ),
-    );
+  Future<List<rust.Text>> getPage(int n) async {
+    return rust.page(renderer, _rendered!, n);
   }
 }

@@ -1,11 +1,10 @@
-import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/painting.dart' show TextStyle;
 import 'rust_bindings_generated.dart' as bind;
-export 'rust_bindings_generated.dart' show Style, Text;
+export 'rust_bindings_generated.dart' show Style;
 
 class Dimensions {
   final double width;
@@ -19,6 +18,14 @@ class Dimensions {
     required this.headerHeight,
     required this.headerPadding,
   });
+}
+
+class Text {
+  final String text;
+  final bind.Rectangle rect;
+  final TextStyle style;
+
+  Text(this.text, this.rect, this.style);
 }
 
 Pointer<Void> getRenderer() {
@@ -60,8 +67,8 @@ void registerStyle(
 }
 
 TextStyle toTextStyle(bind.TextStyle textStyle) {
-  final fontFamily = utf8.decode(
-    textStyle.font_family.cast<Uint8>().asTypedList(textStyle.font_family_len),
+  final fontFamily = textStyle.font_family.cast<Utf8>().toDartString(
+    length: textStyle.font_family_len,
   );
   return TextStyle(
     fontFamily: fontFamily,
@@ -90,7 +97,7 @@ Uint8List serializePages(Pointer<Void> layout) {
   return out.value.asTypedList(outLen.value);
 }
 
-List<bind.Text> page(Pointer<Void> renderer, Uint8List pages, int n) {
+List<Text> page(Pointer<Void> renderer, Uint8List pages, int n) {
   final ptr = malloc<Uint8>(pages.length);
   final bytePtr = ptr.asTypedList(pages.length);
   bytePtr.setAll(0, pages);
@@ -99,7 +106,14 @@ List<bind.Text> page(Pointer<Void> renderer, Uint8List pages, int n) {
 
   _bindings.page(renderer, ptr.cast<Char>(), pages.length, n, out, outLen);
 
-  return List.generate(outLen.value, (i) => (out.value + i).ref);
+  return List.generate(outLen.value, (i) {
+    final text = (out.value + i).ref;
+    return Text(
+      text.text.cast<Utf8>().toDartString(length: text.len),
+      text.rect,
+      toTextStyle(text.style),
+    );
+  });
 }
 
 const String _libName = 'rust';

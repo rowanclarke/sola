@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
+import 'package:rust/rust.dart';
 
 class PageModel {
-  final Widget page;
+  final List<Text> page;
 
   PageModel({required this.page});
 }

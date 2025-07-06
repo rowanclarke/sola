@@ -37,7 +37,9 @@ class PaginationScreen extends StatelessWidget {
                   padding: EdgeInsets.all(padding),
                   child: PageViewWidget(
                     isLoading: vm.isLoading,
-                    widget: model.page,
+                    builder: model.page,
+                    width: width,
+                    height: height,
                   ),
                 );
               },
