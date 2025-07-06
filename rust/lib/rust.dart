@@ -5,7 +5,7 @@ import 'dart:typed_data';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/painting.dart' show TextStyle;
 import 'rust_bindings_generated.dart' as bind;
-export 'rust_bindings_generated.dart' show Style;
+export 'rust_bindings_generated.dart' show Style, Text;
 
 class Dimensions {
   final double width;

@@ -1,0 +1,80 @@
+name: Bug report
+description: Report a problem or unexpected behavior
+labels: [bug]
+assignees: []
+
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: What version of the project are you using?
+      placeholder: "e.g. v1.4.2 or commit hash abc123"
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the bug
+      description: A clear and concise description of what the bug is.
+      placeholder: "When I do X, it results in Y, but I expected Z."
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Provide a step-by-step guide to help us reproduce the issue.
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. Scroll down to '...'
+        4. See error
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: Describe what you expected to happen instead.
+      placeholder: "It should have..."
+    validations:
+      required: false
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots or logs
+      description: If applicable, add screenshots or log output to help explain your problem.
+      placeholder: "Drag and drop screenshots or paste logs here"
+    validations:
+      required: false
+  - type: dropdown
+    id: platform
+    attributes:
+      label: What environment are you seeing the bug in?
+      options:
+        - Web (browser)
+        - Mobile (iOS/Android)
+        - Desktop
+        - Server / API
+        - CLI
+        - Other
+    validations:
+      required: false
+  - type: input
+    id: system_info
+    attributes:
+      label: System info
+      description: OS, browser, device, or runtime environment where the bug occurred.
+      placeholder: "e.g. macOS 13, Chrome 114, Node.js 18.0"
+    validations:
+      required: false
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: I have searched existing issues and this bug has not been reported yet.
+          required: true
+        - label: I have provided all necessary information to reproduce the bug.
+          required: true
