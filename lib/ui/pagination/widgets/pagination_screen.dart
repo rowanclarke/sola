@@ -3,52 +3,48 @@ import 'package:provider/provider.dart';
 import '../view_model/pagination_view_model.dart';
 import 'page_view_widget.dart';
 
-class PaginationScreen extends StatefulWidget {
-  @override
-  PaginationScreenState createState() => PaginationScreenState();
-}
+class PaginationScreen extends StatelessWidget {
+  final double padding;
 
-class PaginationScreenState extends State<PaginationScreen> {
-  late PageController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    final vm = context.read<PaginationViewModel>();
-    vm.loadPages();
-    _controller = PageController(initialPage: vm.currentIndex);
-    _controller.addListener(_handleSwipe);
-  }
-
-  void _handleSwipe() {
-    final vm = context.read<PaginationViewModel>();
-    final page = _controller.page?.round() ?? vm.currentIndex;
-    if (page != vm.currentIndex) {
-      vm.setPage(page);
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.removeListener(_handleSwipe);
-    _controller.dispose();
-    super.dispose();
-  }
+  const PaginationScreen(this.padding, {super.key});
 
   @override
   Widget build(BuildContext context) {
     return Consumer<PaginationViewModel>(
       builder: (context, vm, _) {
-        return Scaffold(
-          appBar: AppBar(title: Text('Pagination Demo')),
-          body: PageView.builder(
-            controller: _controller,
-            itemCount: vm.pages.length,
-            itemBuilder: (context, index) {
-              final model = vm.pages[index];
-              return PageViewWidget(isLoading: vm.isLoading, text: model.text);
-            },
-          ),
+        return LayoutBuilder(
+          builder: (_, constraints) {
+            final width = constraints.maxWidth - 2.0 * padding;
+            final height = constraints.maxHeight - 2.0 * padding;
+
+            if (width == 0 && height == 0) return Container();
+
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!vm.isLoading && vm.pages.isEmpty) {
+                vm.loadPages(width, height);
+              }
+            });
+
+            return PageView.builder(
+              controller: PageController(),
+              itemCount: vm.pages.length,
+              onPageChanged: (index) {
+                vm.setPage(index);
+              },
+              itemBuilder: (context, index) {
+                final model = vm.pages[index];
+                return Padding(
+                  padding: EdgeInsets.all(padding),
+                  child: PageViewWidget(
+                    isLoading: vm.isLoading,
+                    builder: model.page,
+                    width: width,
+                    height: height,
+                  ),
+                );
+              },
+            );
+          },
         );
       },
     );

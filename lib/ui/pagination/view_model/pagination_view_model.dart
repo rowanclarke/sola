@@ -14,11 +14,11 @@ class PaginationViewModel extends ChangeNotifier {
   bool get isLoading => _isLoading;
   int get currentIndex => _currentIndex;
 
-  Future<void> loadPages() async {
+  Future<void> loadPages(double width, double height) async {
     _isLoading = true;
     notifyListeners();
 
-    _pages = await repository.getPages();
+    _pages = await repository.getPages(width, height);
 
     _isLoading = false;
     notifyListeners();

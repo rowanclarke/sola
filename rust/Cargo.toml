@@ -1,0 +1,13 @@
+[package]
+name = "rust"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["lib", "cdylib"]
+
+[dependencies]
+itertools = "0.14.0"
+usfm = { path = "../../usfm" }
+skia-safe = { version = "0.86.1", features = ["textlayout"] }
+rkyv = "0.8.10"

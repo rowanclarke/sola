@@ -1,6 +1,7 @@
-class PageModel {
-  final int id;
-  final String text;
+import 'package:rust/rust.dart';
 
-  PageModel({required this.id, required this.text});
+class PageModel {
+  final List<Text> page;
+
+  PageModel({required this.page});
 }
