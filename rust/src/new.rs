@@ -18,9 +18,14 @@ pub trait Paint {
 impl Paint for Book {
     fn paint(&self, painter: &mut Painter) {
         use usfm::BookContents as C;
-        for contents in self.contents.iter().skip(10).take(2) {
+        for contents in self.contents.iter().take(12) {
             match contents {
                 C::Paragraph(paragraph) => paragraph.paint(painter),
+                C::Chapter(n) => painter
+                    .push_style(Style::Chapter)
+                    .add_text(n.to_string())
+                    .pop_style()
+                    .paint_drop_cap(),
                 _ => (),
             }
         }
@@ -146,10 +151,14 @@ impl Layout {
         self.body.top += self.line_height;
     }
 
-    fn next_line_width(&mut self, line: usize) -> f32 {
-        if line >= self.lines.len() {
+    fn ensure_line(&mut self, line: usize) {
+        for _ in self.lines.len()..=line {
             self.next_line();
         }
+    }
+
+    fn get_line_width(&mut self, line: usize) -> f32 {
+        self.ensure_line(line);
         self.lines[line].width
     }
 
@@ -166,7 +175,6 @@ impl Layout {
         width: f32,
         word_spacing: f32,
     ) {
-        let page = self.pages.last_mut().unwrap();
         let line = &mut self.lines[line];
         let rect = Rectangle {
             top: line.top,
@@ -174,10 +182,22 @@ impl Layout {
             width,
             height: self.line_height,
         };
-        let text = PartialText::new(text, rect, style, word_spacing);
-        log!("{:?}", text);
-        page.push(text);
         line.left += width;
+        self.write(text, rect, style, word_spacing);
+    }
+
+    fn write(&mut self, text: String, rect: Rectangle, style: Style, word_spacing: f32) {
+        let text = PartialText::new(text, rect, style, word_spacing);
+        self.pages.last_mut().unwrap().push(text);
+    }
+
+    fn from_body(&mut self, width: f32, height: f32) -> Rectangle {
+        Rectangle {
+            top: self.body.top,
+            left: self.body.left,
+            width,
+            height,
+        }
     }
 
     fn drain_lines(&mut self) {
@@ -201,14 +221,14 @@ impl<'a> Writer<'a> {
         let mut total = 0.0;
         let mut total_ws = 0.0;
         let mut lines: Vec<Words> = vec![];
-        let mut available = self.layout.next_line_width(0);
+        let mut available = self.layout.get_line_width(0);
         for (range, _, width) in self.inline.iter() {
             if total + width > available {
                 // log!("{}, {} > {}", total, total + width, available);
                 lines.push(Words::new(a..b, available, available - total, total_ws));
             }
             if total + width > available {
-                available = self.layout.next_line_width(lines.len());
+                available = self.layout.get_line_width(lines.len());
                 a = b;
                 total = 0.0;
                 total_ws = 0.0;
@@ -280,7 +300,18 @@ impl Painter {
         }
     }
 
-    fn paint_drop_cap(&mut self) {}
+    fn paint_drop_cap(&mut self) {
+        let (text, inline) = inline(&mut self.builder, &self.styled);
+        let (_, style, width) = inline[0];
+        let width = width + self.dim.header_padding;
+        let rect = self.layout.from_body(width, 2.0 * self.layout.line_height);
+        self.layout.ensure_line(1);
+        self.layout.mutate_line(0, width, -width);
+        self.layout.mutate_line(1, width, -width);
+        self.layout.write(text.to_string(), rect, style, 0.0);
+        self.styled.drain(..);
+        self.builder.reset();
+    }
 
     fn paint_paragraph(&mut self, format: Format, line_format: LineFormat) {
         let (text, inline) = inline(&mut self.builder, &self.styled);
@@ -438,7 +469,6 @@ fn inline<'a>(
 ) -> (&'a str, Vec<(Range, Style, f32)>) {
     let mut paragraph = builder.build();
     paragraph.layout(f32::INFINITY);
-
     let text = builder.get_text();
     let mut inline: Vec<(Range, Style, f32)> = vec![];
     let mut start = 0;
@@ -452,7 +482,7 @@ fn inline<'a>(
         inline.push((range, styled[style].1, rect.width()));
     };
     let mut style = 0;
-    let mut word = false;
+    let mut word = !text.chars().next().unwrap().is_whitespace();
     for (i, chr) in text.chars().enumerate() {
         if i >= styled[style].0 {
             push(start..i, style);
