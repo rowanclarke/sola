@@ -1,12 +1,14 @@
 mod layout;
+mod new;
 mod words;
 
-use layout::{ArchivedPage, Dimensions, Layout, Text};
+use layout::{ArchivedPage, Layout};
+use new::{Paint, Painter};
 use rkyv::rancor::Error;
 use rkyv::vec::ArchivedVec;
 use rkyv::{Archive, Deserialize, Serialize};
 use skia_safe::FontMgr;
-use skia_safe::textlayout::TypefaceFontProvider;
+use skia_safe::textlayout::{ParagraphBuilder, TypefaceFontProvider};
 use std::collections::HashMap;
 use std::ffi::{c_char, c_void};
 use std::slice::from_raw_parts;
@@ -35,6 +37,28 @@ pub struct TextStyle {
 }
 
 #[derive(Debug)]
+#[repr(C)]
+pub struct Text(*const c_char, usize, Rectangle, TextStyle);
+
+#[derive(Archive, Serialize, Deserialize, Debug, Clone, Copy)]
+#[repr(C)]
+pub struct Rectangle {
+    top: f32,
+    left: f32,
+    width: f32,
+    height: f32,
+}
+
+#[derive(Debug, Clone)]
+#[repr(C)]
+pub struct Dimensions {
+    width: f32,
+    height: f32,
+    header_height: f32,
+    header_padding: f32,
+}
+
+#[derive(Debug, Clone)]
 struct Renderer {
     font_provider: TypefaceFontProvider,
     style_collection: HashMap<Style, TextStyle>,
@@ -97,9 +121,14 @@ pub extern "C" fn layout(
     let usfm = unsafe { from_utf8_unchecked(from_raw_parts(usfm, len)) };
     let dim = unsafe { Box::from_raw(dim) };
     let usfm = parse(&usfm);
-    let mut layout = Box::new(Layout::new(renderer, *dim));
-    layout.layout(&usfm.contents);
-    Box::into_raw(layout) as *mut c_void
+
+    let mut painter = Painter::new(renderer, *dim.clone());
+    usfm.paint(&mut painter);
+
+    // let mut layout = Box::new(Layout::new(renderer, *dim));
+    // renderer.str_test();
+    // layout.layout(&usfm.contents);
+    Box::into_raw(Box::new(painter)) as *mut c_void
 }
 
 #[unsafe(no_mangle)]
@@ -122,9 +151,13 @@ pub extern "C" fn page(
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn serialize_pages(layout: *const c_void, out: *mut *const u8, out_len: *mut usize) {
-    let layout = unsafe { &*(layout as *const Layout) };
-    let pages = layout.serialised_pages();
+pub extern "C" fn serialize_pages(
+    painter: *const c_void,
+    out: *mut *const u8,
+    out_len: *mut usize,
+) {
+    let painter = unsafe { &*(painter as *const Painter) };
+    let pages = painter.get_pages();
     unsafe {
         *out = pages.as_ptr();
         *out_len = pages.len()

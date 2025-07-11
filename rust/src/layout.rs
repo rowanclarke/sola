@@ -1,7 +1,8 @@
 #[cfg(test)]
 mod tests;
 
-use rkyv::{Archive, Deserialize, Serialize, deserialize, rancor::Error, util::AlignedVec};
+use crate::{Dimensions, Rectangle, Text};
+use rkyv::{Archive, Serialize, deserialize, rancor::Error, util::AlignedVec};
 use std::{
     collections::VecDeque, ffi::c_char, mem, slice::from_raw_parts, str::from_utf8_unchecked,
 };
@@ -10,10 +11,14 @@ use itertools::Itertools;
 use skia_safe::{
     Font, FontMetrics, FontMgr, FontStyle,
     textlayout::{
-        FontCollection, ParagraphBuilder, ParagraphStyle, TextStyle as ParagraphTextStyle,
+        FontCollection, ParagraphBuilder, ParagraphStyle, RectHeightStyle, RectWidthStyle,
+        TextStyle as ParagraphTextStyle,
     },
 };
-use usfm::{BookContents, CharacterContents, ElementContents, ElementType, ParagraphContents};
+use usfm::{
+    BookContents, Character, CharacterContents, Element, ElementContents, ElementType, Paragraph,
+    ParagraphContents,
+};
 
 use crate::{Renderer, Style, TextStyle, log, words::words};
 
@@ -58,10 +63,10 @@ impl<'a> Layout<'a> {
     }
 
     pub fn layout(&mut self, contents: &Vec<BookContents>) {
-        use BookContents::*;
+        use BookContents as C;
         for contents in contents.into_iter().take(18) {
             match contents {
-                Chapter(n) => {
+                C::Chapter(n) => {
                     let text = n.to_string();
                     let width = self.renderer.measure_str(&text, &Style::Chapter);
                     let height = self.renderer.line_height(&Style::Chapter);
@@ -94,8 +99,8 @@ impl<'a> Layout<'a> {
                     });
                     self.region.top += height;
                 }
-                Element { ty, contents } => self.element(ty, contents),
-                Paragraph { contents, .. } => self.paragraph(contents),
+                C::Element(Element { ty, contents }) => self.element(ty, contents),
+                C::Paragraph(Paragraph { contents, .. }) => self.paragraph(contents),
                 _ => (),
             }
         }
@@ -106,17 +111,17 @@ impl<'a> Layout<'a> {
     }
 
     fn paragraph(&mut self, contents: &Vec<ParagraphContents>) {
-        use ParagraphContents::*;
+        use ParagraphContents as C;
         self.next_line(&Style::Normal, 1);
         for contents in contents {
             match contents {
-                Verse(n) => {
+                C::Verse(n) => {
                     self.queue.push_back(self.inline(" ", Style::Normal));
                     self.queue
                         .push_back(self.inline(n.to_string(), Style::Verse));
                 }
-                Line(s) => self.write(s, Style::Normal),
-                Character { contents, .. } => self.character(contents),
+                C::Line(s) => self.write(s, Style::Normal),
+                C::Character(Character { contents, .. }) => self.character(contents),
                 _ => (),
             }
         }
@@ -125,11 +130,11 @@ impl<'a> Layout<'a> {
     }
 
     fn element(&mut self, ty: &ElementType, contents: &Vec<ElementContents>) {
-        use ElementContents::*;
+        use ElementContents as C;
         use ElementType::*;
         for contents in contents {
             match (ty, contents) {
-                (Header, Line(s)) => {
+                (Header, C::Line(s)) => {
                     let height = self.renderer.line_height(&Style::Header);
                     let (text, _, width) = self.inline(s, Style::Header);
                     let page = self.pages.last_mut().unwrap();
@@ -153,11 +158,11 @@ impl<'a> Layout<'a> {
     }
 
     fn character(&mut self, contents: &Vec<CharacterContents>) {
-        use CharacterContents::*;
+        use CharacterContents as C;
         for contents in contents {
             match contents {
-                Line(s) => self.write(s, Style::Normal),
-                Character { contents, .. } => self.character(contents),
+                C::Line(s) => self.write(s, Style::Normal),
+                C::Character(Character { contents, .. }) => self.character(contents),
             }
         }
     }
@@ -335,6 +340,26 @@ impl Renderer {
         }
     }
 
+    pub fn new_builder(&self) -> ParagraphBuilder {
+        let mut font_collection = FontCollection::new();
+        let font_mgr: FontMgr = self.font_provider.clone().into();
+        font_collection.set_default_font_manager(Some(font_mgr), None);
+        let paragraph_style = ParagraphStyle::new();
+        ParagraphBuilder::new(&paragraph_style, font_collection)
+    }
+
+    pub fn get_style(&self, style: &Style) -> ParagraphTextStyle {
+        let text_style = &self.style_collection[style];
+        let mut paragraph_text_style = ParagraphTextStyle::new();
+        paragraph_text_style
+            .set_font_size(text_style.font_size)
+            .set_font_families(&[text_style.font_family()])
+            .set_height(text_style.height)
+            .set_letter_spacing(text_style.letter_spacing)
+            .set_word_spacing(text_style.word_spacing);
+        paragraph_text_style
+    }
+
     pub fn measure_str(&self, text: &str, style: &Style) -> f32 {
         let text_style = &self.style_collection[style];
         let mut font_collection = FontCollection::new();
@@ -354,6 +379,30 @@ impl Renderer {
         let mut paragraph = builder.build();
         paragraph.layout(f32::INFINITY);
         paragraph.max_intrinsic_width()
+    }
+
+    pub fn str_test(&self) {
+        let mut font_collection = FontCollection::new();
+        let font_mgr: FontMgr = self.font_provider.clone().into();
+        font_collection.set_default_font_manager(Some(font_mgr), None);
+        let paragraph_style = ParagraphStyle::new();
+        let mut builder = ParagraphBuilder::new(&paragraph_style, font_collection);
+        let normal = self.get_style(&Style::Normal);
+        let verse = self.get_style(&Style::Verse);
+        builder
+            .push_style(&verse)
+            .add_text("1")
+            .push_style(&normal)
+            .add_text("In the beginning");
+        let mut paragraph = builder.build();
+        paragraph.layout(f32::INFINITY);
+        let bounds = paragraph.get_word_boundary(3);
+        let text_box = paragraph.get_rects_for_range(
+            bounds.clone(),
+            RectHeightStyle::Tight,
+            RectWidthStyle::Tight,
+        )[0];
+        log!("{:?} > {:?}", bounds, text_box);
     }
 
     pub fn get_metrics(&self, style: &Style) -> FontMetrics {
@@ -397,24 +446,8 @@ pub type Page = Vec<PartialText>;
 #[derive(Archive, Serialize, Debug)]
 pub struct PartialText(String, Rectangle, Style, f32);
 
-#[derive(Debug)]
-#[repr(C)]
-pub struct Text(*const c_char, usize, Rectangle, TextStyle);
-
-#[derive(Archive, Serialize, Deserialize, Debug, Clone, Copy)]
-#[repr(C)]
-pub struct Rectangle {
-    top: f32,
-    left: f32,
-    width: f32,
-    height: f32,
-}
-
-#[derive(Debug)]
-#[repr(C)]
-pub struct Dimensions {
-    width: f32,
-    height: f32,
-    header_height: f32,
-    header_padding: f32,
+impl PartialText {
+    pub fn new(text: String, rect: Rectangle, style: Style, word_spacing: f32) -> Self {
+        Self(text, rect, style, word_spacing)
+    }
 }
