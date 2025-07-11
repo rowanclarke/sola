@@ -205,59 +205,104 @@ impl Layout {
     }
 }
 
+#[derive(Debug)]
+struct Inline {
+    // TODO: index &str instead of &[char]
+    range: Range,
+    is_whitespace: bool,
+    style: Style,
+    width: f32,
+}
+
 struct Writer<'a> {
     text: &'a [char],
-    inline: &'a [(Range, Style, f32)],
+    inline: &'a [Inline],
     line_format: LineFormat,
     layout: &'a mut Layout, // TODO: next_line: impl FnMut()
+    lines: Vec<Words<'a>>,
 }
 
 impl<'a> Writer<'a> {
     // TODO: include LineFormat in available
     // TODO: do not worry about spaces before/after - write fn trim() instead
     // TODO: write get_metrics() for getting whitespace
-    fn write(&mut self) -> Vec<Words> {
+    fn write(&mut self) -> &mut Self {
         let (mut a, mut b) = (0, 0);
         let mut total = 0.0;
-        let mut total_ws = 0.0;
-        let mut lines: Vec<Words> = vec![];
         let mut available = self.layout.get_line_width(0);
-        for (range, _, width) in self.inline.iter() {
+        for Inline { width, .. } in self.inline.iter() {
             if total + width > available {
-                // log!("{}, {} > {}", total, total + width, available);
-                lines.push(Words::new(a..b, available, available - total, total_ws));
+                self.lines
+                    .push(Words::new(self.text, self.inline, a..b, available));
             }
             if total + width > available {
-                available = self.layout.get_line_width(lines.len());
+                available = self.layout.get_line_width(self.lines.len());
                 a = b;
                 total = 0.0;
-                total_ws = 0.0;
-            }
-            if self.text[range.clone()].contains(&' ') {
-                total_ws += width;
             }
             b += 1;
             total += width;
         }
-        lines.push(Words::new(a..b, available, available - total, total_ws));
-        lines
+        self.lines
+            .push(Words::new(self.text, self.inline, a..b, available));
+        self
+    }
+
+    fn trim(&mut self) -> &mut Self {
+        for Words { range, .. } in self.lines.iter_mut() {
+            for (start, offset, incr) in [(&mut range.start, 0, 1), (&mut range.end, -1, -1)] {
+                while self.inline[start.wrapping_add_signed(offset)].is_whitespace {
+                    *start = start.wrapping_add_signed(incr);
+                }
+            }
+        }
+        self
+    }
+
+    fn get_lines(self) -> Vec<Words<'a>> {
+        self.lines
     }
 }
 
-struct Words {
-    range: Range,
-    available: f32,
+#[derive(Clone, Debug)]
+struct LineMetrics {
     remaining: f32,
     whitespace: f32,
 }
 
-impl Words {
-    fn new(range: Range, available: f32, remaining: f32, whitespace: f32) -> Self {
+#[derive(Debug)]
+struct Words<'a> {
+    text: &'a [char],
+    inline: &'a [Inline],
+    range: Range,
+    available: f32,
+}
+
+impl<'a> Words<'a> {
+    fn get_metrics(&self) -> LineMetrics {
+        let words = &self.inline[self.range.clone()];
+        let whitespace: f32 = words
+            .iter()
+            .filter_map(|Inline { range, width, .. }| {
+                self.text[range.clone()]
+                    .iter()
+                    .find(|chr| chr.is_whitespace())
+                    .and(Some(width))
+            })
+            .sum();
+        let total: f32 = words.iter().map(|inline| inline.width).sum();
+        LineMetrics {
+            remaining: self.available - total,
+            whitespace,
+        }
+    }
+
+    fn new(text: &'a [char], inline: &'a [Inline], range: Range, available: f32) -> Self {
         Self {
+            text,
+            inline,
             range,
             available,
-            remaining,
-            whitespace,
         }
     }
 }
@@ -301,92 +346,90 @@ impl Painter {
     }
 
     fn paint_drop_cap(&mut self) {
-        let (text, inline) = inline(&mut self.builder, &self.styled);
-        let (_, style, width) = inline[0];
+        let (raw, _, inline) = inline(&mut self.builder, &self.styled);
+        let Inline { style, width, .. } = inline[0];
         let width = width + self.dim.header_padding;
         let rect = self.layout.from_body(width, 2.0 * self.layout.line_height);
         self.layout.ensure_line(1);
         self.layout.mutate_line(0, width, -width);
         self.layout.mutate_line(1, width, -width);
-        self.layout.write(text.to_string(), rect, style, 0.0);
+        self.layout.write(raw.to_string(), rect, style, 0.0);
         self.styled.drain(..);
         self.builder.reset();
     }
 
     fn paint_paragraph(&mut self, format: Format, line_format: LineFormat) {
-        let (text, inline) = inline(&mut self.builder, &self.styled);
-        let chars: Vec<char> = text.chars().collect();
+        let (_, text, inline) = inline(&mut self.builder, &self.styled);
 
         let mut writer = Writer {
-            text: &chars[..],
+            text: &text[..],
             inline: inline.as_slice(),
             line_format,
             layout: &mut self.layout,
+            lines: vec![],
         };
-        let lines = writer.write();
-
-        #[derive(Debug)]
+        writer.write().trim();
+        #[derive(Debug, Clone)]
         struct Unformatted<'a> {
             line: usize,
             text: &'a [char],
             style: Style,
             width: f32,
             whitespace: f32,
+            metrics: LineMetrics,
         }
 
         let mut unformatted = vec![];
         let mut line = 0;
         let mut total = 0.0;
         let mut whitespace = 0.0;
-        let mut index = 0;
-        let mut last = &self.styled[0].1;
+        let mut last = self.styled[0].1;
 
-        for Words { range, .. } in lines.iter() {
-            let words = &inline[range.clone()];
+        for words in writer.get_lines().iter() {
+            let metrics = words.get_metrics();
+            let words = &inline[words.range.clone()];
+            let mut index = words[0].range.start;
             // TODO: use split_last
-            for (i, (range, style, width)) in words.iter().enumerate() {
-                if chars[range.clone()].contains(&' ') {
-                    whitespace += width;
+            for (i, inline) in words.iter().enumerate() {
+                if inline.is_whitespace {
+                    whitespace += inline.width;
                 }
-                if style != last {
+                if inline.style != last {
                     unformatted.push(Unformatted {
                         line,
-                        text: &chars[index..range.start],
+                        text: &text[index..inline.range.start],
                         style: last.clone(),
                         width: total,
                         whitespace,
+                        metrics: metrics.clone(),
                     });
                     whitespace = 0.0;
                     total = 0.0;
-                    last = style;
-                    index = range.start;
+                    last = inline.style;
+                    index = inline.range.start;
                 }
-                total += width;
+                total += inline.width;
                 if i == words.len() - 1 {
                     unformatted.push(Unformatted {
                         line,
-                        text: &chars[index..range.end],
+                        text: &text[index..inline.range.end],
                         style: last.clone(),
                         width: total,
                         whitespace,
+                        metrics: metrics.clone(),
                     });
                     whitespace = 0.0;
                     total = 0.0;
-                    last = style;
-                    index = range.end;
+                    last = inline.style;
+                    index = inline.range.end;
                 }
             }
             line += 1;
         }
 
-        fn justify(layout: &mut Layout, lines: &[Words], unformatted: &[Unformatted]) {
+        fn justify(layout: &mut Layout, unformatted: &[Unformatted]) {
             for words in unformatted {
-                let Words {
-                    remaining,
-                    whitespace,
-                    ..
-                } = lines[words.line];
-                let ratio = remaining / whitespace;
+                let ratio = words.metrics.remaining / words.metrics.whitespace;
                 let spaces = words.text.iter().filter(|c| c.is_whitespace()).count() as f32;
                 let spacing = ratio * words.whitespace;
                 let word_spacing = if spaces == 0.0 { 0.0 } else { spacing / spaces };
@@ -416,7 +459,7 @@ impl Painter {
         match format {
             Format::Justified => {
                 let (tail, head) = unformatted.split_last().unwrap();
-                justify(&mut self.layout, &lines, head);
+                justify(&mut self.layout, head);
                 left(&mut self.layout, from_ref(tail));
             }
             _ => (),
@@ -466,11 +509,12 @@ impl Painter {
 fn inline<'a>(
     builder: &'a mut ParagraphBuilder,
     styled: &'a [(usize, Style)],
-) -> (&'a str, Vec<(Range, Style, f32)>) {
+) -> (&'a str, Vec<char>, Vec<Inline>) {
     let mut paragraph = builder.build();
     paragraph.layout(f32::INFINITY);
-    let text = builder.get_text();
-    let mut inline: Vec<(Range, Style, f32)> = vec![];
+    let raw = builder.get_text();
+    let text: Vec<_> = raw.chars().collect();
+    let mut inline: Vec<Inline> = vec![];
     let mut start = 0;
     let mut push = |range: Range, style: usize| {
         let rect = paragraph.get_rects_for_range(
@@ -479,11 +523,20 @@ fn inline<'a>(
             RectWidthStyle::Tight,
         )[0]
         .rect;
-        inline.push((range, styled[style].1, rect.width()));
+        let is_whitespace = text[range.clone()]
+            .iter()
+            .find(|chr| chr.is_whitespace())
+            .is_some();
+        inline.push(Inline {
+            range,
+            is_whitespace,
+            style: styled[style].1,
+            width: rect.width(),
+        });
     };
     let mut style = 0;
-    let mut word = !text.chars().next().unwrap().is_whitespace();
-    for (i, chr) in text.chars().enumerate() {
+    let mut word = !text[0].is_whitespace();
+    for (i, chr) in text.iter().enumerate() {
         if i >= styled[style].0 {
             push(start..i, style);
             start = i;
@@ -503,6 +556,6 @@ fn inline<'a>(
             word = true;
         }
     }
-    push(start..text.chars().count(), style);
-    (text, inline)
+    push(start..text.len(), style);
+    (raw, text, inline)
 }
