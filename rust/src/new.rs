@@ -175,10 +175,11 @@ impl Layout {
         style: Style,
         width: f32,
         word_spacing: f32,
+        top_offset: f32,
     ) {
         let line = &mut self.lines[line];
         let rect = Rectangle {
-            top: line.top,
+            top: line.top + top_offset,
             left: line.left,
             width,
             height: self.line_height,
@@ -213,6 +214,7 @@ struct Inline {
     is_whitespace: bool,
     style: Style,
     width: f32,
+    top_offset: f32,
 }
 
 struct Writer<'a> {
@@ -351,7 +353,7 @@ impl Painter {
     }
 
     fn paint_region(&mut self, format: Format, height: f32) {
-        let (_, text, inline) = inline(&mut self.builder, &self.styled);
+        let (_, text, inline) = inline(&self.renderer, &mut self.builder, &self.styled);
         // HACK assume line height is the first inline
         let line_height = self.renderer.line_height(&inline[0].style);
         let mut layout = Layout {
@@ -405,7 +407,7 @@ impl Painter {
     }
 
     fn paint_drop_cap(&mut self) {
-        let (raw, _, inline) = inline(&mut self.builder, &self.styled);
+        let (raw, _, inline) = inline(&self.renderer, &mut self.builder, &self.styled);
         let Inline { style, width, .. } = inline[0];
         let width = width + self.dim.header_padding;
         let rect = self.layout.from_body(width, 2.0 * self.layout.line_height);
@@ -418,7 +420,7 @@ impl Painter {
     }
 
     fn paint_paragraph(&mut self, format: Format, line_format: LineFormat) {
-        let (_, text, inline) = inline(&mut self.builder, &self.styled);
+        let (_, text, inline) = inline(&self.renderer, &mut self.builder, &self.styled);
 
         let mut writer = Writer {
             text: &text[..],
@@ -443,6 +445,7 @@ impl Painter {
                     words.style,
                     width,
                     word_spacing,
+                    words.top_offset,
                 );
             }
         }
@@ -455,6 +458,7 @@ impl Painter {
                     words.style,
                     words.width,
                     0.0,
+                    words.top_offset,
                 );
             }
         }
@@ -515,6 +519,7 @@ struct Unformatted<'a> {
     text: &'a [char],
     style: Style,
     width: f32,
+    top_offset: f32,
     whitespace: f32,
     metrics: LineMetrics,
 }
@@ -532,41 +537,33 @@ fn get_unformatted<'a, 'b>(
     for words in lines.iter() {
         let metrics = words.get_metrics();
         let words = &inline[words.range.clone()];
-        let mut index = words[0].range.start;
-        let mut last = words[0].style;
-        // TODO: use split_last
+        let mut last = &words[0];
+        let mut index = last.range.start;
         for (i, inline) in words.iter().enumerate() {
             if inline.is_whitespace {
                 whitespace += inline.width;
             }
-            if inline.style != last {
-                unformatted.push(Unformatted {
-                    line,
-                    text: &text[index..inline.range.start],
-                    style: last.clone(),
-                    width: total,
-                    whitespace,
-                    metrics: metrics.clone(),
-                });
-                whitespace = 0.0;
-                total = 0.0;
-                last = inline.style;
-                index = inline.range.start;
-            }
+            let is_last = i == words.len() - 1;
+            let (end, width) = if is_last {
+                (inline.range.end, total + inline.width)
+            } else {
+                (inline.range.start, total)
+            };
             total += inline.width;
-            if i == words.len() - 1 {
+            if inline.style != last.style || is_last {
                 unformatted.push(Unformatted {
                     line,
-                    text: &text[index..inline.range.end],
-                    style: last.clone(),
-                    width: total,
+                    text: &text[index..end],
+                    style: last.style.clone(),
+                    width,
                     whitespace,
                     metrics: metrics.clone(),
+                    top_offset: last.top_offset,
                 });
                 whitespace = 0.0;
-                total = 0.0;
-                last = inline.style;
-                index = inline.range.end;
+                total -= width;
+                last = &inline;
+                index = end;
             }
         }
         line += 1;
@@ -575,6 +572,7 @@ fn get_unformatted<'a, 'b>(
 }
 
 fn inline<'a>(
+    renderer: &'a Renderer,
     builder: &'a mut ParagraphBuilder,
     styled: &'a [(usize, Style)],
 ) -> (&'a str, Vec<char>, Vec<Inline>) {
@@ -595,11 +593,14 @@ fn inline<'a>(
             .iter()
             .find(|chr| chr.is_whitespace())
             .is_some();
+        let style = styled[style].1;
+        let top_offset = renderer.top_offset(&style);
         inline.push(Inline {
             range,
             is_whitespace,
-            style: styled[style].1,
+            style,
             width: rect.width(),
+            top_offset,
         });
     };
     let mut style = 0;
