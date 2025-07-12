@@ -106,6 +106,7 @@ struct Line {
     top: f32,
     left: f32,
     width: f32,
+    locked: bool,
 }
 
 struct Layout {
@@ -148,6 +149,7 @@ impl Layout {
             top: self.body.top,
             left: self.body.left,
             width: self.body.width,
+            locked: false,
         });
         self.body.top += self.line_height;
     }
@@ -204,8 +206,15 @@ impl Line {
     }
 
     fn mutate(&mut self, left: f32, width: f32) -> &mut Self {
-        self.left += left;
-        self.width += width;
+        if !self.locked {
+            self.left += left;
+            self.width += width;
+        }
+        self
+    }
+
+    fn lock(&mut self) -> &mut Self {
+        self.locked = true;
         self
     }
 }
@@ -420,8 +429,8 @@ impl Painter {
         let Inline { style, width, .. } = inline[0];
         let width = width + self.dim.header_padding;
         let rect = self.layout.from_body(width, 2.0 * self.layout.line_height);
-        self.layout.get_line(0).mutate(width, -width);
-        self.layout.get_line(1).mutate(width, -width);
+        self.layout.get_line(0).mutate(width, -width).lock();
+        self.layout.get_line(1).mutate(width, -width).lock();
         self.layout.write(raw.to_string(), rect, style, 0.0);
         self.styled.drain(..);
         self.builder.reset();
