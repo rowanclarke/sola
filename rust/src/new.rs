@@ -152,20 +152,11 @@ impl Layout {
         self.body.top += self.line_height;
     }
 
-    fn ensure_line(&mut self, line: usize) {
+    fn get_line(&mut self, line: usize) -> &mut Line {
         for _ in self.lines.len()..=line {
             self.next_line();
         }
-    }
-
-    fn get_line_width(&mut self, line: usize) -> f32 {
-        self.ensure_line(line);
-        self.lines[line].width
-    }
-
-    fn mutate_line(&mut self, line: usize, left: f32, width: f32) {
-        self.lines[line].left += left;
-        self.lines[line].width += width;
+        &mut self.lines[line]
     }
 
     fn write_line(
@@ -207,6 +198,18 @@ impl Layout {
     }
 }
 
+impl Line {
+    fn get_width(&self) -> f32 {
+        self.width
+    }
+
+    fn mutate(&mut self, left: f32, width: f32) -> &mut Self {
+        self.left += left;
+        self.width += width;
+        self
+    }
+}
+
 #[derive(Debug)]
 struct Inline {
     // TODO: index &str instead of &[char]
@@ -232,14 +235,20 @@ impl<'a> Writer<'a> {
     fn write(&mut self) -> &mut Self {
         let (mut a, mut b) = (0, 0);
         let mut total = 0.0;
-        let mut available = self.layout.get_line_width(0);
+        let mut get_available = |left: f32, i: usize| {
+            self.layout
+                .get_line(i)
+                .mutate(left, -left - self.line_format.shrink)
+                .get_width()
+        };
+        let mut available = get_available(self.line_format.head, 0);
         for Inline { width, .. } in self.inline.iter() {
             if total + width > available {
                 self.lines
                     .push(Words::new(self.text, self.inline, a..b, available));
             }
             if total + width > available {
-                available = self.layout.get_line_width(self.lines.len());
+                available = get_available(self.line_format.tail, self.lines.len());
                 a = b;
                 total = 0.0;
             }
@@ -411,9 +420,8 @@ impl Painter {
         let Inline { style, width, .. } = inline[0];
         let width = width + self.dim.header_padding;
         let rect = self.layout.from_body(width, 2.0 * self.layout.line_height);
-        self.layout.ensure_line(1);
-        self.layout.mutate_line(0, width, -width);
-        self.layout.mutate_line(1, width, -width);
+        self.layout.get_line(0).mutate(width, -width);
+        self.layout.get_line(1).mutate(width, -width);
         self.layout.write(raw.to_string(), rect, style, 0.0);
         self.styled.drain(..);
         self.builder.reset();
