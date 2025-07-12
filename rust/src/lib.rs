@@ -55,7 +55,7 @@ pub struct Dimensions {
     width: f32,
     height: f32,
     header_height: f32,
-    header_padding: f32,
+    header_padding: f32, // TODO: rename to drop_cap_padding
 }
 
 #[derive(Debug, Clone)]

@@ -21,6 +21,7 @@ impl Paint for Book {
         for contents in self.contents.iter().take(12) {
             match contents {
                 C::Paragraph(paragraph) => paragraph.paint(painter),
+                C::Element(element) => element.paint(painter),
                 C::Chapter(n) => painter
                     .push_style(Style::Chapter)
                     .add_text(n.to_string())
@@ -64,18 +65,17 @@ impl Paint for Element {
     fn paint(&self, painter: &mut Painter) {
         use usfm::ElementContents as C;
         use usfm::ElementType::*;
-        painter.push_style(Style::Normal);
+        let header_height = painter.get_dimensions().header_height;
         for contents in &self.contents {
             match (&self.ty, contents) {
                 (Header, C::Line(s)) => painter
                     .push_style(Style::Header)
                     .add_text(s)
                     .pop_style()
-                    .done(),
+                    .paint_region(Format::Center, header_height),
                 _ => (),
             }
         }
-        painter.pop_style();
     }
 }
 
@@ -117,6 +117,7 @@ struct Layout {
     pages: Vec<Page>,
 }
 
+#[derive(Clone)]
 struct Region {
     top: f32,
     left: f32,
@@ -345,6 +346,64 @@ impl Painter {
         }
     }
 
+    fn get_dimensions(&self) -> &Dimensions {
+        &self.dim
+    }
+
+    fn paint_region(&mut self, format: Format, height: f32) {
+        let (_, text, inline) = inline(&mut self.builder, &self.styled);
+        // HACK assume line height is the first inline
+        let line_height = self.renderer.line_height(&inline[0].style);
+        let mut layout = Layout {
+            width: self.dim.width,
+            height,
+            line_height,
+            body: self.layout.body.clone(),
+            lines: VecDeque::new(),
+            pages: vec![],
+        };
+        let mut writer = Writer {
+            text: &text[..],
+            inline: inline.as_slice(),
+            line_format: LineFormat {
+                head: 0.0,
+                tail: 0.0,
+                shrink: 0.0,
+            },
+            layout: &mut layout,
+            lines: vec![],
+        };
+        writer.write().trim();
+        let unformatted = get_unformatted(&text, &inline, writer.get_lines());
+        self.layout
+            .request_height(height + 2.0 * self.layout.line_height);
+        self.layout.body.top += height;
+
+        match format {
+            Format::Center => {
+                let total_height = unformatted.len() as f32 * line_height;
+                let top_offset = (height - total_height) / 2.0;
+                for line in unformatted {
+                    let region = &layout.lines[line.line];
+                    let rect = Rectangle {
+                        top: region.top + top_offset,
+                        left: region.left + line.metrics.remaining / 2.0,
+                        width: line.width,
+                        height: line_height,
+                    };
+                    self.layout
+                        .write(line.text.iter().collect::<String>(), rect, line.style, 0.0);
+                }
+            }
+            Format::Left => todo!(),
+            _ => (),
+        }
+
+        self.styled.drain(..);
+        self.layout.drain_lines();
+        self.builder.reset();
+    }
+
     fn paint_drop_cap(&mut self) {
         let (raw, _, inline) = inline(&mut self.builder, &self.styled);
         let Inline { style, width, .. } = inline[0];
@@ -369,63 +428,7 @@ impl Painter {
             lines: vec![],
         };
         writer.write().trim();
-        #[derive(Debug, Clone)]
-        struct Unformatted<'a> {
-            line: usize,
-            text: &'a [char],
-            style: Style,
-            width: f32,
-            whitespace: f32,
-            metrics: LineMetrics,
-        }
-
-        let mut unformatted = vec![];
-        let mut line = 0;
-        let mut total = 0.0;
-        let mut whitespace = 0.0;
-        let mut last = self.styled[0].1;
-
-        for words in writer.get_lines().iter() {
-            let metrics = words.get_metrics();
-            let words = &inline[words.range.clone()];
-            let mut index = words[0].range.start;
-            // TODO: use split_last
-            for (i, inline) in words.iter().enumerate() {
-                if inline.is_whitespace {
-                    whitespace += inline.width;
-                }
-                if inline.style != last {
-                    unformatted.push(Unformatted {
-                        line,
-                        text: &text[index..inline.range.start],
-                        style: last.clone(),
-                        width: total,
-                        whitespace,
-                        metrics: metrics.clone(),
-                    });
-                    whitespace = 0.0;
-                    total = 0.0;
-                    last = inline.style;
-                    index = inline.range.start;
-                }
-                total += inline.width;
-                if i == words.len() - 1 {
-                    unformatted.push(Unformatted {
-                        line,
-                        text: &text[index..inline.range.end],
-                        style: last.clone(),
-                        width: total,
-                        whitespace,
-                        metrics: metrics.clone(),
-                    });
-                    whitespace = 0.0;
-                    total = 0.0;
-                    last = inline.style;
-                    index = inline.range.end;
-                }
-            }
-            line += 1;
-        }
+        let unformatted = get_unformatted(&text, &inline, writer.get_lines());
 
         fn justify(layout: &mut Layout, unformatted: &[Unformatted]) {
             for words in unformatted {
@@ -504,6 +507,71 @@ impl Painter {
     pub fn get_pages(&self) -> AlignedVec {
         rkyv::to_bytes::<Error>(&self.layout.pages).unwrap()
     }
+}
+
+#[derive(Debug, Clone)]
+struct Unformatted<'a> {
+    line: usize,
+    text: &'a [char],
+    style: Style,
+    width: f32,
+    whitespace: f32,
+    metrics: LineMetrics,
+}
+
+fn get_unformatted<'a, 'b>(
+    text: &'a [char],
+    inline: &'a [Inline],
+    lines: Vec<Words<'b>>,
+) -> Vec<Unformatted<'a>> {
+    let mut unformatted = vec![];
+    let mut line = 0;
+    let mut total = 0.0;
+    let mut whitespace = 0.0;
+
+    for words in lines.iter() {
+        let metrics = words.get_metrics();
+        let words = &inline[words.range.clone()];
+        let mut index = words[0].range.start;
+        let mut last = words[0].style;
+        // TODO: use split_last
+        for (i, inline) in words.iter().enumerate() {
+            if inline.is_whitespace {
+                whitespace += inline.width;
+            }
+            if inline.style != last {
+                unformatted.push(Unformatted {
+                    line,
+                    text: &text[index..inline.range.start],
+                    style: last.clone(),
+                    width: total,
+                    whitespace,
+                    metrics: metrics.clone(),
+                });
+                whitespace = 0.0;
+                total = 0.0;
+                last = inline.style;
+                index = inline.range.start;
+            }
+            total += inline.width;
+            if i == words.len() - 1 {
+                unformatted.push(Unformatted {
+                    line,
+                    text: &text[index..inline.range.end],
+                    style: last.clone(),
+                    width: total,
+                    whitespace,
+                    metrics: metrics.clone(),
+                });
+                whitespace = 0.0;
+                total = 0.0;
+                last = inline.style;
+                index = inline.range.end;
+            }
+        }
+        line += 1;
+    }
+    unformatted
 }
 
 fn inline<'a>(
