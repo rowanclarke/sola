@@ -1,14 +1,13 @@
-mod layout;
-mod new;
-mod words;
+mod painter;
 
-use layout::{ArchivedPage, Layout};
-use new::{Paint, Painter};
+// use layout::{ArchivedPage, Layout};
+// use new::{Paint, Painter};
+use painter::{ArchivedPage, Dimensions, Paint, Painter, Renderer, Style, Text, TextStyle};
 use rkyv::rancor::Error;
 use rkyv::vec::ArchivedVec;
 use rkyv::{Archive, Deserialize, Serialize};
 use skia_safe::FontMgr;
-use skia_safe::textlayout::{ParagraphBuilder, TypefaceFontProvider};
+use skia_safe::textlayout::TypefaceFontProvider;
 use std::collections::HashMap;
 use std::ffi::{c_char, c_void};
 use std::slice::from_raw_parts;
@@ -16,60 +15,9 @@ use std::str::from_utf8_unchecked;
 use std::{mem, slice};
 use usfm::parse;
 
-#[derive(Archive, Serialize, Deserialize, Debug, Hash, PartialEq, Eq, Clone, Copy)]
-#[repr(i32)]
-pub enum Style {
-    Verse = 0,
-    Normal = 1,
-    Header = 2,
-    Chapter = 3,
-}
-
-#[derive(Debug, Clone, Copy)]
-#[repr(C)]
-pub struct TextStyle {
-    font_family: *const c_char,
-    font_family_len: usize,
-    font_size: f32,
-    height: f32,
-    letter_spacing: f32,
-    word_spacing: f32,
-}
-
-#[derive(Debug)]
-#[repr(C)]
-pub struct Text(*const c_char, usize, Rectangle, TextStyle);
-
-#[derive(Archive, Serialize, Deserialize, Debug, Clone, Copy)]
-#[repr(C)]
-pub struct Rectangle {
-    top: f32,
-    left: f32,
-    width: f32,
-    height: f32,
-}
-
-#[derive(Debug, Clone)]
-#[repr(C)]
-pub struct Dimensions {
-    width: f32,
-    height: f32,
-    header_height: f32,
-    header_padding: f32, // TODO: rename to drop_cap_padding
-}
-
-#[derive(Debug, Clone)]
-struct Renderer {
-    font_provider: TypefaceFontProvider,
-    style_collection: HashMap<Style, TextStyle>,
-}
-
 #[unsafe(no_mangle)]
 pub extern "C" fn renderer() -> *mut c_void {
-    Box::into_raw(Box::new(Renderer {
-        font_provider: TypefaceFontProvider::new(),
-        style_collection: HashMap::new(),
-    })) as *mut c_void
+    Box::into_raw(Box::new(Renderer::new())) as *mut c_void
 }
 
 #[unsafe(no_mangle)]
@@ -87,24 +35,20 @@ pub extern "C" fn register_font_family(
         .expect("Invalid font");
     let family =
         unsafe { from_utf8_unchecked(slice::from_raw_parts(family as *const u8, family_len)) };
-    renderer.font_provider.register_typeface(typeface, family);
+    renderer.register_typeface(typeface, family);
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn register_style(renderer: *mut c_void, style: Style, text_style: *mut TextStyle) {
     let renderer = unsafe { &mut *(renderer as *mut Renderer) };
     let text_style = unsafe { &*text_style };
-    renderer.style_collection.insert(style, text_style.clone());
+    renderer.insert_style(style, text_style.clone());
     match style {
         Style::Normal => {
-            let height = renderer.line_height(&Style::Normal);
             let mut chapter_style = text_style.clone();
-            chapter_style.font_size = 2.0 * height;
-            chapter_style.height =
-                2.0 * renderer.line_height(&Style::Normal) / chapter_style.font_size;
-            renderer
-                .style_collection
-                .insert(Style::Chapter, chapter_style);
+            chapter_style.font_size *= 2.0 * chapter_style.height;
+            chapter_style.height = 1.0;
+            renderer.insert_style(Style::Chapter, chapter_style);
         }
         _ => (),
     }
