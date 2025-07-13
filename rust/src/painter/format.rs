@@ -1,5 +1,6 @@
 use super::{
     Style,
+    layout::Layout,
     renderer::Inline,
     writer::{LineMetrics, Words},
 };
@@ -66,4 +67,35 @@ pub fn get_unformatted<'a, 'b>(
         line += 1;
     }
     unformatted
+}
+
+pub fn justify(layout: &mut Layout, unformatted: &[Unformatted]) {
+    for words in unformatted {
+        let ratio = words.metrics.remaining / words.metrics.whitespace;
+        let spaces = words.text.iter().filter(|c| c.is_whitespace()).count() as f32;
+        let spacing = ratio * words.whitespace;
+        let word_spacing = if spaces == 0.0 { 0.0 } else { spacing / spaces };
+        let width = words.width + spacing;
+        layout.write_line(
+            words.line,
+            words.text.iter().collect(),
+            words.style,
+            width,
+            word_spacing,
+            words.top_offset,
+        );
+    }
+}
+
+pub fn left(layout: &mut Layout, unformatted: &[Unformatted]) {
+    for words in unformatted {
+        layout.write_line(
+            words.line,
+            words.text.iter().collect(),
+            words.style,
+            words.width,
+            0.0,
+            words.top_offset,
+        );
+    }
 }

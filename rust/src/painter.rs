@@ -6,9 +6,9 @@ mod writer;
 
 use std::{ffi::c_char, ops, slice::from_ref};
 
-use format::{Format, Unformatted, get_unformatted};
+use format::{Format, get_unformatted, justify, left};
+pub use layout::ArchivedPage;
 use layout::Layout;
-pub use layout::{ArchivedPage, Page};
 pub use paint::Paint;
 use renderer::{Inline, inline};
 pub use renderer::{Renderer, TextStyle};
@@ -77,10 +77,7 @@ impl Painter {
             Format::Left => todo!(),
             _ => (),
         }
-
-        self.styled.drain(..);
-        self.layout.drain_lines();
-        self.builder.reset();
+        self.clean();
     }
 
     fn paint_drop_cap(&mut self) {
@@ -104,46 +101,22 @@ impl Painter {
         writer.write().trim();
         let unformatted = get_unformatted(&text, &inline, writer.get_lines());
 
-        fn justify(layout: &mut Layout, unformatted: &[Unformatted]) {
-            for words in unformatted {
-                let ratio = words.metrics.remaining / words.metrics.whitespace;
-                let spaces = words.text.iter().filter(|c| c.is_whitespace()).count() as f32;
-                let spacing = ratio * words.whitespace;
-                let word_spacing = if spaces == 0.0 { 0.0 } else { spacing / spaces };
-                let width = words.width + spacing;
-                layout.write_line(
-                    words.line,
-                    words.text.iter().collect(),
-                    words.style,
-                    width,
-                    word_spacing,
-                    words.top_offset,
-                );
-            }
-        }
-
-        fn left(layout: &mut Layout, unformatted: &[Unformatted]) {
-            for words in unformatted {
-                layout.write_line(
-                    words.line,
-                    words.text.iter().collect(),
-                    words.style,
-                    words.width,
-                    0.0,
-                    words.top_offset,
-                );
-            }
-        }
-
         match format {
             Format::Justified => {
                 let (tail, head) = unformatted.split_last().unwrap();
                 justify(&mut self.layout, head);
                 left(&mut self.layout, from_ref(tail));
             }
+            Format::Left => {
+                left(&mut self.layout, &unformatted);
+            }
             _ => (),
         }
 
+        self.clean();
+    }
+
+    fn clean(&mut self) {
         self.styled.drain(..);
         self.layout.drain_lines();
         self.builder.reset();
