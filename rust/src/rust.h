@@ -34,7 +34,7 @@ typedef struct {
   float width;
   float height;
   float header_height;
-  float header_padding;
+  float drop_cap_padding;
 } Dimensions;
 
 void* renderer();

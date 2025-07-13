@@ -86,7 +86,7 @@ impl Painter {
     fn paint_drop_cap(&mut self) {
         let (raw, _, inline) = inline(&self.renderer, &mut self.builder, &self.styled);
         let Inline { style, width, .. } = inline[0];
-        let width = width + self.dim.header_padding;
+        let width = width + self.dim.drop_cap_padding;
         let rect = self
             .layout
             .from_body(width, 2.0 * self.layout.get_line_height());
@@ -213,7 +213,7 @@ pub struct Dimensions {
     width: f32,
     height: f32,
     header_height: f32,
-    header_padding: f32, // TODO: rename to drop_cap_padding
+    drop_cap_padding: f32,
 }
 
 pub type Range = ops::Range<usize>;

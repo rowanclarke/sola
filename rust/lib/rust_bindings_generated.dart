@@ -151,12 +151,12 @@ class RustBindings {
   void page(
     ffi.Pointer<ffi.Void> renderer,
     ffi.Pointer<ffi.Char> pages,
-    int pages_t,
+    int pages_len,
     int n,
     ffi.Pointer<ffi.Pointer<Text>> out,
     ffi.Pointer<ffi.Size> out_len,
   ) {
-    return _page(renderer, pages, pages_t, n, out, out_len);
+    return _page(renderer, pages, pages_len, n, out, out_len);
   }
 
   late final _pagePtr =
@@ -258,5 +258,5 @@ final class Dimensions extends ffi.Struct {
   external double header_height;
 
   @ffi.Float()
-  external double header_padding;
+  external double drop_cap_padding;
 }

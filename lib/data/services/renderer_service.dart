@@ -57,7 +57,7 @@ class RendererService {
       width,
       height,
       headerHeight: height / 5,
-      headerPadding: 20,
+      dropCapPadding: 20,
     );
     final rendered = rust.layout(renderer, usfm, dimensions);
     return rust.serializePages(rendered);

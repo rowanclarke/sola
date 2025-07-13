@@ -10,13 +10,13 @@ class Dimensions {
   final double width;
   final double height;
   final double headerHeight;
-  final double headerPadding;
+  final double dropCapPadding;
 
   Dimensions(
     this.width,
     this.height, {
     required this.headerHeight,
-    required this.headerPadding,
+    required this.dropCapPadding,
   });
 }
 
@@ -85,7 +85,7 @@ Pointer<Void> layout(Pointer<Void> map, String usfm, Dimensions dim) {
   cdim.ref.width = dim.width;
   cdim.ref.height = dim.height;
   cdim.ref.header_height = dim.headerHeight;
-  cdim.ref.header_padding = dim.headerPadding;
+  cdim.ref.drop_cap_padding = dim.dropCapPadding;
   return _bindings.layout(map, native.cast<Char>(), native.length, cdim);
 }
 
