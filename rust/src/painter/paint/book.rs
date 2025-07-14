@@ -7,7 +7,7 @@ use super::Paint;
 impl Paint for Book {
     fn paint(&self, painter: &mut Painter) {
         use usfm::BookContents as C;
-        for contents in self.contents.iter().take(16) {
+        for contents in self.contents.iter() {
             match contents {
                 C::Paragraph(paragraph) => paragraph.paint(painter),
                 C::Poetry(poetry) => poetry.paint(painter),

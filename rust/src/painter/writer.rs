@@ -7,6 +7,7 @@ pub struct Writer<'a> {
     inline: &'a [Inline],
     line_format: LineFormat,
     layout: &'a mut Layout, // TODO: next_line: impl FnMut()
+    words: Vec<Range>,      // index into inline
     lines: Vec<Words<'a>>,
 }
 
@@ -17,11 +18,24 @@ impl<'a> Writer<'a> {
         line_format: LineFormat,
         layout: &'a mut Layout,
     ) -> Self {
+        let (mut a, mut b) = (0, 0);
+        let mut words = Vec::new();
+        let mut is_whitespace = inline[a].is_whitespace;
+        for inline in inline {
+            if inline.is_whitespace != is_whitespace {
+                words.push(a..b);
+                is_whitespace = !is_whitespace;
+                a = b;
+            }
+            b += 1;
+        }
+        words.push(a..b);
         Self {
             text,
             inline,
             line_format,
             layout,
+            words,
             lines: vec![],
         }
     }
@@ -30,7 +44,7 @@ impl<'a> Writer<'a> {
     // TODO: do not worry about spaces before/after - write fn trim() instead
     // TODO: write get_metrics() for getting whitespace
     pub fn write(&mut self) -> &mut Self {
-        let (mut a, mut b) = (0, 0);
+        let (mut a, mut b) = (0, 0); // index self.words
         let mut total = 0.0;
         let mut get_available = |left: f32, i: usize| {
             self.layout
@@ -39,7 +53,12 @@ impl<'a> Writer<'a> {
                 .get_width()
         };
         let mut available = get_available(self.line_format.head, 0);
-        for Inline { width, .. } in self.inline.iter() {
+        for (n, width) in self.words.iter().map(|r| {
+            (
+                r.end - r.start,
+                r.clone().map(|i| self.inline[i].width).sum::<f32>(),
+            )
+        }) {
             if total + width > available {
                 self.lines
                     .push(Words::new(self.text, self.inline, a..b, available));
@@ -47,7 +66,7 @@ impl<'a> Writer<'a> {
                 a = b;
                 total = 0.0;
             }
-            b += 1;
+            b += n;
             total += width;
         }
         self.lines

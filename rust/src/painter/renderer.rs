@@ -1,5 +1,9 @@
 use std::{
-    collections::HashMap, ffi::c_char, ops, slice::from_raw_parts, str::from_utf8_unchecked,
+    collections::HashMap,
+    ffi::c_char,
+    ops::{self, Index},
+    slice::from_raw_parts,
+    str::from_utf8_unchecked,
 };
 
 use rkyv::{api::low::deserialize, rancor::Error};

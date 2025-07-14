@@ -89,7 +89,6 @@ pub fn justify(layout: &mut Layout, unformatted: &[Unformatted]) {
         let word_spacing = if spaces == 0.0 { 0.0 } else { spacing / spaces };
         let width = words.width + spacing;
         let text = words.text.iter().collect();
-        log!("{}: {:?}", text, words.style);
         layout.write_line(
             words.line,
             text,
