@@ -64,52 +64,50 @@ class _SearchOverlayScreenState extends State<SearchOverlayScreen>
                 ignoring: _controller.value == 0,
                 child: Opacity(
                   opacity: _opacityAnimation.value,
-                  child: Container(
-                    color: Colors.black.withOpacity(0.8),
-                    child: Column(
-                      children: [
-                        SizedBox(
-                          height: MediaQuery.of(context).padding.top + 20,
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: TextField(
-                            controller: _searchController,
-                            onChanged: context
-                                .read<SearchViewModel>()
-                                .updateQuery,
-                            style: TextStyle(color: Colors.white),
-                            decoration: InputDecoration(
-                              hintText: 'Search...',
-                              hintStyle: TextStyle(color: Colors.white54),
-                              filled: true,
-                              fillColor: Colors.black54,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide.none,
-                              ),
-                              prefixIcon: Icon(
-                                Icons.search,
-                                color: Colors.white,
-                              ),
-                            ),
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.translucent,
+                    onTap: _closeOverlay, // 👈 Dismiss on tap anywhere
+                    child: Container(
+                      color: Colors.black.withOpacity(0.4),
+                      child: Column(
+                        children: [
+                          SizedBox(
+                            height: MediaQuery.of(context).padding.top + 20,
                           ),
-                        ),
-                        SizedBox(height: 20),
-                        Expanded(
-                          child: Consumer<SearchViewModel>(
-                            builder: (_, vm, __) => ListView.builder(
-                              itemCount: vm.results.length,
-                              itemBuilder: (_, index) => ListTile(
-                                title: Text(
-                                  vm.results[index],
-                                  style: TextStyle(color: Colors.white),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: GestureDetector(
+                              onTap:
+                                  () {}, // 👈 prevent propagation when tapping input
+                              child: TextField(
+                                controller: _searchController,
+                                onChanged: context
+                                    .read<SearchViewModel>()
+                                    .updateQuery,
+                                decoration: InputDecoration(
+                                  hintText: 'Search...',
+                                  filled: true,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  prefixIcon: Icon(Icons.search),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
+                          SizedBox(height: 20),
+                          Expanded(
+                            child: Consumer<SearchViewModel>(
+                              builder: (_, vm, __) => ListView.builder(
+                                itemCount: vm.results.length,
+                                itemBuilder: (_, index) =>
+                                    ListTile(title: Text(vm.results[index])),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
