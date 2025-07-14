@@ -54,10 +54,15 @@ void serialize_pages(
   size_t* out_len
 );
 
+void* archived_pages(const char* pages, size_t pages_len);
+
+size_t num_pages(
+  void* archived_pages
+);
+
 void page(
   void* renderer,
-  const char* pages,
-  size_t pages_len,
+  void* archived_pages,
   size_t n,
   const Text** out,
   size_t* out_len

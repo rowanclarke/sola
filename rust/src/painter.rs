@@ -7,8 +7,8 @@ mod writer;
 use std::{ffi::c_char, ops, slice::from_ref};
 
 use format::{Format, get_unformatted, justify, left};
-pub use layout::ArchivedPage;
 use layout::Layout;
+pub use layout::{ArchivedPage, ArchivedPages};
 pub use paint::Paint;
 use renderer::{Inline, inline};
 pub use renderer::{Renderer, TextStyle};
@@ -54,7 +54,8 @@ impl Painter {
         );
         writer.write().trim();
         let unformatted = get_unformatted(&text, &inline, writer.get_lines());
-        self.layout
+        let page = self
+            .layout
             .request_height(height + 2.0 * self.layout.get_line_height());
         self.layout.mutate_body(height);
 
@@ -70,8 +71,13 @@ impl Painter {
                         width: line.width,
                         height: line_height,
                     };
-                    self.layout
-                        .write(line.text.iter().collect::<String>(), rect, line.style, 0.0);
+                    self.layout.write(
+                        page,
+                        line.text.iter().collect::<String>(),
+                        rect,
+                        line.style,
+                        0.0,
+                    );
                 }
             }
             Format::Left => todo!(),
@@ -84,12 +90,12 @@ impl Painter {
         let (raw, _, inline) = inline(&self.renderer, &mut self.builder, &self.styled);
         let Inline { style, width, .. } = inline[0];
         let width = width + self.dim.drop_cap_padding;
-        let rect = self
-            .layout
-            .from_body(width, 2.0 * self.layout.get_line_height());
+        let height = 2.0 * self.layout.get_line_height();
+        let page = self.layout.request_height(height);
+        let rect = self.layout.from_body(width, height);
         self.layout.get_line(0).mutate(width, -width).lock();
         self.layout.get_line(1).mutate(width, -width).lock();
-        self.layout.write(raw.to_string(), rect, style, 0.0);
+        self.layout.write(page, raw.to_string(), rect, style, 0.0);
         self.styled.drain(..);
         self.builder.reset();
     }

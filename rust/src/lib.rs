@@ -2,13 +2,9 @@ mod painter;
 
 // use layout::{ArchivedPage, Layout};
 // use new::{Paint, Painter};
-use painter::{ArchivedPage, Dimensions, Paint, Painter, Renderer, Style, Text, TextStyle};
+use painter::{ArchivedPages, Dimensions, Paint, Painter, Renderer, Style, Text, TextStyle};
 use rkyv::rancor::Error;
-use rkyv::vec::ArchivedVec;
-use rkyv::{Archive, Deserialize, Serialize};
 use skia_safe::FontMgr;
-use skia_safe::textlayout::TypefaceFontProvider;
-use std::collections::HashMap;
 use std::ffi::{c_char, c_void};
 use std::slice::from_raw_parts;
 use std::str::from_utf8_unchecked;
@@ -68,30 +64,36 @@ pub extern "C" fn layout(
 
     let mut painter = Painter::new(renderer, *dim.clone());
     usfm.paint(&mut painter);
-
-    // let mut layout = Box::new(Layout::new(renderer, *dim));
-    // renderer.str_test();
-    // layout.layout(&usfm.contents);
     Box::into_raw(Box::new(painter)) as *mut c_void
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn archived_pages(pages: *const u8, pages_len: usize) -> *const ArchivedPages {
+    let bytes = unsafe { from_raw_parts(pages, pages_len) };
+    rkyv::access::<ArchivedPages, Error>(bytes).unwrap()
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn page(
     renderer: *const c_void,
-    pages: *const u8,
-    pages_len: usize,
+    archived_pages: *const c_void,
     n: usize,
     out: *mut *const Text,
     out_len: *mut usize,
 ) {
     let renderer = unsafe { &*(renderer as *const Renderer) };
-    let bytes = unsafe { from_raw_parts(pages, pages_len) };
-    let archived_pages: &ArchivedVec<ArchivedPage> = rkyv::access::<_, Error>(bytes).unwrap();
+    let archived_pages = unsafe { &*(archived_pages as *const ArchivedPages) };
     let page = renderer.page(&archived_pages[n]).leak();
     unsafe {
         *out = page.as_ptr();
         *out_len = page.len();
     }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn num_pages(archived_pages: *const c_void) -> usize {
+    let archived_pages = unsafe { &*(archived_pages as *const ArchivedPages) };
+    archived_pages.len()
 }
 
 #[unsafe(no_mangle)]
@@ -119,7 +121,7 @@ unsafe extern "C" {
 #[macro_export]
 macro_rules! log {
     ($($arg:tt)*) => {{
-        use std::ffi::CString;
+        use std::ffi::{CString, c_char};
         let message = CString::new(format!($($arg)*)).unwrap();
 
         const ANDROID_LOG_INFO: i32 = 4;

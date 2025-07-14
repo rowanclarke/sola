@@ -148,15 +148,41 @@ class RustBindings {
         )
       >();
 
-  void page(
-    ffi.Pointer<ffi.Void> renderer,
+  ffi.Pointer<ffi.Void> archived_pages(
     ffi.Pointer<ffi.Char> pages,
     int pages_len,
+  ) {
+    return _archived_pages(pages, pages_len);
+  }
+
+  late final _archived_pagesPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<ffi.Void> Function(ffi.Pointer<ffi.Char>, ffi.Size)
+        >
+      >('archived_pages');
+  late final _archived_pages = _archived_pagesPtr
+      .asFunction<ffi.Pointer<ffi.Void> Function(ffi.Pointer<ffi.Char>, int)>();
+
+  int num_pages(ffi.Pointer<ffi.Void> archived_pages) {
+    return _num_pages(archived_pages);
+  }
+
+  late final _num_pagesPtr =
+      _lookup<ffi.NativeFunction<ffi.Size Function(ffi.Pointer<ffi.Void>)>>(
+        'num_pages',
+      );
+  late final _num_pages = _num_pagesPtr
+      .asFunction<int Function(ffi.Pointer<ffi.Void>)>();
+
+  void page(
+    ffi.Pointer<ffi.Void> renderer,
+    ffi.Pointer<ffi.Void> archived_pages,
     int n,
     ffi.Pointer<ffi.Pointer<Text>> out,
     ffi.Pointer<ffi.Size> out_len,
   ) {
-    return _page(renderer, pages, pages_len, n, out, out_len);
+    return _page(renderer, archived_pages, n, out, out_len);
   }
 
   late final _pagePtr =
@@ -164,8 +190,7 @@ class RustBindings {
         ffi.NativeFunction<
           ffi.Void Function(
             ffi.Pointer<ffi.Void>,
-            ffi.Pointer<ffi.Char>,
-            ffi.Size,
+            ffi.Pointer<ffi.Void>,
             ffi.Size,
             ffi.Pointer<ffi.Pointer<Text>>,
             ffi.Pointer<ffi.Size>,
@@ -176,8 +201,7 @@ class RustBindings {
       .asFunction<
         void Function(
           ffi.Pointer<ffi.Void>,
-          ffi.Pointer<ffi.Char>,
-          int,
+          ffi.Pointer<ffi.Void>,
           int,
           ffi.Pointer<ffi.Pointer<Text>>,
           ffi.Pointer<ffi.Size>,

@@ -99,51 +99,6 @@ impl Renderer {
         paragraph_text_style
     }
 
-    pub fn measure_str(&self, text: &str, style: &Style) -> f32 {
-        let text_style = &self.style_collection[style];
-        let mut font_collection = FontCollection::new();
-        let font_mgr: FontMgr = self.font_provider.clone().into();
-        font_collection.set_default_font_manager(Some(font_mgr), None);
-        let paragraph_style = ParagraphStyle::new();
-        let mut builder = ParagraphBuilder::new(&paragraph_style, font_collection);
-        let mut paragraph_text_style = ParagraphTextStyle::new();
-        paragraph_text_style
-            .set_font_size(text_style.font_size)
-            .set_font_families(&[text_style.font_family()])
-            .set_height(text_style.height)
-            .set_letter_spacing(text_style.letter_spacing)
-            .set_word_spacing(text_style.word_spacing);
-        builder.push_style(&paragraph_text_style);
-        builder.add_text(text);
-        let mut paragraph = builder.build();
-        paragraph.layout(f32::INFINITY);
-        paragraph.max_intrinsic_width()
-    }
-
-    pub fn str_test(&self) {
-        let mut font_collection = FontCollection::new();
-        let font_mgr: FontMgr = self.font_provider.clone().into();
-        font_collection.set_default_font_manager(Some(font_mgr), None);
-        let paragraph_style = ParagraphStyle::new();
-        let mut builder = ParagraphBuilder::new(&paragraph_style, font_collection);
-        let normal = self.get_style(&Style::Normal);
-        let verse = self.get_style(&Style::Verse);
-        builder
-            .push_style(&verse)
-            .add_text("1")
-            .push_style(&normal)
-            .add_text("In the beginning");
-        let mut paragraph = builder.build();
-        paragraph.layout(f32::INFINITY);
-        let bounds = paragraph.get_word_boundary(3);
-        let text_box = paragraph.get_rects_for_range(
-            bounds.clone(),
-            RectHeightStyle::Tight,
-            RectWidthStyle::Tight,
-        )[0];
-        log!("{:?} > {:?}", bounds, text_box);
-    }
-
     pub fn get_metrics(&self, style: &Style) -> FontMetrics {
         let text_style = &self.style_collection[style];
         let font_mgr: FontMgr = self.font_provider.clone().into();

@@ -63,12 +63,17 @@ class RendererService {
     return rust.serializePages(rendered);
   }
 
-  Uint8List? _rendered;
+  Pointer<Void>? _pages;
+  int? _numPages;
+
   set rendered(Uint8List rendered) {
-    _rendered = rendered;
+    _pages = rust.getArchivedPages(rendered);
+    _numPages = rust.getNumPages(_pages!);
   }
 
+  get numPages => _numPages;
+
   Future<List<rust.Text>> getPage(int n) async {
-    return rust.page(renderer, _rendered!, n);
+    return rust.getPage(renderer, _pages!, n);
   }
 }

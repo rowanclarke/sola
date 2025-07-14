@@ -1,6 +1,8 @@
 use std::collections::VecDeque;
 
-use rkyv::{Archive, Serialize};
+use rkyv::{Archive, Serialize, vec::ArchivedVec};
+
+use crate::log;
 
 use super::{Dimensions, Rectangle, Style};
 
@@ -9,6 +11,7 @@ pub struct Line {
     pub left: f32,
     pub width: f32,
     pub locked: bool,
+    page: usize,
 }
 
 pub struct Layout {
@@ -20,6 +23,7 @@ pub struct Layout {
     pages: Vec<Page>,
 }
 
+pub type ArchivedPages = ArchivedVec<ArchivedPage>;
 pub type ArchivedPage = <Page as Archive>::Archived;
 pub type Page = Vec<PartialText>;
 
@@ -87,19 +91,21 @@ impl Layout {
         }
     }
 
-    pub fn request_height(&mut self, height: f32) {
+    pub fn request_height(&mut self, height: f32) -> usize {
         if self.body.top + height > self.height {
             self.next_page();
         }
+        self.pages.len() - 1
     }
 
     pub fn next_line(&mut self) {
-        self.request_height(self.line_height);
+        let page = self.request_height(self.line_height);
         self.lines.push_back(Line {
             top: self.body.top,
             left: self.body.left,
             width: self.body.width,
             locked: false,
+            page,
         });
         self.body.top += self.line_height;
     }
@@ -125,6 +131,7 @@ impl Layout {
         top_offset: f32,
     ) {
         let line = &mut self.lines[line];
+        let page = line.page;
         let rect = Rectangle {
             top: line.top + top_offset,
             left: line.left,
@@ -132,12 +139,19 @@ impl Layout {
             height: self.line_height,
         };
         line.left += width;
-        self.write(text, rect, style, word_spacing);
+        self.write(page, text, rect, style, word_spacing);
     }
 
-    pub fn write(&mut self, text: String, rect: Rectangle, style: Style, word_spacing: f32) {
+    pub fn write(
+        &mut self,
+        page: usize,
+        text: String,
+        rect: Rectangle,
+        style: Style,
+        word_spacing: f32,
+    ) {
         let text = PartialText::new(text, rect, style, word_spacing);
-        self.pages.last_mut().unwrap().push(text);
+        self.pages[page].push(text);
     }
 
     pub fn from_body(&mut self, width: f32, height: f32) -> Rectangle {

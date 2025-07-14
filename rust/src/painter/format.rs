@@ -1,3 +1,5 @@
+use crate::log;
+
 use super::{
     Style,
     layout::Layout,
@@ -42,26 +44,36 @@ pub fn get_unformatted<'a, 'b>(
                 whitespace += inline.width;
             }
             let is_last = i == words.len() - 1;
-            let (end, width) = if is_last {
-                (inline.range.end, total + inline.width)
-            } else {
-                (inline.range.start, total)
-            };
-            total += inline.width;
-            if inline.style != last.style || is_last {
+            if inline.style != last.style {
                 unformatted.push(Unformatted {
                     line,
-                    text: &text[index..end],
+                    text: &text[index..inline.range.start],
                     style: last.style.clone(),
-                    width,
+                    width: total,
                     whitespace,
                     metrics: metrics.clone(),
                     top_offset: last.top_offset,
                 });
                 whitespace = 0.0;
-                total -= width;
+                total = 0.0;
                 last = &inline;
-                index = end;
+                index = inline.range.start;
+            }
+            total += inline.width;
+            if is_last {
+                unformatted.push(Unformatted {
+                    line,
+                    text: &text[index..inline.range.end],
+                    style: inline.style.clone(),
+                    width: total,
+                    whitespace,
+                    metrics: metrics.clone(),
+                    top_offset: inline.top_offset,
+                });
+                whitespace = 0.0;
+                total = 0.0;
+                last = &inline;
+                index = inline.range.end;
             }
         }
         line += 1;
@@ -76,9 +88,11 @@ pub fn justify(layout: &mut Layout, unformatted: &[Unformatted]) {
         let spacing = ratio * words.whitespace;
         let word_spacing = if spaces == 0.0 { 0.0 } else { spacing / spaces };
         let width = words.width + spacing;
+        let text = words.text.iter().collect();
+        log!("{}: {:?}", text, words.style);
         layout.write_line(
             words.line,
-            words.text.iter().collect(),
+            text,
             words.style,
             width,
             word_spacing,

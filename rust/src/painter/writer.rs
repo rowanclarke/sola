@@ -1,3 +1,5 @@
+use crate::log;
+
 use super::{Range, layout::Layout, renderer::Inline};
 
 pub struct Writer<'a> {
@@ -41,8 +43,6 @@ impl<'a> Writer<'a> {
             if total + width > available {
                 self.lines
                     .push(Words::new(self.text, self.inline, a..b, available));
-            }
-            if total + width > available {
                 available = get_available(self.line_format.tail, self.lines.len());
                 a = b;
                 total = 0.0;
