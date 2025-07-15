@@ -1,25 +1,31 @@
 import 'package:flutter/material.dart';
 
 class SearchViewModel extends ChangeNotifier {
-  final List<String> _allItems = List.generate(100, (i) => 'Item $i');
-  List<String> _results = [];
-  String _query = '';
+  final SearchController controller = SearchController();
+  double dragOffset = 0.0;
+  bool viewOpened = false;
 
-  List<String> get results => _results;
-  String get query => _query;
+  static const double startDescent = -50.0;
+  static const double triggerThreshold = 125.0;
+  static const double maxDescent = 150.0;
 
-  void updateQuery(String query) {
-    _query = query;
-    _results = _allItems
-        .where((item) => item.toLowerCase().contains(query.toLowerCase()))
-        .toList();
+  void handleDragUpdate(DragUpdateDetails details) {
+    dragOffset += details.delta.dy;
+    if (dragOffset < 0) dragOffset = 0;
     notifyListeners();
   }
 
-  void clear() {
-    _query = '';
-    _results = [];
+  void handleDragEnd(DragEndDetails details) {
+    if (dragOffset > triggerThreshold) {
+      controller.openView();
+      viewOpened = true;
+    }
+    dragOffset = 0.0;
+    notifyListeners();
+  }
+
+  void onItemSelected(String item) {
+    controller.closeView(item);
     notifyListeners();
   }
 }
-
