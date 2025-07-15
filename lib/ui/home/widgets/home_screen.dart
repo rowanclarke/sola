@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:sola/ui/search/view_model/search_view_model.dart';
 
 import '../../pagination/widgets/pagination_screen.dart';
 import '../../search/widgets/search_screen.dart';
@@ -11,15 +9,6 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final padding = MediaQuery.of(context).padding.top;
-    final vm = context.watch<SearchViewModel>();
-    return Scaffold(
-      body: SearchScreen(
-        child: PaginationScreen(
-          padding,
-          onVerticalUpdate: vm.handleDragUpdate,
-          onVerticalEnd: vm.handleDragEnd,
-        ),
-      ),
-    );
+    return Scaffold(body: SearchScreen(child: PaginationScreen(padding)));
   }
 }
