@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:sola/data/services/renderer_service.dart';
+
+import 'ui/home/view_model/home_view_model.dart';
+import 'ui/home/widgets/home_screen.dart';
+import 'ui/search/view_model/search_view_model.dart';
 import 'ui/pagination/view_model/pagination_view_model.dart';
 import 'data/services/bible_service.dart';
 import 'data/repositories/page_repository.dart';
-import 'ui/pagination/widgets/pagination_screen.dart';
+import 'data/services/renderer_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,11 +30,17 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final padding = MediaQuery.of(context).padding.top;
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(
           create: (_) => PaginationViewModel(repository: repository),
+        ),
+        ChangeNotifierProvider(create: (_) => SearchViewModel()),
+        Provider<HomeViewModel>(
+          create: (context) => HomeViewModel(
+            pagination: context.read<PaginationViewModel>(),
+            search: context.read<SearchViewModel>(),
+          ),
         ),
       ],
       child: MaterialApp(
@@ -44,7 +53,7 @@ class MyApp extends StatelessWidget {
             child: child!,
           );
         },
-        home: Scaffold(body: PaginationScreen(padding)),
+        home: Scaffold(body: HomeScreen()),
       ),
     );
   }

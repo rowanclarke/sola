@@ -10,6 +10,6 @@ class SearchListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final vm = context.read<SearchViewModel>();
 
-    return ListTile(title: Text(item), onTap: () => vm.onItemSelected(item));
+    return ListTile(title: Text(item), onTap: () => vm.handleItemTap(item));
   }
 }

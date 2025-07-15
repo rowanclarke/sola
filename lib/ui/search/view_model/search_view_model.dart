@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 class SearchViewModel extends ChangeNotifier {
   final SearchController controller = SearchController();
+  Function(String item)? onItemSelected;
+
   double dragOffset = 0.0;
   bool viewOpened = false;
 
@@ -24,8 +26,8 @@ class SearchViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void onItemSelected(String item) {
-    controller.closeView(item);
-    notifyListeners();
+  void handleItemTap(String item) {
+    onItemSelected?.call(item);
+    controller.closeView(null);
   }
 }

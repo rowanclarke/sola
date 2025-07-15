@@ -1,0 +1,16 @@
+import '../../pagination/view_model/pagination_view_model.dart';
+import '../../search/view_model/search_view_model.dart';
+
+class HomeViewModel {
+  final PaginationViewModel pagination;
+  final SearchViewModel search;
+
+  HomeViewModel({required this.pagination, required this.search}) {
+    search.onItemSelected = handleItemSelected;
+  }
+
+  void handleItemSelected(String item) {
+    final page = int.tryParse(item.replaceAll('item ', '')) ?? 0;
+    pagination.setPage(page);
+  }
+}
