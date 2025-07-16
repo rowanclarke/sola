@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:sola/ui/search/widgets/search_anchor.dart';
 import '../view_model/search_view_model.dart';
 import 'search_list_tile.dart';
 
@@ -70,34 +71,10 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
               ),
             ),
-            SearchAnchor(
+            AsyncSearchAnchor<String>(
               searchController: vm.controller,
-              builder: (context, controller) => const SizedBox.shrink(),
-              suggestionsBuilder: (context, controller) {
-                return [
-                  FutureBuilder(
-                    future: vm.getResult(controller.text),
-                    builder:
-                        (BuildContext context, AsyncSnapshot<String> snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.done) {
-                            final list = snapshot.data;
-                            if (list != null) {
-                              return SearchListTile(item: list);
-                            }
-                          }
-                          return const LinearProgressIndicator();
-                        },
-                  ),
-                ];
-
-                // final text = controller.text;
-                // vm.
-                // return List.generate(5, (i) {
-                //   final item = 'item $i';
-                //   return SearchListTile(item: item);
-                // });
-              },
+              searchFunction: (query) async => [await vm.getResult(query)],
+              builder: (result) => SearchListTile(item: result),
             ),
           ],
         ),
