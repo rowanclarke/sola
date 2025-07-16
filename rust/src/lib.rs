@@ -4,9 +4,9 @@ mod words;
 use layout::{ArchivedPage, Dimensions, Layout, Text};
 use rkyv::rancor::Error;
 use rkyv::vec::ArchivedVec;
-use rkyv::{Archive, Deserialize, Serialize};
-use skia_safe::FontMgr;
+use rkyv::{Archive, Deserialize, Serialize, result};
 use skia_safe::textlayout::TypefaceFontProvider;
+use skia_safe::{EncodedText, FontMgr};
 use std::collections::HashMap;
 use std::ffi::{c_char, c_void};
 use std::slice::from_raw_parts;
@@ -130,6 +130,150 @@ pub extern "C" fn serialize_pages(layout: *const c_void, out: *mut *const u8, ou
         *out_len = pages.len()
     }
     mem::forget(pages);
+}
+
+use ndarray::{Array2, ArrayD, Axis, Ix2};
+use ndarray_npy::ReadNpyExt;
+use std::fs::File;
+use std::io::Cursor;
+use std::io::{BufRead, BufReader};
+use tokenizers::Tokenizer;
+use tract_onnx::prelude::*;
+
+fn load_embeddings(npy_bytes: &[u8]) -> Array2<f32> {
+    let reader = Cursor::new(npy_bytes);
+    let array = Array2::<f32>::read_npy(reader).unwrap();
+    tract_ndarray::Array::into_tensor(array)
+        .to_array_view::<f32>()
+        .unwrap()
+        .into_dimensionality::<Ix2>()
+        .unwrap()
+        .to_owned()
+}
+
+fn mean_pooling(last_hidden: &Tensor, attention_mask: &Tensor) -> Tensor {
+    let last_hidden: ArrayD<f32> = last_hidden.to_array_view::<f32>().unwrap().to_owned();
+    let mask: ArrayD<f32> = attention_mask
+        .to_array_view::<i64>()
+        .unwrap()
+        .to_owned()
+        .mapv(|v| v as f32);
+
+    let mask = mask.insert_axis(Axis(2)); // [1, seq_len, 1]
+    let expanded_mask = mask.broadcast(last_hidden.raw_dim()).unwrap();
+
+    let masked = &last_hidden * &expanded_mask;
+    let sum_embeddings = masked.sum_axis(Axis(1));
+    let sum_mask = expanded_mask.sum_axis(Axis(1)).mapv(|x| x.max(1e-9));
+
+    let pooled = &sum_embeddings / &sum_mask;
+    tract_ndarray::Array::into_tensor(pooled)
+}
+
+struct Model<'a> {
+    embeddings: Array2<f32>,
+    lines: Vec<&'a str>,
+    model: RunnableModel<TypedFact, Box<dyn TypedOp>, TypedModel>,
+    tokenizer: Tokenizer,
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn load_model(
+    embeddings: *const u8,
+    embeddings_len: usize,
+    lines: *const u8,
+    lines_len: usize,
+    model: *const u8,
+    model_len: usize,
+    tokenizer: *const u8,
+    tokenizer_len: usize,
+) -> *mut c_void {
+    let embeddings = unsafe { from_raw_parts(embeddings, embeddings_len) };
+    let lines = unsafe { from_utf8_unchecked(from_raw_parts(lines, lines_len)) };
+    let model = unsafe { from_raw_parts(model, model_len) };
+    let tokenizer = unsafe { from_raw_parts(tokenizer, tokenizer_len) };
+
+    let embeddings = load_embeddings(embeddings);
+    let lines = lines.lines().collect::<Vec<_>>();
+    let model = tract_onnx::onnx()
+        .model_for_read(&mut Cursor::new(model))
+        .unwrap()
+        .into_optimized()
+        .unwrap()
+        .into_runnable()
+        .unwrap();
+    let tokenizer = Tokenizer::from_bytes(tokenizer).unwrap();
+
+    Box::into_raw(Box::new(Model {
+        embeddings,
+        lines,
+        model,
+        tokenizer,
+    })) as *mut c_void
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn get_result(
+    model: *const c_void,
+    query: *const u8,
+    len: usize,
+    out: *mut *const u8,
+    out_len: *mut usize,
+) {
+    let Model {
+        embeddings,
+        lines,
+        model,
+        tokenizer,
+    } = unsafe { &*(model as *const Model) };
+
+    let input = unsafe { from_utf8_unchecked(from_raw_parts(query, len)).trim() };
+    let encoding = tokenizer.encode(input, true).unwrap();
+    let ids: Vec<i64> = encoding.get_ids().iter().map(|&id| id as i64).collect();
+    let mask: Vec<i64> = encoding
+        .get_attention_mask()
+        .iter()
+        .map(|&m| m as i64)
+        .collect();
+
+    let input_ids = Array2::from_shape_vec((1, ids.len()), ids).unwrap();
+    let attention_mask = Array2::from_shape_vec((1, mask.len()), mask).unwrap();
+
+    let input_ids_tensor = tract_ndarray::Array::into_tensor(input_ids);
+    let attention_mask_tensor = tract_ndarray::Array::into_tensor(attention_mask);
+
+    let outputs = model
+        .run(
+            tvec![input_ids_tensor.clone(), attention_mask_tensor.clone()]
+                .into_iter()
+                .map(TValue::from)
+                .collect(),
+        )
+        .unwrap();
+    let last_hidden = outputs[0].clone();
+    let pooled = mean_pooling(&last_hidden, &attention_mask_tensor);
+    let pooled_array: ArrayD<f32> = pooled.to_array_view::<f32>().unwrap().to_owned();
+    let norm = pooled_array.mapv(|x| x.powi(2)).sum().sqrt().max(1e-9);
+    let normed = &pooled_array / norm;
+
+    let dot = embeddings.dot(
+        &normed
+            .clone()
+            .t()
+            .into_dimensionality::<tract_ndarray::Ix2>()
+            .unwrap(),
+    );
+
+    let (idx, _) = dot
+        .indexed_iter()
+        .max_by(|a, b| a.1.partial_cmp(b.1).unwrap())
+        .unwrap();
+    let result = lines[idx.0];
+
+    unsafe {
+        *out = result.as_ptr();
+        *out_len = result.len();
+    }
 }
 
 #[cfg(target_os = "android")]

@@ -116,6 +116,58 @@ List<Text> page(Pointer<Void> renderer, Uint8List pages, int n) {
   });
 }
 
+Pointer<Void> loadModel(
+  Uint8List embeddings,
+  String lines,
+  Uint8List model,
+  Uint8List tokenizer,
+) {
+  final bEmbeddings = Bytes(embeddings);
+  final bLines = lines.toNativeUtf8();
+  final bModel = Bytes(model);
+  final bTokenizer = Bytes(tokenizer);
+  return _bindings.load_model(
+    bEmbeddings.bytes,
+    bEmbeddings.length,
+    bLines.cast<Char>(),
+    bLines.length,
+    bModel.bytes,
+    bModel.length,
+    bTokenizer.bytes,
+    bTokenizer.length,
+  );
+}
+
+String getResult(Pointer<Void> model, String query) {
+  final native = query.toNativeUtf8();
+  final out = malloc<Pointer<Utf8>>();
+  final outLen = malloc<Size>();
+
+  _bindings.get_result(
+    model,
+    native.cast<Char>(),
+    native.length,
+    out.cast<Pointer<Char>>(),
+    outLen,
+  );
+
+  return out.value.toDartString(length: outLen.value);
+}
+
+class Bytes {
+  late Pointer<Uint8> _bytes;
+  late int length;
+
+  Bytes(Uint8List list) {
+    length = list.length;
+    _bytes = malloc<Uint8>(length);
+    final bytePtr = _bytes.asTypedList(length);
+    bytePtr.setAll(0, list);
+  }
+
+  get bytes => _bytes.cast<Char>();
+}
+
 const String _libName = 'rust';
 
 final DynamicLibrary _dylib = () {

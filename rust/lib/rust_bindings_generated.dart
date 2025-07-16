@@ -151,12 +151,12 @@ class RustBindings {
   void page(
     ffi.Pointer<ffi.Void> renderer,
     ffi.Pointer<ffi.Char> pages,
-    int pages_t,
+    int pages_len,
     int n,
     ffi.Pointer<ffi.Pointer<Text>> out,
     ffi.Pointer<ffi.Size> out_len,
   ) {
-    return _page(renderer, pages, pages_t, n, out, out_len);
+    return _page(renderer, pages, pages_len, n, out, out_len);
   }
 
   late final _pagePtr =
@@ -180,6 +180,90 @@ class RustBindings {
           int,
           int,
           ffi.Pointer<ffi.Pointer<Text>>,
+          ffi.Pointer<ffi.Size>,
+        )
+      >();
+
+  ffi.Pointer<ffi.Void> load_model(
+    ffi.Pointer<ffi.Char> embeddings,
+    int embeddings_len,
+    ffi.Pointer<ffi.Char> lines,
+    int lines_len,
+    ffi.Pointer<ffi.Char> model,
+    int model_len,
+    ffi.Pointer<ffi.Char> tokenizer,
+    int tokenizer_len,
+  ) {
+    return _load_model(
+      embeddings,
+      embeddings_len,
+      lines,
+      lines_len,
+      model,
+      model_len,
+      tokenizer,
+      tokenizer_len,
+    );
+  }
+
+  late final _load_modelPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<ffi.Void> Function(
+            ffi.Pointer<ffi.Char>,
+            ffi.Size,
+            ffi.Pointer<ffi.Char>,
+            ffi.Size,
+            ffi.Pointer<ffi.Char>,
+            ffi.Size,
+            ffi.Pointer<ffi.Char>,
+            ffi.Size,
+          )
+        >
+      >('load_model');
+  late final _load_model = _load_modelPtr
+      .asFunction<
+        ffi.Pointer<ffi.Void> Function(
+          ffi.Pointer<ffi.Char>,
+          int,
+          ffi.Pointer<ffi.Char>,
+          int,
+          ffi.Pointer<ffi.Char>,
+          int,
+          ffi.Pointer<ffi.Char>,
+          int,
+        )
+      >();
+
+  void get_result(
+    ffi.Pointer<ffi.Void> model,
+    ffi.Pointer<ffi.Char> query,
+    int query_len,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> out,
+    ffi.Pointer<ffi.Size> out_len,
+  ) {
+    return _get_result(model, query, query_len, out, out_len);
+  }
+
+  late final _get_resultPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(
+            ffi.Pointer<ffi.Void>,
+            ffi.Pointer<ffi.Char>,
+            ffi.Size,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+            ffi.Pointer<ffi.Size>,
+          )
+        >
+      >('get_result');
+  late final _get_result = _get_resultPtr
+      .asFunction<
+        void Function(
+          ffi.Pointer<ffi.Void>,
+          ffi.Pointer<ffi.Char>,
+          int,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
           ffi.Pointer<ffi.Size>,
         )
       >();

@@ -11,3 +11,8 @@ itertools = "0.14.0"
 usfm = { path = "../../usfm" }
 skia-safe = { version = "0.86.1", features = ["textlayout"] }
 rkyv = "0.8.10"
+ndarray = "0.16.1"
+ndarray-npy = "0.9.1"
+tokenizers = "0.21.2"
+tract-onnx = "0.21.13"
+
