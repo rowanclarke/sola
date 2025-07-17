@@ -1,51 +1,17 @@
-mod layout;
-mod words;
+mod painter;
 
-use layout::{ArchivedPage, Dimensions, Layout, Text};
+use painter::{ArchivedPages, Dimensions, Paint, Painter, Renderer, Style, Text, TextStyle};
 use rkyv::rancor::Error;
-use rkyv::vec::ArchivedVec;
-use rkyv::{Archive, Deserialize, Serialize, result};
-use skia_safe::textlayout::TypefaceFontProvider;
-use skia_safe::{EncodedText, FontMgr};
-use std::collections::HashMap;
+use skia_safe::FontMgr;
 use std::ffi::{c_char, c_void};
 use std::slice::from_raw_parts;
 use std::str::from_utf8_unchecked;
 use std::{mem, slice};
 use usfm::parse;
 
-#[derive(Archive, Serialize, Deserialize, Debug, Hash, PartialEq, Eq, Clone, Copy)]
-#[repr(i32)]
-pub enum Style {
-    Verse = 0,
-    Normal = 1,
-    Header = 2,
-    Chapter = 3,
-}
-
-#[derive(Debug, Clone, Copy)]
-#[repr(C)]
-pub struct TextStyle {
-    font_family: *const c_char,
-    font_family_len: usize,
-    font_size: f32,
-    height: f32,
-    letter_spacing: f32,
-    word_spacing: f32,
-}
-
-#[derive(Debug)]
-struct Renderer {
-    font_provider: TypefaceFontProvider,
-    style_collection: HashMap<Style, TextStyle>,
-}
-
 #[unsafe(no_mangle)]
 pub extern "C" fn renderer() -> *mut c_void {
-    Box::into_raw(Box::new(Renderer {
-        font_provider: TypefaceFontProvider::new(),
-        style_collection: HashMap::new(),
-    })) as *mut c_void
+    Box::into_raw(Box::new(Renderer::new())) as *mut c_void
 }
 
 #[unsafe(no_mangle)]
@@ -63,24 +29,20 @@ pub extern "C" fn register_font_family(
         .expect("Invalid font");
     let family =
         unsafe { from_utf8_unchecked(slice::from_raw_parts(family as *const u8, family_len)) };
-    renderer.font_provider.register_typeface(typeface, family);
+    renderer.register_typeface(typeface, family);
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn register_style(renderer: *mut c_void, style: Style, text_style: *mut TextStyle) {
     let renderer = unsafe { &mut *(renderer as *mut Renderer) };
     let text_style = unsafe { &*text_style };
-    renderer.style_collection.insert(style, text_style.clone());
+    renderer.insert_style(style, text_style.clone());
     match style {
         Style::Normal => {
-            let height = renderer.line_height(&Style::Normal);
             let mut chapter_style = text_style.clone();
-            chapter_style.font_size = 2.0 * height;
-            chapter_style.height =
-                2.0 * renderer.line_height(&Style::Normal) / chapter_style.font_size;
-            renderer
-                .style_collection
-                .insert(Style::Chapter, chapter_style);
+            chapter_style.font_size *= 2.0 * chapter_style.height;
+            chapter_style.height = 1.0;
+            renderer.insert_style(Style::Chapter, chapter_style);
         }
         _ => (),
     }
@@ -97,23 +59,28 @@ pub extern "C" fn layout(
     let usfm = unsafe { from_utf8_unchecked(from_raw_parts(usfm, len)) };
     let dim = unsafe { Box::from_raw(dim) };
     let usfm = parse(&usfm);
-    let mut layout = Box::new(Layout::new(renderer, *dim));
-    layout.layout(&usfm.contents);
-    Box::into_raw(layout) as *mut c_void
+
+    let mut painter = Painter::new(renderer, *dim.clone());
+    usfm.paint(&mut painter);
+    Box::into_raw(Box::new(painter)) as *mut c_void
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn archived_pages(pages: *const u8, pages_len: usize) -> *const ArchivedPages {
+    let bytes = unsafe { from_raw_parts(pages, pages_len) };
+    rkyv::access::<ArchivedPages, Error>(bytes).unwrap()
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn page(
     renderer: *const c_void,
-    pages: *const u8,
-    pages_len: usize,
+    archived_pages: *const c_void,
     n: usize,
     out: *mut *const Text,
     out_len: *mut usize,
 ) {
     let renderer = unsafe { &*(renderer as *const Renderer) };
-    let bytes = unsafe { from_raw_parts(pages, pages_len) };
-    let archived_pages: &ArchivedVec<ArchivedPage> = rkyv::access::<_, Error>(bytes).unwrap();
+    let archived_pages = unsafe { &*(archived_pages as *const ArchivedPages) };
     let page = renderer.page(&archived_pages[n]).leak();
     unsafe {
         *out = page.as_ptr();
@@ -122,9 +89,19 @@ pub extern "C" fn page(
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn serialize_pages(layout: *const c_void, out: *mut *const u8, out_len: *mut usize) {
-    let layout = unsafe { &*(layout as *const Layout) };
-    let pages = layout.serialised_pages();
+pub extern "C" fn num_pages(archived_pages: *const c_void) -> usize {
+    let archived_pages = unsafe { &*(archived_pages as *const ArchivedPages) };
+    archived_pages.len()
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn serialize_pages(
+    painter: *const c_void,
+    out: *mut *const u8,
+    out_len: *mut usize,
+) {
+    let painter = unsafe { &*(painter as *const Painter) };
+    let pages = painter.get_pages();
     unsafe {
         *out = pages.as_ptr();
         *out_len = pages.len()
@@ -134,9 +111,7 @@ pub extern "C" fn serialize_pages(layout: *const c_void, out: *mut *const u8, ou
 
 use ndarray::{Array2, ArrayD, Axis, Ix2};
 use ndarray_npy::ReadNpyExt;
-use std::fs::File;
 use std::io::Cursor;
-use std::io::{BufRead, BufReader};
 use tokenizers::Tokenizer;
 use tract_onnx::prelude::*;
 
@@ -286,7 +261,7 @@ unsafe extern "C" {
 #[macro_export]
 macro_rules! log {
     ($($arg:tt)*) => {{
-        use std::ffi::CString;
+        use std::ffi::{CString, c_char};
         let message = CString::new(format!($($arg)*)).unwrap();
 
         const ANDROID_LOG_INFO: i32 = 4;

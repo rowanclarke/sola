@@ -10,13 +10,13 @@ class Dimensions {
   final double width;
   final double height;
   final double headerHeight;
-  final double headerPadding;
+  final double dropCapPadding;
 
   Dimensions(
     this.width,
     this.height, {
     required this.headerHeight,
-    required this.headerPadding,
+    required this.dropCapPadding,
   });
 }
 
@@ -85,7 +85,7 @@ Pointer<Void> layout(Pointer<Void> map, String usfm, Dimensions dim) {
   cdim.ref.width = dim.width;
   cdim.ref.height = dim.height;
   cdim.ref.header_height = dim.headerHeight;
-  cdim.ref.header_padding = dim.headerPadding;
+  cdim.ref.drop_cap_padding = dim.dropCapPadding;
   return _bindings.layout(map, native.cast<Char>(), native.length, cdim);
 }
 
@@ -97,14 +97,22 @@ Uint8List serializePages(Pointer<Void> layout) {
   return out.value.asTypedList(outLen.value);
 }
 
-List<Text> page(Pointer<Void> renderer, Uint8List pages, int n) {
+Pointer<Void> getArchivedPages(Uint8List pages) {
   final ptr = malloc<Uint8>(pages.length);
   final bytePtr = ptr.asTypedList(pages.length);
   bytePtr.setAll(0, pages);
+  return _bindings.archived_pages(ptr.cast<Char>(), pages.length);
+}
+
+int getNumPages(Pointer<Void> pages) {
+  return _bindings.num_pages(pages);
+}
+
+List<Text> getPage(Pointer<Void> renderer, Pointer<Void> pages, int n) {
   final out = malloc<Pointer<bind.Text>>();
   final outLen = malloc<Size>();
 
-  _bindings.page(renderer, ptr.cast<Char>(), pages.length, n, out, outLen);
+  _bindings.page(renderer, pages, n, out, outLen);
 
   return List.generate(outLen.value, (i) {
     final text = (out.value + i).ref;
