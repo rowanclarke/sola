@@ -1,6 +1,7 @@
 import 'package:sola/data/repositories/renderer_repository.dart';
 import 'package:sola/data/services/file_service.dart';
 import 'package:sola/data/services/renderer_service.dart';
+import 'package:sola/domain/models/index_model.dart';
 
 import '../services/search_service.dart';
 
@@ -24,7 +25,7 @@ class SearchRepository {
     searchService.loadModel(indices, embeddings, verses, model, tokenizer);
   }
 
-  Future<String> getResult(String s) {
+  Future<IndexModel> getResult(String s) {
     return searchService.getResult(s);
   }
 }

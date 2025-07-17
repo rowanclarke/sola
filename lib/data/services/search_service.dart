@@ -4,6 +4,8 @@ import 'package:rust/rust.dart' as rust;
 
 import 'dart:ffi';
 
+import '../../domain/models/index_model.dart';
+
 class SearchService {
   late Pointer<Void> model;
   late Pointer<Void> indices;
@@ -19,10 +21,15 @@ class SearchService {
     this.model = rust.loadModel(embeddings, verses, model, tokenizer);
   }
 
-  Future<String> getResult(String s) async {
-    final index = rust.getResult(model, s);
-    final page = rust.getIndex(indices, index);
-    return page.toString();
+  Future<IndexModel> getResult(String s) async {
+    final result = rust.getResult(model, s);
+    final index = rust.getIndex(indices, result);
+    return IndexModel(
+      page: index.page,
+      book: index.book,
+      chapter: index.chapter,
+      verse: index.verse,
+    );
   }
 
   Uint8List getVerses(Pointer<Void> painter) {

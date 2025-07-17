@@ -79,9 +79,14 @@ void* archived_indices(
   size_t indices_len
 );
 
-size_t get_index(
+void get_index(
   void* archived_indices,
-  void* index
+  void* index,
+  size_t* out_page,
+  const char** out_book,
+  size_t* out_book_len,
+  unsigned short* out_chapter,
+  unsigned short* out_verse
 );
 
 void serialize_verses(
@@ -89,3 +94,6 @@ void serialize_verses(
   const char** out,
   size_t* out_len
 );
+
+
+

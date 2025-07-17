@@ -30,7 +30,7 @@ class PaginationScreen extends StatelessWidget {
             }
 
             return PageView.builder(
-              controller: PageController(),
+              controller: vm.controller,
               hitTestBehavior: HitTestBehavior.translucent,
               itemCount: vm.pages.length,
               onPageChanged: (index) {

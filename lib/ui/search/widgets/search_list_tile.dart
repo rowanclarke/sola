@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:sola/domain/models/index_model.dart';
 import '../view_model/search_view_model.dart';
 
 class SearchListTile extends StatelessWidget {
-  final String item;
-  const SearchListTile({required this.item, super.key});
+  final IndexModel index;
+  const SearchListTile({required this.index, super.key});
 
   @override
   Widget build(BuildContext context) {
     final vm = context.read<SearchViewModel>();
 
-    return ListTile(title: Text(item), onTap: () => vm.handleItemTap(item));
+    return ListTile(
+      title: Text("${index.book} ${index.chapter}:${index.verse}"),
+      onTap: () => vm.handleItemTap(index.page),
+    );
   }
 }

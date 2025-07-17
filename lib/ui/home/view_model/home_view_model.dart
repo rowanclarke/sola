@@ -14,8 +14,7 @@ class HomeViewModel {
     search.loadModel();
   }
 
-  void handleItemSelected(String item) {
-    final page = int.tryParse(item.replaceAll('item ', '')) ?? 0;
+  void handleItemSelected(int page) {
     pagination.setPage(page);
   }
 }

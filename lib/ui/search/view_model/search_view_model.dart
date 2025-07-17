@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:sola/data/repositories/search_repository.dart';
+import 'package:sola/domain/models/index_model.dart';
 
 class SearchViewModel extends ChangeNotifier {
   final SearchController controller = SearchController();
   final SearchRepository repository;
   SearchViewModel(this.repository);
 
-  Function(String item)? onItemSelected;
+  Function(int)? onItemSelected;
 
   double dragOffset = 0.0;
   bool viewOpened = false;
@@ -30,8 +31,8 @@ class SearchViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void handleItemTap(String item) {
-    onItemSelected?.call(item);
+  void handleItemTap(int page) {
+    onItemSelected?.call(page);
     controller.closeView(null);
   }
 
@@ -39,7 +40,7 @@ class SearchViewModel extends ChangeNotifier {
     await repository.loadModel();
   }
 
-  Future<String> getResult(String s) async {
+  Future<IndexModel> getResult(String s) async {
     return await repository.getResult(s);
   }
 }

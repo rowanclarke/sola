@@ -28,6 +28,15 @@ class Text {
   Text(this.text, this.rect, this.style);
 }
 
+class Index {
+  final int page;
+  final String book;
+  final int chapter;
+  final int verse;
+
+  Index(this.page, this.book, this.chapter, this.verse);
+}
+
 Pointer<Void> getRenderer() {
   return _bindings.renderer();
 }
@@ -137,8 +146,27 @@ Pointer<Void> getArchivedIndices(Uint8List indices) {
   return _bindings.archived_indices(bIndices.bytes, bIndices.length);
 }
 
-int getIndex(Pointer<Void> indices, Pointer<Void> index) {
-  return _bindings.get_index(indices, index);
+Index getIndex(Pointer<Void> indices, Pointer<Void> index) {
+  final page = malloc<Size>();
+  final book = malloc<Pointer<Utf8>>();
+  final bookLen = malloc<Size>();
+  final chapter = malloc<UnsignedShort>();
+  final verse = malloc<UnsignedShort>();
+  _bindings.get_index(
+    indices,
+    index,
+    page,
+    book.cast<Pointer<Char>>(),
+    bookLen,
+    chapter,
+    verse,
+  );
+  return Index(
+    page.value,
+    book.value.toDartString(length: bookLen.value),
+    chapter.value,
+    verse.value,
+  );
 }
 
 Uint8List serializeVerses(Pointer<Void> painter) {

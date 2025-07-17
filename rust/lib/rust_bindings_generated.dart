@@ -122,11 +122,11 @@ class RustBindings {
       >();
 
   void serialize_pages(
-    ffi.Pointer<ffi.Void> layout,
+    ffi.Pointer<ffi.Void> painter,
     ffi.Pointer<ffi.Pointer<ffi.Char>> out,
     ffi.Pointer<ffi.Size> out_len,
   ) {
-    return _serialize_pages(layout, out, out_len);
+    return _serialize_pages(painter, out, out_len);
   }
 
   late final _serialize_pagesPtr =
@@ -251,21 +251,52 @@ class RustBindings {
   late final _archived_indices = _archived_indicesPtr
       .asFunction<ffi.Pointer<ffi.Void> Function(ffi.Pointer<ffi.Char>, int)>();
 
-  int get_index(
+  void get_index(
     ffi.Pointer<ffi.Void> archived_indices,
     ffi.Pointer<ffi.Void> index,
+    ffi.Pointer<ffi.Size> out_page,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> out_book,
+    ffi.Pointer<ffi.Size> out_book_len,
+    ffi.Pointer<ffi.UnsignedShort> out_chapter,
+    ffi.Pointer<ffi.UnsignedShort> out_verse,
   ) {
-    return _get_index(archived_indices, index);
+    return _get_index(
+      archived_indices,
+      index,
+      out_page,
+      out_book,
+      out_book_len,
+      out_chapter,
+      out_verse,
+    );
   }
 
   late final _get_indexPtr =
       _lookup<
         ffi.NativeFunction<
-          ffi.Size Function(ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Void>)
+          ffi.Void Function(
+            ffi.Pointer<ffi.Void>,
+            ffi.Pointer<ffi.Void>,
+            ffi.Pointer<ffi.Size>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+            ffi.Pointer<ffi.Size>,
+            ffi.Pointer<ffi.UnsignedShort>,
+            ffi.Pointer<ffi.UnsignedShort>,
+          )
         >
       >('get_index');
   late final _get_index = _get_indexPtr
-      .asFunction<int Function(ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Void>)>();
+      .asFunction<
+        void Function(
+          ffi.Pointer<ffi.Void>,
+          ffi.Pointer<ffi.Void>,
+          ffi.Pointer<ffi.Size>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          ffi.Pointer<ffi.Size>,
+          ffi.Pointer<ffi.UnsignedShort>,
+          ffi.Pointer<ffi.UnsignedShort>,
+        )
+      >();
 
   void serialize_verses(
     ffi.Pointer<ffi.Void> painter,

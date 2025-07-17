@@ -6,12 +6,13 @@ use painter::{
 };
 use rkyv::rancor::Error;
 use rkyv::vec::ArchivedVec;
+use rkyv::{Deserialize, deserialize};
 use skia_safe::FontMgr;
 use std::ffi::{c_char, c_void};
 use std::slice::from_raw_parts;
 use std::str::from_utf8_unchecked;
 use std::{mem, slice};
-use usfm::parse;
+use usfm::{BookIdentifier, parse};
 
 #[unsafe(no_mangle)]
 pub extern "C" fn renderer() -> *mut c_void {
@@ -138,10 +139,26 @@ pub extern "C" fn archived_indices(
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn get_index(archived_indices: *const c_void, index: *const c_void) -> usize {
+pub extern "C" fn get_index(
+    archived_indices: *const c_void,
+    index: *const c_void,
+    out_page: *mut usize,
+    out_book: *mut *const u8,
+    out_book_len: *mut usize,
+    out_chapter: *mut u16,
+    out_verse: *mut u16,
+) {
     let archived_indices = unsafe { &*(archived_indices as *const ArchivedIndices) };
     let index = unsafe { &*(index as *const ArchivedIndex) };
-    archived_indices[index].try_into().unwrap()
+    unsafe { *out_page = archived_indices[index].try_into().unwrap() };
+    let index = deserialize::<_, Error>(index).unwrap();
+    let book = format!("{:?}", index.book).leak();
+    unsafe {
+        *out_book = book.as_ptr();
+        *out_book_len = book.len();
+        *out_chapter = index.chapter;
+        *out_verse = index.verse;
+    }
 }
 
 #[unsafe(no_mangle)]

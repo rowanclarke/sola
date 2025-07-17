@@ -1,6 +1,6 @@
 use std::collections::{HashMap, VecDeque};
 
-use rkyv::{Archive, Serialize, vec::ArchivedVec};
+use rkyv::{Archive, Deserialize, Serialize, vec::ArchivedVec};
 use usfm::BookIdentifier;
 
 use crate::log;
@@ -26,13 +26,12 @@ pub struct Layout {
     verses: Vec<Index>,
 }
 
-#[derive(Eq, Hash, PartialEq, Serialize, Archive, Clone)]
+#[derive(Eq, Hash, PartialEq, Serialize, Archive, Clone, Deserialize)]
 #[rkyv(derive(Hash, PartialEq, Eq))]
-#[repr(C)]
 pub struct Index {
-    book: BookIdentifier,
-    chapter: u16,
-    verse: u16,
+    pub book: BookIdentifier,
+    pub chapter: u16,
+    pub verse: u16,
 }
 
 impl Index {
