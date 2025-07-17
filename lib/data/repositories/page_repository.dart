@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 
 import 'package:msgpack_dart/msgpack_dart.dart';
 import 'package:sola/data/services/renderer_service.dart';
@@ -47,10 +48,11 @@ class PageRepository {
     }
 
     renderer.rendered = await file.readAsBytes();
-    return [
-      PageModel(page: await renderer.getPage(0)),
-      PageModel(page: await renderer.getPage(1)),
-    ];
+    print(renderer.numPages);
+    final texts = await Future.wait(
+      List.generate(renderer.numPages, (n) => renderer.getPage(n)),
+    );
+    return texts.map((text) => PageModel(page: text)).toList();
   }
 
   Future<Map<String, String>> getBible() async {
