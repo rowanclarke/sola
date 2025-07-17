@@ -7,13 +7,14 @@ mod writer;
 use std::{ffi::c_char, ops, slice::from_ref};
 
 use format::{Format, get_unformatted, justify, left};
-pub use layout::ArchivedPages;
 use layout::Layout;
+pub use layout::{ArchivedIndex, ArchivedIndices, ArchivedPages, Index};
 pub use paint::Paint;
 use renderer::{Inline, inline};
 pub use renderer::{Renderer, TextStyle};
 use rkyv::{Archive, Deserialize, Serialize, rancor::Error, util::AlignedVec};
 use skia_safe::textlayout::ParagraphBuilder;
+use usfm::BookIdentifier;
 use writer::{LineFormat, Writer};
 
 pub struct Painter {
@@ -23,6 +24,13 @@ pub struct Painter {
     styled: Vec<(usize, Style)>,
     styles: Vec<Style>,
     layout: Layout,
+    index: PartialIndex,
+}
+
+#[derive(Default)]
+struct PartialIndex {
+    book: Option<BookIdentifier>,
+    chapter: Option<u16>,
 }
 
 impl Painter {
@@ -34,6 +42,7 @@ impl Painter {
             styles: Vec::new(),
             layout: Layout::new(dim.width, dim.height, renderer.line_height(&Style::Normal)),
             dim,
+            index: PartialIndex::default(),
         }
     }
 
@@ -157,10 +166,37 @@ impl Painter {
         self.styled.last().map_or(0, |(i, _)| *i)
     }
 
+    pub fn index_book(&mut self, book: BookIdentifier) -> &mut Self {
+        self.index.book = Some(book);
+        self
+    }
+
+    pub fn index_chapter(&mut self, chapter: u16) -> &mut Self {
+        self.index.chapter = Some(chapter);
+        self
+    }
+
+    pub fn index_verse(&mut self, verse: u16) -> &mut Self {
+        self.layout.add_index(Index::new(
+            self.index.book.clone().unwrap(),
+            self.index.chapter.unwrap(),
+            verse,
+        ));
+        self
+    }
+
     fn done(&mut self) {}
 
     pub fn get_pages(&self) -> AlignedVec {
         rkyv::to_bytes::<Error>(self.layout.get_pages()).unwrap()
+    }
+
+    pub fn get_indices(&self) -> AlignedVec {
+        rkyv::to_bytes::<Error>(self.layout.get_indices()).unwrap()
+    }
+
+    pub fn get_verses(&self) -> AlignedVec {
+        rkyv::to_bytes::<Error>(self.layout.get_verses()).unwrap()
     }
 }
 

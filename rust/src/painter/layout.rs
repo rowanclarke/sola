@@ -1,6 +1,7 @@
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 
 use rkyv::{Archive, Serialize, vec::ArchivedVec};
+use usfm::BookIdentifier;
 
 use crate::log;
 
@@ -21,11 +22,34 @@ pub struct Layout {
     body: Region,
     lines: VecDeque<Line>,
     pages: Vec<Page>,
+    indices: Indices,
+    verses: Vec<Index>,
+}
+
+#[derive(Eq, Hash, PartialEq, Serialize, Archive, Clone)]
+#[rkyv(derive(Hash, PartialEq, Eq))]
+#[repr(C)]
+pub struct Index {
+    book: BookIdentifier,
+    chapter: u16,
+    verse: u16,
+}
+
+impl Index {
+    pub fn new(book: BookIdentifier, chapter: u16, verse: u16) -> Self {
+        Self {
+            book,
+            chapter,
+            verse,
+        }
+    }
 }
 
 pub type ArchivedPages = ArchivedVec<ArchivedPage>;
 pub type ArchivedPage = <Page as Archive>::Archived;
 pub type Page = Vec<PartialText>;
+pub type ArchivedIndices = <Indices as Archive>::Archived;
+pub type Indices = HashMap<Index, usize>;
 
 #[derive(Archive, Serialize, Debug)]
 pub struct PartialText(pub String, pub Rectangle, pub Style, pub f32);
@@ -56,6 +80,8 @@ impl Layout {
             },
             lines: VecDeque::new(),
             pages: vec![Vec::new()],
+            indices: HashMap::new(),
+            verses: Vec::new(),
         }
     }
 
@@ -67,6 +93,8 @@ impl Layout {
             body: self.body.clone(),
             lines: VecDeque::new(),
             pages: vec![Vec::new()],
+            indices: HashMap::new(),
+            verses: Vec::new(),
         }
     }
 
@@ -78,8 +106,21 @@ impl Layout {
         self.body.top += height;
     }
 
-    pub fn get_pages(&self) -> &'_ Vec<Page> {
+    pub fn add_index(&mut self, index: Index) {
+        self.verses.push(index.clone());
+        self.indices.insert(index, self.pages.len() - 1);
+    }
+
+    pub fn get_pages(&self) -> &Vec<Page> {
         &self.pages
+    }
+
+    pub fn get_indices(&self) -> &Indices {
+        &self.indices
+    }
+
+    pub fn get_verses(&self) -> &Vec<Index> {
+        &self.verses
     }
 
     fn next_page(&mut self) {

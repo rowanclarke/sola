@@ -5,22 +5,18 @@ import '../../../data/repositories/page_repository.dart';
 class PaginationViewModel extends ChangeNotifier {
   final PageRepository repository;
   List<PageModel> _pages = [];
-  bool _isLoading = false;
   int _currentIndex = 0;
 
-  PaginationViewModel({required this.repository});
+  PaginationViewModel(this.repository);
+
+  get initialized => repository.rendererRepository.initialized;
 
   List<PageModel> get pages => _pages;
-  bool get isLoading => _isLoading;
   int get currentIndex => _currentIndex;
 
   Future<void> loadPages(double width, double height) async {
-    _isLoading = true;
-    notifyListeners();
-
+    print("Load Pages");
     _pages = await repository.getPages(width, height);
-
-    _isLoading = false;
     notifyListeners();
   }
 

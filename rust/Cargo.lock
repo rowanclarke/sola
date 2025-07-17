@@ -2036,6 +2036,7 @@ dependencies = [
  "pest",
  "pest-ast",
  "pest_derive",
+ "rkyv",
 ]
 
 [[package]]

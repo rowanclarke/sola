@@ -208,11 +208,97 @@ class RustBindings {
         )
       >();
 
+  void serialize_indices(
+    ffi.Pointer<ffi.Void> painter,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> out,
+    ffi.Pointer<ffi.Size> out_len,
+  ) {
+    return _serialize_indices(painter, out, out_len);
+  }
+
+  late final _serialize_indicesPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(
+            ffi.Pointer<ffi.Void>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+            ffi.Pointer<ffi.Size>,
+          )
+        >
+      >('serialize_indices');
+  late final _serialize_indices = _serialize_indicesPtr
+      .asFunction<
+        void Function(
+          ffi.Pointer<ffi.Void>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          ffi.Pointer<ffi.Size>,
+        )
+      >();
+
+  ffi.Pointer<ffi.Void> archived_indices(
+    ffi.Pointer<ffi.Char> indices,
+    int indices_len,
+  ) {
+    return _archived_indices(indices, indices_len);
+  }
+
+  late final _archived_indicesPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<ffi.Void> Function(ffi.Pointer<ffi.Char>, ffi.Size)
+        >
+      >('archived_indices');
+  late final _archived_indices = _archived_indicesPtr
+      .asFunction<ffi.Pointer<ffi.Void> Function(ffi.Pointer<ffi.Char>, int)>();
+
+  int get_index(
+    ffi.Pointer<ffi.Void> archived_indices,
+    ffi.Pointer<ffi.Void> index,
+  ) {
+    return _get_index(archived_indices, index);
+  }
+
+  late final _get_indexPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Size Function(ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Void>)
+        >
+      >('get_index');
+  late final _get_index = _get_indexPtr
+      .asFunction<int Function(ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Void>)>();
+
+  void serialize_verses(
+    ffi.Pointer<ffi.Void> painter,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> out,
+    ffi.Pointer<ffi.Size> out_len,
+  ) {
+    return _serialize_verses(painter, out, out_len);
+  }
+
+  late final _serialize_versesPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(
+            ffi.Pointer<ffi.Void>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+            ffi.Pointer<ffi.Size>,
+          )
+        >
+      >('serialize_verses');
+  late final _serialize_verses = _serialize_versesPtr
+      .asFunction<
+        void Function(
+          ffi.Pointer<ffi.Void>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          ffi.Pointer<ffi.Size>,
+        )
+      >();
+
   ffi.Pointer<ffi.Void> load_model(
     ffi.Pointer<ffi.Char> embeddings,
     int embeddings_len,
-    ffi.Pointer<ffi.Char> lines,
-    int lines_len,
+    ffi.Pointer<ffi.Char> verses,
+    int verses_len,
     ffi.Pointer<ffi.Char> model,
     int model_len,
     ffi.Pointer<ffi.Char> tokenizer,
@@ -221,8 +307,8 @@ class RustBindings {
     return _load_model(
       embeddings,
       embeddings_len,
-      lines,
-      lines_len,
+      verses,
+      verses_len,
       model,
       model_len,
       tokenizer,
@@ -259,36 +345,30 @@ class RustBindings {
         )
       >();
 
-  void get_result(
+  ffi.Pointer<ffi.Void> get_result(
     ffi.Pointer<ffi.Void> model,
     ffi.Pointer<ffi.Char> query,
     int query_len,
-    ffi.Pointer<ffi.Pointer<ffi.Char>> out,
-    ffi.Pointer<ffi.Size> out_len,
   ) {
-    return _get_result(model, query, query_len, out, out_len);
+    return _get_result(model, query, query_len);
   }
 
   late final _get_resultPtr =
       _lookup<
         ffi.NativeFunction<
-          ffi.Void Function(
+          ffi.Pointer<ffi.Void> Function(
             ffi.Pointer<ffi.Void>,
             ffi.Pointer<ffi.Char>,
             ffi.Size,
-            ffi.Pointer<ffi.Pointer<ffi.Char>>,
-            ffi.Pointer<ffi.Size>,
           )
         >
       >('get_result');
   late final _get_result = _get_resultPtr
       .asFunction<
-        void Function(
+        ffi.Pointer<ffi.Void> Function(
           ffi.Pointer<ffi.Void>,
           ffi.Pointer<ffi.Char>,
           int,
-          ffi.Pointer<ffi.Pointer<ffi.Char>>,
-          ffi.Pointer<ffi.Size>,
         )
       >();
 }

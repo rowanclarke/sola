@@ -1,71 +1,27 @@
-import 'dart:io';
-import 'dart:math';
-
-import 'package:msgpack_dart/msgpack_dart.dart';
-import 'package:sola/data/services/renderer_service.dart';
+import 'package:sola/data/repositories/renderer_repository.dart';
+import 'package:sola/data/services/file_service.dart';
 import '../../domain/models/page_model.dart';
-import '../services/bible_service.dart';
 
 class PageRepository {
-  final BibleService service;
-  final RendererService renderer;
-  final Directory documents;
+  final FileService bibleService;
+  final RendererRepository rendererRepository;
 
-  final String url;
-  late String bible;
   final String book;
 
-  PageRepository(
-    this.service,
-    this.renderer,
-    this.documents,
-    this.url,
-    this.book,
-  ) {
-    bible = Uri.parse(url).pathSegments.last;
-    bible = bible.substring(0, bible.lastIndexOf('.'));
-
-    renderer.registerStyles();
-  }
-
-  Future<String> _getFilePath() async {
-    return '${documents.path}/pages_$book';
-  }
-
-  Future<String> _getBiblePath() async {
-    return '${documents.path}/bibles_$bible';
-  }
+  PageRepository(this.bibleService, this.rendererRepository, this.book);
 
   Future<List<PageModel>> getPages(double width, double height) async {
-    final filePath = await _getFilePath();
-    final file = File(filePath);
-
-    if (!await file.exists()) {
-      renderer.registerFontFamilies();
-      final bible = await getBible();
-      final render = await renderer.render(bible[book]!, width, height);
-      await file.writeAsBytes(render);
-    }
-
-    renderer.rendered = await file.readAsBytes();
-    print(renderer.numPages);
-    final texts = await Future.wait(
-      List.generate(renderer.numPages, (n) => renderer.getPage(n)),
+    await rendererRepository.render(
+      book,
+      width,
+      height,
+      () async => await bibleService.readAsString(book),
     );
-    return texts.map((text) => PageModel(page: text)).toList();
-  }
-
-  Future<Map<String, String>> getBible() async {
-    final filePath = await _getBiblePath();
-    final file = File(filePath);
-
-    if (!await file.exists()) {
-      final bible = await service.fetchBible(url);
-      await file.writeAsBytes(serialize(bible));
-      return bible;
-    } else {
-      final decoded = deserialize(await file.readAsBytes());
-      return Map<String, String>.from(decoded);
-    }
+    return await Future.wait(
+      List.generate(
+        rendererRepository.numPages,
+        (n) => rendererRepository.getPage(n),
+      ),
+    );
   }
 }

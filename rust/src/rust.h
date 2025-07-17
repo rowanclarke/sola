@@ -49,7 +49,7 @@ void* layout(
 );
 
 void serialize_pages(
-  void* layout,
+  void* painter,
   const char** out,
   size_t* out_len
 );
@@ -65,5 +65,27 @@ void page(
   void* archived_pages,
   size_t n,
   const Text** out,
+  size_t* out_len
+);
+
+void serialize_indices(
+  void* painter,
+  const char** out,
+  size_t* out_len
+);
+
+void* archived_indices(
+  char* indices,
+  size_t indices_len
+);
+
+size_t get_index(
+  void* archived_indices,
+  void* index
+);
+
+void serialize_verses(
+  void* painter,
+  const char** out,
   size_t* out_len
 );

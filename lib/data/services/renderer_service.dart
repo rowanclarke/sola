@@ -52,28 +52,43 @@ class RendererService {
     );
   }
 
-  Future<Uint8List> render(String usfm, double width, double height) async {
+  late Pointer<Void> _painter;
+
+  Future<void> render(String usfm, double width, double height) async {
     final dimensions = rust.Dimensions(
       width,
       height,
       headerHeight: height / 5,
       dropCapPadding: 20,
     );
-    final rendered = rust.layout(renderer, usfm, dimensions);
-    return rust.serializePages(rendered);
+    _painter = rust.layout(renderer, usfm, dimensions);
   }
 
-  Pointer<Void>? _pages;
-  int? _numPages;
-
-  set rendered(Uint8List rendered) {
-    _pages = rust.getArchivedPages(rendered);
-    _numPages = rust.getNumPages(_pages!);
+  Uint8List getPages() {
+    return rust.serializePages(_painter);
   }
 
-  get numPages => _numPages;
+  Uint8List getIndices() {
+    return rust.serializeIndices(_painter);
+  }
 
-  Future<List<rust.Text>> getPage(int n) async {
-    return rust.getPage(renderer, _pages!, n);
+  Uint8List getVerses() {
+    return rust.serializeVerses(_painter);
+  }
+
+  Pointer<Void> getArchivedPages(Uint8List pages) {
+    return rust.getArchivedPages(pages);
+  }
+
+  Pointer<Void> getArchivedIndices(Uint8List indices) {
+    return rust.getArchivedIndices(indices);
+  }
+
+  int getNumPages(Pointer<Void> pages) {
+    return rust.getNumPages(pages);
+  }
+
+  Future<List<rust.Text>> getPage(Pointer<Void> pages, int n) async {
+    return rust.getPage(renderer, pages, n);
   }
 }

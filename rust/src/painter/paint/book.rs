@@ -9,10 +9,12 @@ impl Paint for Book {
         use usfm::BookContents as C;
         for contents in self.contents.iter() {
             match contents {
+                C::Id { code, .. } => painter.index_book(code.clone()).done(),
                 C::Paragraph(paragraph) => paragraph.paint(painter),
                 C::Poetry(poetry) => poetry.paint(painter),
                 C::Element(element) => element.paint(painter),
                 C::Chapter(n) => painter
+                    .index_chapter(*n)
                     .push_style(Style::Chapter)
                     .add_text(n.to_string())
                     .pop_style()

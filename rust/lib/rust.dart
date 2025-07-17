@@ -79,21 +79,21 @@ TextStyle toTextStyle(bind.TextStyle textStyle) {
   );
 }
 
-Pointer<Void> layout(Pointer<Void> map, String usfm, Dimensions dim) {
+Pointer<Void> layout(Pointer<Void> renderer, String usfm, Dimensions dim) {
   final native = usfm.toNativeUtf8();
   final cdim = calloc<bind.Dimensions>();
   cdim.ref.width = dim.width;
   cdim.ref.height = dim.height;
   cdim.ref.header_height = dim.headerHeight;
   cdim.ref.drop_cap_padding = dim.dropCapPadding;
-  return _bindings.layout(map, native.cast<Char>(), native.length, cdim);
+  return _bindings.layout(renderer, native.cast<Char>(), native.length, cdim);
 }
 
-Uint8List serializePages(Pointer<Void> layout) {
+Uint8List serializePages(Pointer<Void> painter) {
   final out = malloc<Pointer<Uint8>>();
   final outLen = malloc<Size>();
 
-  _bindings.serialize_pages(layout, out.cast<Pointer<Char>>(), outLen);
+  _bindings.serialize_pages(painter, out.cast<Pointer<Char>>(), outLen);
   return out.value.asTypedList(outLen.value);
 }
 
@@ -124,20 +124,45 @@ List<Text> getPage(Pointer<Void> renderer, Pointer<Void> pages, int n) {
   });
 }
 
+Uint8List serializeIndices(Pointer<Void> painter) {
+  final out = malloc<Pointer<Uint8>>();
+  final outLen = malloc<Size>();
+
+  _bindings.serialize_indices(painter, out.cast<Pointer<Char>>(), outLen);
+  return out.value.asTypedList(outLen.value);
+}
+
+Pointer<Void> getArchivedIndices(Uint8List indices) {
+  final bIndices = Bytes(indices);
+  return _bindings.archived_indices(bIndices.bytes, bIndices.length);
+}
+
+int getIndex(Pointer<Void> indices, Pointer<Void> index) {
+  return _bindings.get_index(indices, index);
+}
+
+Uint8List serializeVerses(Pointer<Void> painter) {
+  final out = malloc<Pointer<Uint8>>();
+  final outLen = malloc<Size>();
+
+  _bindings.serialize_verses(painter, out.cast<Pointer<Char>>(), outLen);
+  return out.value.asTypedList(outLen.value);
+}
+
 Pointer<Void> loadModel(
   Uint8List embeddings,
-  String lines,
+  Uint8List verses,
   Uint8List model,
   Uint8List tokenizer,
 ) {
   final bEmbeddings = Bytes(embeddings);
-  final bLines = lines.toNativeUtf8();
+  final bLines = Bytes(verses);
   final bModel = Bytes(model);
   final bTokenizer = Bytes(tokenizer);
   return _bindings.load_model(
     bEmbeddings.bytes,
     bEmbeddings.length,
-    bLines.cast<Char>(),
+    bLines.bytes,
     bLines.length,
     bModel.bytes,
     bModel.length,
@@ -146,20 +171,9 @@ Pointer<Void> loadModel(
   );
 }
 
-String getResult(Pointer<Void> model, String query) {
+Pointer<Void> getResult(Pointer<Void> model, String query) {
   final native = query.toNativeUtf8();
-  final out = malloc<Pointer<Utf8>>();
-  final outLen = malloc<Size>();
-
-  _bindings.get_result(
-    model,
-    native.cast<Char>(),
-    native.length,
-    out.cast<Pointer<Char>>(),
-    outLen,
-  );
-
-  return out.value.toDartString(length: outLen.value);
+  return _bindings.get_result(model, native.cast<Char>(), native.length);
 }
 
 class Bytes {

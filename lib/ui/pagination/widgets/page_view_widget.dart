@@ -2,13 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:rust/rust.dart' as rust;
 
 class PageViewWidget extends StatelessWidget {
-  final bool isLoading;
   final List<rust.Text>? builder;
   final double width;
   final double height;
 
   const PageViewWidget({
-    required this.isLoading,
     this.builder,
     required this.width,
     required this.height,
@@ -17,9 +15,6 @@ class PageViewWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (isLoading) {
-      return Center(child: CircularProgressIndicator());
-    }
     return SizedBox(
       width: width,
       height: height,

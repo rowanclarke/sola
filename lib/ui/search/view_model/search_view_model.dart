@@ -35,6 +35,10 @@ class SearchViewModel extends ChangeNotifier {
     controller.closeView(null);
   }
 
+  Future<void> loadModel() async {
+    await repository.loadModel();
+  }
+
   Future<String> getResult(String s) async {
     return await repository.getResult(s);
   }

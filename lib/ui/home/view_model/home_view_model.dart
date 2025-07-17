@@ -9,6 +9,11 @@ class HomeViewModel {
     search.onItemSelected = handleItemSelected;
   }
 
+  Future<void> init(double width, double height) async {
+    await pagination.loadPages(width, height);
+    search.loadModel();
+  }
+
   void handleItemSelected(String item) {
     final page = int.tryParse(item.replaceAll('item ', '')) ?? 0;
     pagination.setPage(page);

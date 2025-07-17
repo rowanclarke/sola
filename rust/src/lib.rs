@@ -1,7 +1,11 @@
 mod painter;
 
-use painter::{ArchivedPages, Dimensions, Paint, Painter, Renderer, Style, Text, TextStyle};
+use painter::{
+    ArchivedIndex, ArchivedIndices, ArchivedPages, Dimensions, Index, Paint, Painter, Renderer,
+    Style, Text, TextStyle,
+};
 use rkyv::rancor::Error;
+use rkyv::vec::ArchivedVec;
 use skia_safe::FontMgr;
 use std::ffi::{c_char, c_void};
 use std::slice::from_raw_parts;
@@ -66,6 +70,21 @@ pub extern "C" fn layout(
 }
 
 #[unsafe(no_mangle)]
+pub extern "C" fn serialize_pages(
+    painter: *const c_void,
+    out: *mut *const u8,
+    out_len: *mut usize,
+) {
+    let painter = unsafe { &*(painter as *const Painter) };
+    let pages = painter.get_pages();
+    unsafe {
+        *out = pages.as_ptr();
+        *out_len = pages.len()
+    }
+    mem::forget(pages);
+}
+
+#[unsafe(no_mangle)]
 pub extern "C" fn archived_pages(pages: *const u8, pages_len: usize) -> *const ArchivedPages {
     let bytes = unsafe { from_raw_parts(pages, pages_len) };
     rkyv::access::<ArchivedPages, Error>(bytes).unwrap()
@@ -95,18 +114,49 @@ pub extern "C" fn num_pages(archived_pages: *const c_void) -> usize {
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn serialize_pages(
+pub extern "C" fn serialize_indices(
     painter: *const c_void,
     out: *mut *const u8,
     out_len: *mut usize,
 ) {
     let painter = unsafe { &*(painter as *const Painter) };
-    let pages = painter.get_pages();
+    let indices = painter.get_indices();
     unsafe {
-        *out = pages.as_ptr();
-        *out_len = pages.len()
+        *out = indices.as_ptr();
+        *out_len = indices.len()
     }
-    mem::forget(pages);
+    mem::forget(indices);
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn archived_indices(
+    indices: *const u8,
+    indices_len: usize,
+) -> *const ArchivedIndices {
+    let bytes = unsafe { from_raw_parts(indices, indices_len) };
+    rkyv::access::<ArchivedIndices, Error>(bytes).unwrap()
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn get_index(archived_indices: *const c_void, index: *const c_void) -> usize {
+    let archived_indices = unsafe { &*(archived_indices as *const ArchivedIndices) };
+    let index = unsafe { &*(index as *const ArchivedIndex) };
+    archived_indices[index].try_into().unwrap()
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn serialize_verses(
+    painter: *const c_void,
+    out: *mut *const u8,
+    out_len: *mut usize,
+) {
+    let painter = unsafe { &*(painter as *const Painter) };
+    let verses = painter.get_verses();
+    unsafe {
+        *out = verses.as_ptr();
+        *out_len = verses.len();
+    }
+    mem::forget(verses);
 }
 
 use ndarray::{Array2, ArrayD, Axis, Ix2};
@@ -147,29 +197,31 @@ fn mean_pooling(last_hidden: &Tensor, attention_mask: &Tensor) -> Tensor {
 
 struct Model<'a> {
     embeddings: Array2<f32>,
-    lines: Vec<&'a str>,
+    verses: &'a Verses,
     model: RunnableModel<TypedFact, Box<dyn TypedOp>, TypedModel>,
     tokenizer: Tokenizer,
 }
+
+type Verses = ArchivedVec<ArchivedIndex>;
 
 #[unsafe(no_mangle)]
 pub extern "C" fn load_model(
     embeddings: *const u8,
     embeddings_len: usize,
-    lines: *const u8,
-    lines_len: usize,
+    verses: *const u8,
+    verses_len: usize,
     model: *const u8,
     model_len: usize,
     tokenizer: *const u8,
     tokenizer_len: usize,
 ) -> *mut c_void {
     let embeddings = unsafe { from_raw_parts(embeddings, embeddings_len) };
-    let lines = unsafe { from_utf8_unchecked(from_raw_parts(lines, lines_len)) };
+    let verses = unsafe { from_raw_parts(verses, verses_len) };
+    let verses = rkyv::access::<Verses, Error>(verses).unwrap();
     let model = unsafe { from_raw_parts(model, model_len) };
     let tokenizer = unsafe { from_raw_parts(tokenizer, tokenizer_len) };
 
     let embeddings = load_embeddings(embeddings);
-    let lines = lines.lines().collect::<Vec<_>>();
     let model = tract_onnx::onnx()
         .model_for_read(&mut Cursor::new(model))
         .unwrap()
@@ -181,7 +233,7 @@ pub extern "C" fn load_model(
 
     Box::into_raw(Box::new(Model {
         embeddings,
-        lines,
+        verses,
         model,
         tokenizer,
     })) as *mut c_void
@@ -191,18 +243,16 @@ pub extern "C" fn load_model(
 pub extern "C" fn get_result(
     model: *const c_void,
     query: *const u8,
-    len: usize,
-    out: *mut *const u8,
-    out_len: *mut usize,
-) {
+    query_len: usize,
+) -> *const ArchivedIndex {
     let Model {
         embeddings,
-        lines,
+        verses,
         model,
         tokenizer,
     } = unsafe { &*(model as *const Model) };
 
-    let input = unsafe { from_utf8_unchecked(from_raw_parts(query, len)).trim() };
+    let input = unsafe { from_utf8_unchecked(from_raw_parts(query, query_len)).trim() };
     let encoding = tokenizer.encode(input, true).unwrap();
     let ids: Vec<i64> = encoding.get_ids().iter().map(|&id| id as i64).collect();
     let mask: Vec<i64> = encoding
@@ -243,12 +293,7 @@ pub extern "C" fn get_result(
         .indexed_iter()
         .max_by(|a, b| a.1.partial_cmp(b.1).unwrap())
         .unwrap();
-    let result = lines[idx.0];
-
-    unsafe {
-        *out = result.as_ptr();
-        *out_len = result.len();
-    }
+    return &verses[idx.0];
 }
 
 #[cfg(target_os = "android")]
