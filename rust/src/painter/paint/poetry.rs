@@ -13,6 +13,7 @@ impl Paint for Poetry {
                 C::Verse(n) => painter
                     .add_text(" ")
                     .push_style(Style::Verse)
+                    .index_verse(*n)
                     .add_text(n.to_string())
                     .pop_style()
                     .done(),

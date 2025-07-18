@@ -26,8 +26,8 @@ pub struct Layout {
     verses: Vec<Index>,
 }
 
-#[derive(Eq, Hash, PartialEq, Serialize, Archive, Clone, Deserialize)]
-#[rkyv(derive(Hash, PartialEq, Eq))]
+#[derive(Eq, Hash, PartialEq, Serialize, Archive, Clone, Deserialize, Debug)]
+#[rkyv(derive(Hash, PartialEq, Eq, Debug))]
 pub struct Index {
     pub book: BookIdentifier,
     pub chapter: u16,
@@ -105,9 +105,9 @@ impl Layout {
         self.body.top += height;
     }
 
-    pub fn add_index(&mut self, index: Index) {
+    pub fn add_index(&mut self, index: Index, line: usize) {
         self.verses.push(index.clone());
-        self.indices.insert(index, self.pages.len() - 1);
+        self.indices.insert(index, self.lines[line].page);
     }
 
     pub fn get_pages(&self) -> &Vec<Page> {
@@ -176,7 +176,7 @@ impl Layout {
             top: line.top + top_offset,
             left: line.left,
             width,
-            height: self.line_height,
+            height: self.line_height, // TODO calculate line_height
         };
         line.left += width;
         self.write(page, text, rect, style, word_spacing);

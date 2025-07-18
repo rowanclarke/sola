@@ -52,4 +52,9 @@ class StorageService {
   FileService local(String path) {
     return FileService(Directory(externPath(path)));
   }
+
+  Future<void> deleteDirectory(String path) async {
+    final dir = Directory(externPath(path));
+    await dir.delete(recursive: true);
+  }
 }

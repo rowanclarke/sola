@@ -17,6 +17,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final extern = await getApplicationDocumentsDirectory();
   final storageService = StorageService(extern);
+  await storageService.deleteDirectory("assets/model.zip");
   final modelService = await storageService.extractAsset("assets/model.zip");
   final bibleService = await storageService.extractRemote(
     "https://ebible.org/Scriptures/engwebpb_usfm.zip",

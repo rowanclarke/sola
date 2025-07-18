@@ -247,7 +247,6 @@ pub extern "C" fn load_model(
         .into_runnable()
         .unwrap();
     let tokenizer = Tokenizer::from_bytes(tokenizer).unwrap();
-
     Box::into_raw(Box::new(Model {
         embeddings,
         verses,

@@ -12,7 +12,7 @@ use skia_safe::{
 use crate::log;
 
 use super::{
-    Range, Style, Text,
+    Properties, Range, Style, Text,
     layout::{ArchivedPage, ArchivedPartialText},
 };
 
@@ -126,7 +126,7 @@ pub struct Inline {
     // TODO: index &str instead of &[char]
     pub range: Range,
     pub is_whitespace: bool,
-    pub style: Style,
+    pub properties: Properties,
     pub width: f32,
     pub top_offset: f32,
 }
@@ -134,7 +134,7 @@ pub struct Inline {
 pub fn inline<'a>(
     renderer: &'a Renderer,
     builder: &'a mut ParagraphBuilder,
-    styled: &'a [(usize, Style)],
+    properties: &'a [(usize, Properties)],
 ) -> (&'a str, Vec<char>, Vec<Inline>) {
     let mut paragraph = builder.build();
     paragraph.layout(f32::INFINITY);
@@ -153,12 +153,12 @@ pub fn inline<'a>(
             .iter()
             .find(|chr| chr.is_whitespace())
             .is_some();
-        let style = styled[style].1;
-        let top_offset = renderer.top_offset(&style);
+        let properties = properties[style].1.clone();
+        let top_offset = renderer.top_offset(&properties.style);
         inline.push(Inline {
             range,
             is_whitespace,
-            style,
+            properties,
             width: rect.width(),
             top_offset,
         });
@@ -166,7 +166,7 @@ pub fn inline<'a>(
     let mut style = 0;
     let mut word = !text[0].is_whitespace();
     for (i, chr) in text.iter().enumerate() {
-        if i >= styled[style].0 {
+        if i >= properties[style].0 {
             push(start..i, style);
             start = i;
             style += 1;

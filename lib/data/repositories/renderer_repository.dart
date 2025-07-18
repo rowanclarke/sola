@@ -25,6 +25,7 @@ class RendererRepository {
     double height,
     Future<String> Function() getUsfm,
   ) async {
+    await fileService.deleteDirectory(book);
     if (!await fileService.openDirectory(book)) {
       rendererService.registerFontFamilies();
       await rendererService.render(await getUsfm(), width, height);

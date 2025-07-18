@@ -1,7 +1,7 @@
 use crate::log;
 
 use super::{
-    Style,
+    Index, Properties, Style,
     layout::Layout,
     renderer::Inline,
     writer::{LineMetrics, Words},
@@ -13,11 +13,16 @@ pub enum Format {
     Center,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Action {
+    Index(Index),
+}
+
 #[derive(Debug, Clone)]
 pub struct Unformatted<'a> {
     pub line: usize,
     pub text: &'a [char],
-    pub style: Style,
+    pub properties: Properties,
     pub width: f32,
     pub top_offset: f32,
     pub whitespace: f32,
@@ -44,11 +49,11 @@ pub fn get_unformatted<'a, 'b>(
                 whitespace += inline.width;
             }
             let is_last = i == words.len() - 1;
-            if inline.style != last.style {
+            if inline.properties != last.properties {
                 unformatted.push(Unformatted {
                     line,
                     text: &text[index..inline.range.start],
-                    style: last.style.clone(),
+                    properties: last.properties.clone(),
                     width: total,
                     whitespace,
                     metrics: metrics.clone(),
@@ -64,7 +69,7 @@ pub fn get_unformatted<'a, 'b>(
                 unformatted.push(Unformatted {
                     line,
                     text: &text[index..inline.range.end],
-                    style: inline.style.clone(),
+                    properties: inline.properties.clone(),
                     width: total,
                     whitespace,
                     metrics: metrics.clone(),
@@ -87,28 +92,29 @@ pub fn justify(layout: &mut Layout, unformatted: &[Unformatted]) {
         let spaces = words.text.iter().filter(|c| c.is_whitespace()).count() as f32;
         let spacing = ratio * words.whitespace;
         let word_spacing = if spaces == 0.0 { 0.0 } else { spacing / spaces };
-        let width = words.width + spacing;
-        let text = words.text.iter().collect();
-        layout.write_line(
-            words.line,
-            text,
-            words.style,
-            width,
-            word_spacing,
-            words.top_offset,
-        );
+        words.write_line(layout, spacing, word_spacing);
     }
 }
 
 pub fn left(layout: &mut Layout, unformatted: &[Unformatted]) {
     for words in unformatted {
+        words.write_line(layout, 0.0, 0.0);
+    }
+}
+
+impl<'a> Unformatted<'a> {
+    fn write_line(&self, layout: &mut Layout, spacing: f32, word_spacing: f32) {
+        match self.properties.action {
+            Some(Action::Index(ref index)) => layout.add_index(index.clone(), self.line),
+            None => (),
+        }
         layout.write_line(
-            words.line,
-            words.text.iter().collect(),
-            words.style,
-            words.width,
-            0.0,
-            words.top_offset,
+            self.line,
+            self.text.iter().collect(),
+            self.properties.style,
+            self.width + spacing,
+            word_spacing,
+            self.top_offset,
         );
     }
 }

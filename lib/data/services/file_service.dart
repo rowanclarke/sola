@@ -20,6 +20,16 @@ class FileService {
     return true;
   }
 
+  Future<void> deleteDirectory(String path) async {
+    final dir = Directory(localPath(path));
+    await dir.delete(recursive: true);
+  }
+
+  Future<void> deleteFile(String path) async {
+    final file = File(localPath(path));
+    await file.delete(recursive: true);
+  }
+
   Future<String> readAsString(String path, {String Function()? get}) async {
     final file = File(localPath(path));
     if (!await file.exists()) {
