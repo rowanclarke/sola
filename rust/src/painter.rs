@@ -121,16 +121,12 @@ impl Painter {
     }
 
     fn paint_paragraph(&mut self, format: Format, line_format: LineFormat) {
-        log!("Props: {:?}", self.properties);
         let (_, text, inline) = inline(&self.renderer, &mut self.builder, &self.properties);
-
-        // log!("Inline: {:?}", inline);
 
         let mut writer = Writer::new(&text[..], inline.as_slice(), line_format, &mut self.layout);
         writer.write().trim();
         let unformatted = get_unformatted(&text, &inline, writer.get_lines());
 
-        // log!("Unformatted: {:?}", unformatted);
         match format {
             Format::Justified => {
                 let (tail, head) = unformatted.split_last().unwrap();

@@ -18,9 +18,12 @@ class PaginationViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void jumpToPage(int index) {
+    controller.jumpToPage(index);
+  }
+
   void setPage(int index) {
     if (index >= 0 && index < _pages.length) {
-      controller.jumpToPage(index);
       notifyListeners();
     }
   }

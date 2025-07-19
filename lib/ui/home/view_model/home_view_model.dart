@@ -15,6 +15,6 @@ class HomeViewModel {
   }
 
   void handleItemSelected(int page) {
-    pagination.setPage(page);
+    pagination.jumpToPage(page);
   }
 }
