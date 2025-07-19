@@ -36,21 +36,25 @@ dependencies:
   provider: ^6.1.5
   path_provider: ^2.1.2
   cupertino_icons: ^1.0.8
+  msgpack_dart: ^1.0.1
   rust:
     path: rust
-  asset_cache: 2.1.0
-  msgpack_dart: ^1.0.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-
-  # The "flutter_lints" package below contains a set of recommended lints to
-  # encourage good coding practices. The lint set provided by the package is
-  # activated in the `analysis_options.yaml` file located at the root of your
-  # package. See that file for information about deactivating specific lint
-  # rules and activating additional ones.
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.4
+
+flutter_launcher_icons:
+  image_path: "icon/sola.png"
+  android: true
+  adaptive_icon_background: "#182c56"
+  adaptive_icon_foreground: "icon/sola_adaptive.png"
+  adaptive_icon_monochrome: "icon/sola_monochrome.png"
+  ios: true
+  remove_alpha_ios: true
+
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
