@@ -1,5 +1,6 @@
 mod painter;
 
+use core::panic;
 use painter::{
     ArchivedIndex, ArchivedIndices, ArchivedPages, Dimensions, Index, Paint, Painter, Renderer,
     Style, Text, TextStyle,
@@ -12,7 +13,7 @@ use std::ffi::{c_char, c_void};
 use std::slice::from_raw_parts;
 use std::str::from_utf8_unchecked;
 use std::{mem, slice};
-use usfm::{BookIdentifier, parse};
+use usfm::{ArchivedBook, BookIdentifier, parse};
 
 #[unsafe(no_mangle)]
 pub extern "C" fn renderer() -> *mut c_void {
@@ -54,16 +55,53 @@ pub extern "C" fn register_style(renderer: *mut c_void, style: Style, text_style
 }
 
 #[unsafe(no_mangle)]
+pub extern "C" fn serialize_usfm(
+    usfm: *const u8,
+    usfm_len: usize,
+    out: *mut *const u8,
+    out_len: *mut usize,
+) {
+    let usfm = unsafe { from_utf8_unchecked(from_raw_parts(usfm, usfm_len)) };
+    let book = parse(&usfm);
+    let bytes = rkyv::to_bytes::<Error>(&book).unwrap();
+    unsafe {
+        *out = bytes.as_ptr();
+        *out_len = bytes.len();
+    }
+    mem::forget(bytes);
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn archived_book(book: *const u8, book_len: usize) -> *const ArchivedBook {
+    let bytes = unsafe { from_raw_parts(book, book_len) };
+    let archived = rkyv::access::<ArchivedBook, Error>(bytes).unwrap();
+    archived
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn book_identifier(usfm: *const c_void, out: *mut *const u8, out_len: *mut usize) {
+    use usfm::ArchivedBookContents as C;
+    let usfm = unsafe { &*(usfm as *const ArchivedBook) };
+    if let Some(C::Id { code, .. }) = usfm.contents.iter().find(|c| matches!(c, C::Id { .. })) {
+        let id = code.to_identifier();
+        unsafe {
+            *out = id.as_ptr();
+            *out_len = id.len();
+        }
+    } else {
+        panic!("Missing indentifier.");
+    }
+}
+
+#[unsafe(no_mangle)]
 pub extern "C" fn layout(
     renderer: *const c_void,
-    usfm: *const u8,
-    len: usize,
+    usfm: *const c_void,
     dim: *mut Dimensions,
 ) -> *mut c_void {
     let renderer = unsafe { &*(renderer as *const Renderer) };
-    let usfm = unsafe { from_utf8_unchecked(from_raw_parts(usfm, len)) };
+    let usfm = unsafe { &*(usfm as *const ArchivedBook) };
     let dim = unsafe { Box::from_raw(dim) };
-    let usfm = parse(&usfm);
 
     let mut painter = Painter::new(renderer, *dim.clone());
     usfm.paint(&mut painter);
@@ -80,7 +118,7 @@ pub extern "C" fn serialize_pages(
     let pages = painter.get_pages();
     unsafe {
         *out = pages.as_ptr();
-        *out_len = pages.len()
+        *out_len = pages.len();
     }
     mem::forget(pages);
 }
@@ -124,7 +162,7 @@ pub extern "C" fn serialize_indices(
     let indices = painter.get_indices();
     unsafe {
         *out = indices.as_ptr();
-        *out_len = indices.len()
+        *out_len = indices.len();
     }
     mem::forget(indices);
 }

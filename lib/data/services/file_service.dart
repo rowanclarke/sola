@@ -30,6 +30,18 @@ class FileService {
     await file.delete(recursive: true);
   }
 
+  File file(String path) {
+    return File(localPath(path));
+  }
+
+  List<File> getFiles() {
+    return local.listSync(recursive: true).whereType<File>().toList();
+  }
+
+  Future<bool> isInitialized() async {
+    return await local.exists();
+  }
+
   Future<String> readAsString(String path, {String Function()? get}) async {
     final file = File(localPath(path));
     if (!await file.exists()) {

@@ -8,7 +8,7 @@ crate-type = ["lib", "cdylib"]
 
 [dependencies]
 itertools = "0.14.0"
-usfm = { path = "../../usfm" }
+usfm = { path = "../../usfm", version = "0.1.1" }
 skia-safe = { version = "0.86.1", features = ["textlayout"] }
 rkyv = "0.8.10"
 ndarray = "0.16.1"

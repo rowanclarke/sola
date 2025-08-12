@@ -41,44 +41,18 @@ void* renderer();
 void register_font_family(void* renderer, char* family, size_t family_len, char* data, size_t len);
 void register_style(void* renderer, Style style, TextStyle* textStyle);
 
-void* layout(
-  void* renderer,
-  const char* usfm,
-  size_t len,
-  Dimensions* dim
-);
+void serialize_usfm(const char* usfm, size_t usfm_len, const char** out, size_t* out_len);
+void* archived_book(const char* book, size_t book_len);
+void book_identifier(void* usfm, const char** out, size_t* out_len);
 
-void serialize_pages(
-  void* painter,
-  const char** out,
-  size_t* out_len
-);
-
+void* layout(void* renderer, void* usfm, Dimensions* dim);
+void serialize_pages(void* painter, const char** out, size_t* out_len);
 void* archived_pages(const char* pages, size_t pages_len);
+size_t num_pages(void* archived_pages);
+void page(void* renderer, void* archived_pages, size_t n, const Text** out, size_t* out_len);
 
-size_t num_pages(
-  void* archived_pages
-);
-
-void page(
-  void* renderer,
-  void* archived_pages,
-  size_t n,
-  const Text** out,
-  size_t* out_len
-);
-
-void serialize_indices(
-  void* painter,
-  const char** out,
-  size_t* out_len
-);
-
-void* archived_indices(
-  char* indices,
-  size_t indices_len
-);
-
+void serialize_indices(void* painter, const char** out, size_t* out_len);
+void* archived_indices(char* indices, size_t indices_len);
 void get_index(
   void* archived_indices,
   void* index,
@@ -88,12 +62,7 @@ void get_index(
   unsigned short* out_chapter,
   unsigned short* out_verse
 );
-
-void serialize_verses(
-  void* painter,
-  const char** out,
-  size_t* out_len
-);
+void serialize_verses(void* painter, const char** out, size_t* out_len);
 
 
 

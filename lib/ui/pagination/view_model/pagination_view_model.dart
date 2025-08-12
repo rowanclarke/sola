@@ -13,8 +13,8 @@ class PaginationViewModel extends ChangeNotifier {
 
   List<PageModel> get pages => _pages;
 
-  Future<void> loadPages(double width, double height) async {
-    _pages = await repository.getPages(width, height);
+  Future<void> loadPages(String book, double width, double height) async {
+    _pages = await repository.getPages(book, width, height);
     notifyListeners();
   }
 

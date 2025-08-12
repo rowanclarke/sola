@@ -1,22 +1,19 @@
 import 'package:sola/data/repositories/renderer_repository.dart';
-import 'package:sola/data/services/file_service.dart';
+import 'package:sola/data/repositories/usfm_repository.dart';
 import '../../domain/models/page_model.dart';
 
 class PageRepository {
-  final FileService bibleService;
+  final UsfmRepository usfmRepository;
   final RendererRepository rendererRepository;
 
-  final String book;
+  PageRepository(this.usfmRepository, this.rendererRepository);
 
-  PageRepository(this.bibleService, this.rendererRepository, this.book);
-
-  Future<List<PageModel>> getPages(double width, double height) async {
-    await rendererRepository.render(
-      book,
-      width,
-      height,
-      () async => await bibleService.readAsString(book),
-    );
+  Future<List<PageModel>> getPages(
+    String book,
+    double width,
+    double height,
+  ) async {
+    await rendererRepository.render(book, width, height);
     return await Future.wait(
       List.generate(
         rendererRepository.numPages,

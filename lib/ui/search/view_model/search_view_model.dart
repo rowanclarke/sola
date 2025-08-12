@@ -7,7 +7,7 @@ class SearchViewModel extends ChangeNotifier {
   final SearchRepository repository;
   SearchViewModel(this.repository);
 
-  Function(int)? onItemSelected;
+  late Function(int) onItemSelected;
 
   double dragOffset = 0.0;
   bool viewOpened = false;
@@ -31,8 +31,8 @@ class SearchViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void handleItemTap(int page) {
-    onItemSelected?.call(page);
+  void handleItemTap(String book, int page) {
+    onItemSelected(page);
     controller.closeView(null);
   }
 

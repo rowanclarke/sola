@@ -12,9 +12,9 @@ pub use layout::{ArchivedIndex, ArchivedIndices, ArchivedPages, Index};
 pub use paint::Paint;
 use renderer::{Inline, inline};
 pub use renderer::{Renderer, TextStyle};
-use rkyv::{Archive, Deserialize, Serialize, rancor::Error, util::AlignedVec};
+use rkyv::{Archive, Deserialize, Serialize, deserialize, rancor::Error, util::AlignedVec};
 use skia_safe::textlayout::ParagraphBuilder;
-use usfm::BookIdentifier;
+use usfm::{ArchivedBookIdentifier, BookIdentifier};
 use writer::{LineFormat, Writer};
 
 use crate::log;
@@ -181,8 +181,8 @@ impl Painter {
         self.properties.last().map_or(0, |(i, _)| *i)
     }
 
-    pub fn index_book(&mut self, book: BookIdentifier) -> &mut Self {
-        self.index.book = Some(book);
+    pub fn index_book(&mut self, book: &ArchivedBookIdentifier) -> &mut Self {
+        self.index.book = Some(deserialize::<_, Error>(book).unwrap());
         self
     }
 

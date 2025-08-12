@@ -88,14 +88,43 @@ TextStyle toTextStyle(bind.TextStyle textStyle) {
   );
 }
 
-Pointer<Void> layout(Pointer<Void> renderer, String usfm, Dimensions dim) {
+Uint8List serializeUsfm(String usfm) {
   final native = usfm.toNativeUtf8();
+  final out = malloc<Pointer<Uint8>>();
+  final outLen = malloc<Size>();
+
+  _bindings.serialize_usfm(
+    native.cast<Char>(),
+    native.length,
+    out.cast<Pointer<Char>>(),
+    outLen,
+  );
+  return out.value.asTypedList(outLen.value);
+}
+
+Pointer<Void> getArchivedBook(Uint8List book) {
+  final bBook = Bytes(book);
+  return _bindings.archived_book(bBook.bytes, bBook.length);
+}
+
+String getBookIdentifier(Pointer<Void> book) {
+  final out = malloc<Pointer<Uint8>>();
+  final outLen = malloc<Size>();
+  _bindings.book_identifier(book, out.cast<Pointer<Char>>(), outLen);
+  return out.value.cast<Utf8>().toDartString(length: outLen.value);
+}
+
+Pointer<Void> layout(
+  Pointer<Void> renderer,
+  Pointer<Void> book,
+  Dimensions dim,
+) {
   final cdim = calloc<bind.Dimensions>();
   cdim.ref.width = dim.width;
   cdim.ref.height = dim.height;
   cdim.ref.header_height = dim.headerHeight;
   cdim.ref.drop_cap_padding = dim.dropCapPadding;
-  return _bindings.layout(renderer, native.cast<Char>(), native.length, cdim);
+  return _bindings.layout(renderer, book, cdim);
 }
 
 Uint8List serializePages(Pointer<Void> painter) {
@@ -205,14 +234,15 @@ Pointer<Void> getResult(Pointer<Void> model, String query) {
 }
 
 class Bytes {
+  final chunkSize = 1024;
   late Pointer<Uint8> _bytes;
   late int length;
 
   Bytes(Uint8List list) {
     length = list.length;
     _bytes = malloc<Uint8>(length);
-    final bytePtr = _bytes.asTypedList(length);
-    bytePtr.setAll(0, list);
+    final view = _bytes.asTypedList(length);
+    view.setAll(0, list);
   }
 
   get bytes => _bytes.cast<Char>();

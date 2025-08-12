@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:sola/data/repositories/renderer_repository.dart';
+import 'package:sola/data/repositories/usfm_repository.dart';
+import 'package:sola/data/services/usfm_service.dart';
 
 import 'ui/home/view_model/home_view_model.dart';
 import 'ui/home/widgets/home_screen.dart';
@@ -24,18 +26,23 @@ Future<void> main() async {
   );
   final rendererService = RendererService();
   final searchService = SearchService();
+  final usfmService = UsfmService();
+  final usfmFileService = storageService.local("usfm");
   final rendererFileService = storageService.local("renderer");
+  final usfmRepository = UsfmRepository(
+    bibleService,
+    usfmService,
+    usfmFileService,
+  );
+  await usfmRepository.loadBooks();
   final rendererRepository = RendererRepository(
+    usfmRepository,
     rendererService,
     rendererFileService,
   );
   runApp(
     MyApp(
-      pageRepository: PageRepository(
-        bibleService,
-        rendererRepository,
-        '02-GENengwebpb.usfm',
-      ),
+      pageRepository: PageRepository(usfmRepository, rendererRepository),
       searchRepository: SearchRepository(
         rendererRepository,
         modelService,
@@ -66,6 +73,7 @@ class MyApp extends StatelessWidget {
         ),
         Provider<HomeViewModel>(
           create: (context) => HomeViewModel(
+            "GEN",
             pagination: context.read<PaginationViewModel>(),
             search: context.read<SearchViewModel>(),
           ),

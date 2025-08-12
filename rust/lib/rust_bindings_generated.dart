@@ -91,13 +91,85 @@ class RustBindings {
         void Function(ffi.Pointer<ffi.Void>, int, ffi.Pointer<TextStyle>)
       >();
 
+  void serialize_usfm(
+    ffi.Pointer<ffi.Char> usfm,
+    int usfm_len,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> out,
+    ffi.Pointer<ffi.Size> out_len,
+  ) {
+    return _serialize_usfm(usfm, usfm_len, out, out_len);
+  }
+
+  late final _serialize_usfmPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(
+            ffi.Pointer<ffi.Char>,
+            ffi.Size,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+            ffi.Pointer<ffi.Size>,
+          )
+        >
+      >('serialize_usfm');
+  late final _serialize_usfm = _serialize_usfmPtr
+      .asFunction<
+        void Function(
+          ffi.Pointer<ffi.Char>,
+          int,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          ffi.Pointer<ffi.Size>,
+        )
+      >();
+
+  ffi.Pointer<ffi.Void> archived_book(
+    ffi.Pointer<ffi.Char> book,
+    int book_len,
+  ) {
+    return _archived_book(book, book_len);
+  }
+
+  late final _archived_bookPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<ffi.Void> Function(ffi.Pointer<ffi.Char>, ffi.Size)
+        >
+      >('archived_book');
+  late final _archived_book = _archived_bookPtr
+      .asFunction<ffi.Pointer<ffi.Void> Function(ffi.Pointer<ffi.Char>, int)>();
+
+  void book_identifier(
+    ffi.Pointer<ffi.Void> usfm,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> out,
+    ffi.Pointer<ffi.Size> out_len,
+  ) {
+    return _book_identifier(usfm, out, out_len);
+  }
+
+  late final _book_identifierPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(
+            ffi.Pointer<ffi.Void>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+            ffi.Pointer<ffi.Size>,
+          )
+        >
+      >('book_identifier');
+  late final _book_identifier = _book_identifierPtr
+      .asFunction<
+        void Function(
+          ffi.Pointer<ffi.Void>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          ffi.Pointer<ffi.Size>,
+        )
+      >();
+
   ffi.Pointer<ffi.Void> layout(
     ffi.Pointer<ffi.Void> renderer,
-    ffi.Pointer<ffi.Char> usfm,
-    int len,
+    ffi.Pointer<ffi.Void> usfm,
     ffi.Pointer<Dimensions> dim,
   ) {
-    return _layout(renderer, usfm, len, dim);
+    return _layout(renderer, usfm, dim);
   }
 
   late final _layoutPtr =
@@ -105,8 +177,7 @@ class RustBindings {
         ffi.NativeFunction<
           ffi.Pointer<ffi.Void> Function(
             ffi.Pointer<ffi.Void>,
-            ffi.Pointer<ffi.Char>,
-            ffi.Size,
+            ffi.Pointer<ffi.Void>,
             ffi.Pointer<Dimensions>,
           )
         >
@@ -115,8 +186,7 @@ class RustBindings {
       .asFunction<
         ffi.Pointer<ffi.Void> Function(
           ffi.Pointer<ffi.Void>,
-          ffi.Pointer<ffi.Char>,
-          int,
+          ffi.Pointer<ffi.Void>,
           ffi.Pointer<Dimensions>,
         )
       >();

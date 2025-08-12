@@ -13,7 +13,7 @@ class SearchListTile extends StatelessWidget {
 
     return ListTile(
       title: Text("${index.book} ${index.chapter}:${index.verse}"),
-      onTap: () => vm.handleItemTap(index.page),
+      onTap: () => vm.handleItemTap(index.book, index.page),
     );
   }
 }
