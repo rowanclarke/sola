@@ -51,10 +51,9 @@ class FileService {
     return local;
   }
 
-  Future<FileService> extractRemote(String url) async {
+  Future<FileService> extractRemote(String url, {String? path}) async {
     Uri uri = Uri.parse(url);
-    final path = uri.pathSegments.last;
-    final local = directory(path);
+    final local = directory(path ?? uri.pathSegments.last);
     if (!await local.exists()) {
       final response = await http.get(uri);
       await _extract(local, response.bodyBytes);
@@ -88,7 +87,7 @@ class FileService {
     return File(relative(path));
   }
 
-  Future<List<File>> getFiles(bool recursive) async {
+  Future<List<File>> getFiles([bool recursive = false]) async {
     if (await exists()) {
       return dir.listSync(recursive: recursive).whereType<File>().toList();
     } else {

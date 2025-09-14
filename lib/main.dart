@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:sola/data/repositories/library_repository.dart';
 import 'package:sola/data/repositories/session_repository.dart';
 import 'package:sola/data/services/file_service.dart';
+import 'package:sola/data/services/renderer_service.dart';
 import 'package:sola/ui/home/view_model/home_view_model.dart';
 import 'package:sola/ui/home/widgets/home_screen.dart';
 
@@ -16,12 +17,22 @@ Future<void> main() async {
   final libraryRepository = LibraryRepository(
     fileService.directory("library"),
     await fileService.deserializeAsset("assets/translations.json", "id"),
+    fileService.directory("serialized"),
+    fileService.directory("rendered"),
   );
-  final homeViewModel = HomeViewModel(sessionRepository, libraryRepository);
+  final rendererService = RendererService();
 
   runApp(
     MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => homeViewModel..init())],
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => HomeViewModel(
+            sessionRepository,
+            libraryRepository,
+            rendererService,
+          )..init(),
+        ),
+      ],
       child: MaterialApp(home: Scaffold(body: HomeScreen())),
     ),
   );
