@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sola/data/repositories/renderer_repository.dart';
 import '../../../domain/models/page_model.dart';
-import '../../../data/repositories/page_repository.dart';
 
 sealed class PaginationState {}
 
@@ -24,10 +23,9 @@ class PaginationViewModel extends ChangeNotifier {
 
   Future<void> init() async {
     notifyListeners();
-    final texts = await Future.wait(
+    pages = await Future.wait(
       List.generate(repository.numPages, (n) => repository.getPage(n)),
     );
-    pages = texts.map((text) => PageModel(page: text)).toList();
     _state = Viewing(0);
     notifyListeners();
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:sola/data/repositories/bible_repository.dart';
 import 'package:sola/data/repositories/library_repository.dart';
 import 'package:sola/data/repositories/renderer_repository.dart';
@@ -41,11 +42,16 @@ class HomeViewModel extends ChangeNotifier {
     } else {
       _state = Choosing();
     }
+
+    print(session);
     notifyListeners();
   }
 
   Future<List<BibleEntryModel>> getOptions() async {
-    return await libraryRepository.getNonDownloadedEntries();
+    print("Hi");
+    final a = await libraryRepository.getNonDownloadedEntries();
+    print("h");
+    return a;
   }
 
   Future<void> chooseOption(BibleEntryModel choice) async {

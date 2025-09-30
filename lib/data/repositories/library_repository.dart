@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/cupertino.dart';
 import 'package:sola/data/repositories/bible_repository.dart';
 import 'package:sola/data/repositories/renderer_repository.dart';
 import 'package:sola/data/services/file_service.dart';
@@ -28,13 +29,22 @@ class LibraryRepository {
     final available = await _getAvailable();
     final downloaded = await _getDownloaded();
     available.removeWhere((id) => downloaded.contains(id));
-    return await Future.wait(available.map(getEntry));
+    final a = await Future.wait(
+      available.map((id) {
+        return getEntry(id).timeout(const Duration(seconds: 2)).catchError((e) {
+          print("Error on id=$id: $e");
+          return null; // or some default value
+        });
+      }),
+      eagerError: false, // let others finish
+    );
+    print("a");
+    return a;
   }
 
   Future<BibleEntryModel> getEntry(String id) async {
-    return BibleEntryModel.fromJson(
-      json.decode(await availableFileService.readAsString(id)),
-    );
+    final r = await availableFileService.readAsString(id);
+    return BibleEntryModel.fromJson(json.decode(r));
   }
 
   Future<List<String>> _getAvailable() async {

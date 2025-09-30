@@ -1,5 +1,6 @@
 import 'dart:ffi';
 import 'dart:typed_data';
+import 'package:rust/rust.dart' as rust;
 
 class BibleService {
   Future<Uint8List> serialize(String usfm) async {

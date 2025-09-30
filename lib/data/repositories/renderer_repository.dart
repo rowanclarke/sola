@@ -46,6 +46,6 @@ class RendererRepository {
   }
 
   Future<PageModel> getPage(int n) async {
-    return PageModel(page: await rendererService.getPage(pages, n));
+    return PageModel(await rendererService.getPage(pages, n));
   }
 }
