@@ -5,18 +5,20 @@ import 'package:sola/data/repositories/library_repository.dart';
 import 'package:sola/data/repositories/session_repository.dart';
 import 'package:sola/data/services/file_service.dart';
 import 'package:sola/data/services/renderer_service.dart';
+import 'package:sola/domain/models/bible_entry_model.dart';
 import 'package:sola/ui/home/view_model/home_view_model.dart';
 import 'package:sola/ui/home/widgets/home_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final fileService = FileService(await getApplicationSupportDirectory());
-  print(fileService.dir.path);
-  // await fileService.deleteFile("session");
-  final sessionRepository = SessionRepository(fileService.file("session"));
+  await fileService.deleteFile("session");
+  final sessionRepository = SessionRepository(
+    await fileService.file("session"),
+  );
   final libraryRepository = LibraryRepository(
+    await fileService.deserializeAsset("assets/translations.json"),
     fileService.directory("library"),
-    await fileService.deserializeAsset("assets/translations.json", "id"),
     fileService.directory("serialized"),
     fileService.directory("rendered"),
   );

@@ -42,16 +42,12 @@ class HomeViewModel extends ChangeNotifier {
     } else {
       _state = Choosing();
     }
-
-    print(session);
     notifyListeners();
   }
 
   Future<List<BibleEntryModel>> getOptions() async {
-    print("Hi");
-    final a = await libraryRepository.getNonDownloadedEntries();
-    print("h");
-    return a;
+    return await libraryRepository.getDownloadedEntries() +
+        await libraryRepository.getNonDownloadedEntries();
   }
 
   Future<void> chooseOption(BibleEntryModel choice) async {
@@ -66,6 +62,7 @@ class HomeViewModel extends ChangeNotifier {
     double width,
     double height,
   ) async {
+    print(book);
     final bibleRepository = await libraryRepository.getBible(
       rendererService,
       bible,

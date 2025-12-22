@@ -27,12 +27,8 @@ class FileService {
     final archive = ZipDecoder().decodeBytes(bytes);
     for (final file in archive) {
       if (file.isFile) {
-        final outFile = local.file(file.name);
-        await outFile.create(recursive: true);
+        final outFile = await local.file(file.name).create(recursive: true);
         await outFile.writeAsBytes(file.content);
-      } else {
-        final dir = local.directory(file.name);
-        await dir.create();
       }
     }
   }
@@ -61,15 +57,9 @@ class FileService {
     return local;
   }
 
-  Future<FileService> deserializeAsset(String path, String name) async {
+  Future<dynamic> deserializeAsset(String path) async {
     final contents = await rootBundle.loadString(path);
-    final local = directory(path);
-    if (!await local.exists()) {
-      for (final dynamic item in json.decode(contents)) {
-        await _write(local.file(item[name]), json.encode(item));
-      }
-    }
-    return local;
+    return json.decode(contents);
   }
 
   Future<File> asset(String path) async {
@@ -114,12 +104,20 @@ class FileService {
 
   Future<void> deleteDirectory(String path) async {
     final dir = Directory(relative(path));
-    await dir.delete(recursive: true);
+    try {
+      await dir.delete(recursive: true);
+    } on FileSystemException {
+      return;
+    }
   }
 
   Future<void> deleteFile(String path) async {
     final file = File(relative(path));
-    await file.delete(recursive: true);
+    try {
+      await file.delete(recursive: true);
+    } on FileSystemException {
+      return;
+    }
   }
 
   Future<String> readAsString(String path, [String Function()? get]) async {

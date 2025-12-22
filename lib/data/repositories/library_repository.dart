@@ -10,16 +10,22 @@ import 'package:sola/domain/models/bible_entry_model.dart';
 
 class LibraryRepository {
   final FileService downloadedFileService;
-  final FileService availableFileService;
   final FileService usfmFileService;
   final FileService rendererFileService;
 
+  late Map<String, BibleEntryModel> available;
+
   LibraryRepository(
+    List<dynamic> available,
     this.downloadedFileService,
-    this.availableFileService,
     this.usfmFileService,
     this.rendererFileService,
-  );
+  ) {
+    this.available = Map.fromIterable(
+      available.map((e) => BibleEntryModel.fromJson(e)),
+      key: (e) => e.id,
+    );
+  }
 
   Future<List<BibleEntryModel>> getDownloadedEntries() async {
     return await Future.wait((await _getDownloaded()).map(getEntry));
@@ -33,24 +39,20 @@ class LibraryRepository {
       available.map((id) {
         return getEntry(id).timeout(const Duration(seconds: 2)).catchError((e) {
           print("Error on id=$id: $e");
-          return null; // or some default value
+          return null;
         });
       }),
-      eagerError: false, // let others finish
+      eagerError: false,
     );
-    print("a");
     return a;
   }
 
   Future<BibleEntryModel> getEntry(String id) async {
-    final r = await availableFileService.readAsString(id);
-    return BibleEntryModel.fromJson(json.decode(r));
+    return available[id]!;
   }
 
   Future<List<String>> _getAvailable() async {
-    return (await availableFileService.getFiles(
-      false,
-    )).map((f) => basename(f.path)).toList();
+    return available.keys.toList();
   }
 
   Future<List<String>> _getDownloaded() async {

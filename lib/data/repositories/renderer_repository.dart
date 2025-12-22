@@ -28,11 +28,14 @@ class RendererRepository {
     await fileService.deleteDirectory(book);
     if (!await fileService.openDirectory(book)) {
       rendererService.registerFontFamilies();
+      final archived = await getArchived();
+      print("fetched");
       response = await rendererService.render(
         await getArchived(),
         width,
         height,
       );
+      print("rendered");
     }
     final pages = await fileService.readAsBytes("pages", response?.getPages);
     final indices = await fileService.readAsBytes(
