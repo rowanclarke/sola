@@ -25,24 +25,24 @@ class RendererRepository {
     double height,
   ) async {
     RendererResponse? response;
-    await fileService.deleteDirectory(book);
-    if (!await fileService.openDirectory(book)) {
+    final path = "$book-$width-$height";
+    if (!await fileService.openDirectory(path)) {
       rendererService.registerFontFamilies();
-      final archived = await getArchived();
-      print("fetched");
       response = await rendererService.render(
         await getArchived(),
         width,
         height,
       );
-      print("rendered");
     }
-    final pages = await fileService.readAsBytes("pages", response?.getPages);
+    final pages = await fileService.readAsBytes(
+      "$path/pages",
+      response?.getPages,
+    );
     final indices = await fileService.readAsBytes(
-      "indices",
+      "$path/indices",
       response?.getIndices,
     );
-    verses = await fileService.readAsBytes("verses", response?.getVerses);
+    verses = await fileService.readAsBytes("$path/verses", response?.getVerses);
     this.pages = rendererService.getArchivedPages(pages);
     numPages = rendererService.getNumPages(this.pages);
     this.indices = rendererService.getArchivedIndices(indices);

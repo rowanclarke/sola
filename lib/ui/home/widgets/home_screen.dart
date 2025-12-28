@@ -34,7 +34,7 @@ class HomeScreen extends StatelessWidget {
               },
             );
           case Selected(:final bible):
-            final padding = 10.0;
+            final padding = MediaQuery.of(context).padding.top;
             return LayoutBuilder(
               builder: (_, constraints) {
                 final width = constraints.maxWidth - 2 * padding;
