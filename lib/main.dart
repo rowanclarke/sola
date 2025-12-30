@@ -16,7 +16,11 @@ import 'package:sola/ui/search/view_model/search_view_model.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final fileService = FileService(await getApplicationSupportDirectory());
-  await fileService.deleteFile("session");
+  final modelService = await fileService.extractRemote(
+    'https://github.com/rowanclarke/sola/releases/download/asset-model-v0.0.1/model.zip',
+  );
+  final searchService = SearchService();
+
   final sessionRepository = SessionRepository(fileService.file("session"));
   final libraryRepository = LibraryRepository(
     await fileService.deserializeAsset("assets/translations.json"),
@@ -25,8 +29,6 @@ Future<void> main() async {
     fileService.directory("rendered"),
   );
   final rendererService = RendererService();
-  final searchService = SearchService(fileService);
-  final _embeddingRepository = EmbeddingRepository(fileService);
 
   runApp(
     MultiProvider(
@@ -36,23 +38,11 @@ Future<void> main() async {
             sessionRepository,
             libraryRepository,
             rendererService,
+            modelService,
+            searchService,
           )..init(),
         ),
         ChangeNotifierProvider(create: (_) => MenuViewModel()),
-        ChangeNotifierProvider(
-          create: (context) {
-            final homeVm = context.read<HomeViewModel>();
-            return SearchViewModel(
-              SearchRepository(
-                // Will be set dynamically based on current translation
-                libraryRepository as dynamic,
-                fileService,
-                searchService,
-              ),
-              currentTranslationId: homeVm.currentTranslationId,
-            );
-          },
-        ),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
