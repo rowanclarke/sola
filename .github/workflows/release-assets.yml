@@ -1,4 +1,6 @@
 name: Release Asset
+permissions:
+  contents: write
 on:
   push:
     tags:
@@ -8,6 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          lfs: true
+          fetch-depth: 0
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
