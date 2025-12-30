@@ -3,12 +3,38 @@ import 'package:provider/provider.dart';
 import '../view_model/pagination_view_model.dart';
 import 'page_view_widget.dart';
 
-class PaginationScreen extends StatelessWidget {
+class PaginationScreen extends StatefulWidget {
   final double padding;
   final double width;
   final double height;
+  final int initialPage;
 
-  const PaginationScreen(this.padding, this.width, this.height, {super.key});
+  const PaginationScreen(
+    this.padding,
+    this.width,
+    this.height, {
+    super.key,
+    this.initialPage = 0,
+  });
+
+  @override
+  State<PaginationScreen> createState() => _PaginationScreenState();
+}
+
+class _PaginationScreenState extends State<PaginationScreen> {
+  late PageController _pageController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(initialPage: widget.initialPage);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +45,7 @@ class PaginationScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           case Viewing():
             return PageView.builder(
-              controller: PageController(),
+              controller: _pageController,
               itemCount: vm.pages.length,
               onPageChanged: (index) {
                 vm.setPage(index);
@@ -27,11 +53,11 @@ class PaginationScreen extends StatelessWidget {
               itemBuilder: (context, index) {
                 final model = vm.pages[index];
                 return Padding(
-                  padding: EdgeInsets.all(padding),
+                  padding: EdgeInsets.all(widget.padding),
                   child: PageViewWidget(
                     page: model.page,
-                    width: width,
-                    height: height,
+                    width: widget.width,
+                    height: widget.height,
                   ),
                 );
               },

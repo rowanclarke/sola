@@ -1,6 +1,7 @@
+import 'dart:typed_data';
+
 import 'package:sola/data/repositories/renderer_repository.dart';
 import 'package:sola/data/services/file_service.dart';
-import 'package:sola/data/services/renderer_service.dart';
 import 'package:sola/domain/models/index_model.dart';
 
 import '../services/search_service.dart';
@@ -27,5 +28,33 @@ class SearchRepository {
 
   Future<IndexModel> getResult(String s) {
     return searchService.getResult(s);
+  }
+
+  Future<void> saveVerseEmbedding(
+    String translationId,
+    String bookId,
+    int chapter,
+    int verse,
+    Uint8List embedding,
+  ) async {
+    // TODO: Implement storing verse embedding in archived binary format
+    // Store at path like: cache/translations/{translationId}/embeddings.bin
+    // Format should match Rust's ArchivedVec<ArchivedIndex> pattern
+  }
+
+  Future<Uint8List?> getVerseEmbeddings(String translationId) async {
+    // TODO: Implement loading all verse embeddings for a translation
+    // Load from cache as archived binary
+    return null;
+  }
+
+  Future<List<(String bookId, int chapter, int verse, double similarity)>>
+  findSimilarVersesForTranslation(
+    String translationId,
+    Uint8List queryEmbedding,
+  ) async {
+    // TODO: Implement finding similar verses for a translation
+    // Use Rust FFI to compute cosine similarities
+    return [];
   }
 }

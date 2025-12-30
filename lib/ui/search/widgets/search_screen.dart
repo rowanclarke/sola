@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sola/domain/models/index_model.dart';
 import 'package:sola/ui/search/widgets/search_anchor.dart';
+import 'package:sola/ui/home/view_model/home_view_model.dart';
 import '../view_model/search_view_model.dart';
 import 'search_list_tile.dart';
 
@@ -23,6 +24,19 @@ class _SearchScreenState extends State<SearchScreen> {
 
   static const double _directionThreshold = 10.0;
   static const double _verticalBias = 1.3;
+
+  @override
+  void initState() {
+    super.initState();
+    // Setup callback from SearchViewModel to HomeViewModel
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final searchVm = context.read<SearchViewModel>();
+      final homeVm = context.read<HomeViewModel>();
+      searchVm.onItemSelected = (bookId, pageNumber) {
+        homeVm.updateCurrentLocation(bookId, pageNumber);
+      };
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
