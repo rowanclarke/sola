@@ -5,11 +5,9 @@ import 'package:sola/domain/models/index_model.dart';
 class SearchViewModel extends ChangeNotifier {
   final SearchController controller = SearchController();
   final SearchRepository repository;
-  final String? currentTranslationId;
+  final Function(String bookId, int pageNumber)? onItemSelected;
 
-  SearchViewModel(this.repository, {this.currentTranslationId});
-
-  late Function(String bookId, int pageNumber)? onItemSelected;
+  SearchViewModel(this.repository, {required this.onItemSelected});
 
   double dragOffset = 0.0;
   bool viewOpened = false;
@@ -43,15 +41,7 @@ class SearchViewModel extends ChangeNotifier {
   }
 
   Future<IndexModel> getResult(String s) async {
+    print("Getting $s");
     return await repository.getResult(s);
-  }
-
-  Future<List<IndexModel>> searchVerses(String query) async {
-    if (currentTranslationId == null) {
-      return [];
-    }
-    // TODO: Implement searching verses across translation
-    // Should use SearchService.searchAcrossTranslation
-    return [];
   }
 }

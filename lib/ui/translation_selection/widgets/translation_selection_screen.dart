@@ -10,9 +10,9 @@ class TranslationSelectionScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Select Translation')),
       body: Consumer<HomeViewModel>(
-        builder: (context, homeVm, _) {
+        builder: (context, vm, _) {
           return FutureBuilder(
-            future: homeVm.getOptions(),
+            future: vm.getOptions(),
             builder: (_, snapshot) {
               if (snapshot.data != null) {
                 return ListView(
@@ -22,7 +22,7 @@ class TranslationSelectionScreen extends StatelessWidget {
                           title: Text(translation.id),
                           subtitle: Text(translation.title ?? ''),
                           onTap: () async {
-                            await homeVm.chooseOption(translation);
+                            await vm.chooseOption(translation);
                             if (context.mounted) {
                               Navigator.of(context).pop();
                             }

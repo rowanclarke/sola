@@ -26,19 +26,6 @@ class _SearchScreenState extends State<SearchScreen> {
   static const double _verticalBias = 1.3;
 
   @override
-  void initState() {
-    super.initState();
-    // Setup callback from SearchViewModel to HomeViewModel
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final searchVm = context.read<SearchViewModel>();
-      final homeVm = context.read<HomeViewModel>();
-      searchVm.onItemSelected = (bookId, pageNumber) {
-        homeVm.updateCurrentLocation(bookId, pageNumber);
-      };
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
     final vm = context.watch<SearchViewModel>();
 

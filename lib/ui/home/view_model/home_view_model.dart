@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:sola/data/repositories/library_repository.dart';
 import 'package:sola/data/repositories/renderer_repository.dart';
 import 'package:sola/data/repositories/session_repository.dart';
+import 'package:sola/data/services/file_service.dart';
 import 'package:sola/data/services/renderer_service.dart';
+import 'package:sola/data/services/search_service.dart';
 import 'package:sola/domain/models/bible_entry_model.dart';
 import 'package:sola/domain/models/session_model.dart';
 
@@ -11,7 +13,7 @@ sealed class HomeState {}
 
 class Loading extends HomeState {}
 
-class Choosing extends HomeState {}
+class Welcome extends HomeState {}
 
 class Selected extends HomeState {
   final BibleEntryModel bible;
@@ -22,6 +24,8 @@ class HomeViewModel extends ChangeNotifier {
   final SessionRepository sessionRepository;
   final LibraryRepository libraryRepository;
   final RendererService rendererService;
+  final FileService modelService;
+  final SearchService searchService;
 
   HomeState _state = Loading();
   HomeState get state => _state;
@@ -40,6 +44,8 @@ class HomeViewModel extends ChangeNotifier {
     this.sessionRepository,
     this.libraryRepository,
     this.rendererService,
+    this.modelService,
+    this.searchService,
   );
 
   Future<void> init() async {
@@ -56,10 +62,10 @@ class HomeViewModel extends ChangeNotifier {
         _state = Selected(bible);
       } catch (e) {
         print('Error loading previous translation: $e');
-        _state = Choosing();
+        _state = Welcome();
       }
     } else {
-      _state = Choosing();
+      _state = Welcome();
     }
     notifyListeners();
   }
