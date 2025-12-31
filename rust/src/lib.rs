@@ -190,7 +190,7 @@ pub extern "C" fn get_index(
     let index = unsafe { &*(index as *const ArchivedIndex) };
     unsafe { *out_page = archived_indices[index].try_into().unwrap() };
     let index = deserialize::<_, Error>(index).unwrap();
-    let book = format!("{:?}", index.book).leak();
+    let book = index.book.to_identifier();
     unsafe {
         *out_book = book.as_ptr();
         *out_book_len = book.len();

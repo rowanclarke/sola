@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sola/domain/models/index_model.dart';
 import 'package:sola/ui/search/widgets/search_anchor.dart';
-import 'package:sola/ui/home/view_model/home_view_model.dart';
 import '../view_model/search_view_model.dart';
 import 'search_list_tile.dart';
 
@@ -76,7 +75,7 @@ class _SearchScreenState extends State<SearchScreen> {
             AsyncSearchAnchor<IndexModel>(
               searchController: vm.controller,
               searchFunction: (query) async => [await vm.getResult(query)],
-              builder: (result) => SearchListTile(index: result),
+              builder: (result) => SearchListTile(vm, index: result),
             ),
           ],
         ),
