@@ -103,24 +103,32 @@ class HomeScreen extends StatelessWidget {
                           vm.modelService,
                           vm.searchService,
                         );
+                        final paginationViewModel = PaginationViewModel(
+                          rendererRepository,
+                          initialPage: initialPage,
+                          onPageChanged: (pageNumber) {
+                            vm.updateCurrentLocation(bookId, pageNumber);
+                          },
+                        )..init();
                         return MultiProvider(
                           providers: [
                             ChangeNotifierProvider(
                               create: (_) => SearchViewModel(
                                 searchRepository,
-                                onItemSelected: (bookId, pageNumber) {
-                                  vm.updateCurrentLocation(bookId, pageNumber);
+                                onItemSelected: (newBookId, pageNumber) {
+                                  print("Go to $newBookId $pageNumber");
+                                  if (newBookId == bookId) {
+                                    paginationViewModel.setPage(pageNumber);
+                                  }
+                                  vm.updateCurrentLocation(
+                                    newBookId,
+                                    pageNumber,
+                                  );
                                 },
                               )..loadModel(),
                             ),
                             ChangeNotifierProvider(
-                              create: (_) => PaginationViewModel(
-                                rendererRepository,
-                                initialPage: initialPage,
-                                onPageChanged: (pageNumber) {
-                                  vm.updateCurrentLocation(bookId, pageNumber);
-                                },
-                              )..init(),
+                              create: (_) => paginationViewModel,
                             ),
                           ],
                           child: SearchScreen(
