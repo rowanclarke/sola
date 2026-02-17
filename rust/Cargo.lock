@@ -2032,6 +2032,8 @@ checksum = "39ec24b3121d976906ece63c9daad25b85969647682eee313cb5779fdd69e14e"
 [[package]]
 name = "usfm"
 version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fb9dcd30febd7d01aa3377edfaf09962560c730264045b6b02cc0bc0ab73c322"
 dependencies = [
  "pest",
  "pest-ast",
