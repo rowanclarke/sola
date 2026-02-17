@@ -14,8 +14,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/models/bible_entry.dart';
-import '../../core/session/session_state.dart';
+import '../../core/models/translation.dart';
 import '../viewmodels/library_viewmodel.dart';
 
 /// Displays the translation library.
@@ -84,7 +83,7 @@ class LibraryScreen extends StatelessWidget {
   /// - Action button (Open for downloaded, Download for available)
   static Widget _buildTranslationTile(
     BuildContext context,
-    BibleEntry entry,
+    Translation translation,
     bool isDownloaded,
     VoidCallback onAction,
   ) {

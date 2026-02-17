@@ -1,24 +1,11 @@
 /// Represents rendering configuration options for formatting a Bible translation.
 /// Contains formatting preferences that affect how pages are rendered.
 class RenderingConfig {
-  final bool enablePoetryFormatting;
-  final bool enableParagraphSpacing;
-  final String pageFormat; // e.g., "single", "double"
+  final int fontSize;
 
   const RenderingConfig({
-    this.enablePoetryFormatting = true,
-    this.enableParagraphSpacing = true,
-    this.pageFormat = 'single',
+    required this.fontSize,
   });
-
-  /// Creates a copy of this rendering config with some fields replaced.
-  RenderingConfig copyWith({
-    bool? enablePoetryFormatting,
-    bool? enableParagraphSpacing,
-    String? pageFormat,
-  }) {
-    throw UnimplementedError();
-  }
 }
 
 /// Represents rendering progress information during the rendering process.

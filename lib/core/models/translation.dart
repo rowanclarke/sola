@@ -2,27 +2,14 @@
 /// Contains identifier, language, name, and optional download information.
 class Translation {
   final String id;
-  final String name;
+  final String title;
   final String language;
-  final String? downloadUrl;
-  final bool isDownloaded;
+  final String url;
 
   const Translation({
     required this.id,
-    required this.name,
+    required this.title,
     required this.language,
-    this.downloadUrl,
-    this.isDownloaded = false,
+    required this.url,
   });
-
-  /// Creates a copy of this translation with some fields replaced.
-  Translation copyWith({
-    String? id,
-    String? name,
-    String? language,
-    String? downloadUrl,
-    bool? isDownloaded,
-  }) {
-    throw UnimplementedError();
-  }
 }
