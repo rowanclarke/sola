@@ -1,33 +1,25 @@
-import 'package:sola/core/models/book.dart';
-import 'package:sola/core/models/book.dart' show VerseData;
+import 'dart:ffi';
+import 'dart:typed_data';
 
-/// SearchService handles semantic search over Bible text.
-/// Generates embeddings for verses and performs semantic queries.
+import 'package:rust/rust.dart' as rust;
+
 class SearchService {
-  /// Generates embeddings for text segments (verses).
-  /// Produces numerical vectors that enable semantic search.
-  /// Input: list of verse texts.
-  /// Output: map of verse references to embedding vectors.
-  Map<String, List<double>> generateEmbeddings(List<VerseData> verses) {
-    throw UnimplementedError();
+  Pointer<Void>? _indices;
+  Pointer<Void>? _model;
+
+  void loadModel(
+    Pointer<Void> indices,
+    Uint8List embeddings,
+    Uint8List verses,
+    Uint8List model,
+    Uint8List tokenizer,
+  ) {
+    _indices = indices;
+    _model = rust.loadModel(embeddings, verses, model, tokenizer);
   }
 
-  /// Performs semantic search against a collection of embeddings.
-  /// Computes similarity between query embedding and stored verse embeddings.
-  /// Input: query embedding, embeddings index, number of results to return.
-  /// Output: list of matching VerseData sorted by relevance.
-  List<VerseData> performSemanticSearch(
-    List<double> queryEmbedding,
-    Map<String, List<double>> embeddingsIndex,
-    List<VerseData> allVerses, {
-    int limit = 10,
-  }) {
-    throw UnimplementedError();
-  }
-
-  /// Generates an embedding for a search query.
-  /// Produces a numerical vector for semantic comparison.
-  List<double> encodeQuery(String query) {
-    throw UnimplementedError();
+  rust.Index getResult(String query) {
+    final resultPtr = rust.getResult(_model!, query);
+    return rust.getIndex(_indices!, resultPtr);
   }
 }

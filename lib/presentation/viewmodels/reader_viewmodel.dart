@@ -1,48 +1,64 @@
 import 'package:flutter/foundation.dart';
 import 'package:sola/core/models/page_model.dart';
+import 'package:sola/data/repositories/bible_repository.dart';
 import 'package:sola/data/repositories/renderer_repository.dart';
 import 'package:sola/data/repositories/session_repository.dart';
 
-/// ReaderViewModel manages the display and navigation of rendered Bible pages.
-/// Handles page changes, book navigation, and interaction with search.
 class ReaderViewModel extends ChangeNotifier {
   final RendererRepository _rendererRepository;
   final SessionRepository _sessionRepository;
+  final BibleRepository _bibleRepository;
 
-  PageModel? _currentPage;
+  List<PageModel> _pages = [];
+  int _currentPageIndex = 0;
+  bool _isLoading = false;
+  String? _currentCacheKey;
 
   ReaderViewModel({
     required RendererRepository rendererRepository,
     required SessionRepository sessionRepository,
+    required BibleRepository bibleRepository,
   }) : _rendererRepository = rendererRepository,
-       _sessionRepository = sessionRepository;
+       _sessionRepository = sessionRepository,
+       _bibleRepository = bibleRepository;
 
-  PageModel? get currentPage => _currentPage;
+  List<PageModel> get pages => _pages;
+  int get currentPageIndex => _currentPageIndex;
+  bool get isLoading => _isLoading;
 
-  /// Navigates to a specific page number and loads its content.
-  /// Updates the session and notifies listeners.
-  Future<void> goToPage(int pageNumber) {
-    throw UnimplementedError();
+  Future<void> loadPages(double width, double height) async {
+    final translationId =
+        _sessionRepository.currentSession.currentTranslationId;
+    final bookId = _sessionRepository.currentSession.currentBookId;
+    print("$translationId $bookId");
+    if (translationId == null || bookId == null) return;
+
+    final cacheKey = '$bookId-$width-$height';
+    print("$cacheKey");
+    if (cacheKey == _currentCacheKey) return;
+
+    _isLoading = true;
+    notifyListeners();
+
+    print("Hiii");
+    await _bibleRepository.serializeTranslation(translationId);
+    _pages = await _rendererRepository.renderAndLoadPages(
+      translationId: translationId,
+      bookId: bookId,
+      width: width,
+      height: height,
+    );
+
+    _currentCacheKey = cacheKey;
+    final savedPage = _sessionRepository.currentSession.currentPageNumber ?? 0;
+    _currentPageIndex = savedPage.clamp(0, _pages.length - 1);
+    _isLoading = false;
+    notifyListeners();
   }
 
-  /// Navigates to a specific book and its first page.
-  Future<void> goToBook(String bookId) {
-    throw UnimplementedError();
-  }
-
-  /// Navigates to the page containing a specific verse.
-  /// Requires the verse reference to be resolved to a page number.
-  Future<void> goToVerse(String verseReference) {
-    throw UnimplementedError();
-  }
-
-  /// Opens the search screen overlay.
-  void openSearch() {
-    throw UnimplementedError();
-  }
-
-  /// Loads the current page content based on session state.
-  Future<void> _loadCurrentPage() {
-    throw UnimplementedError();
+  Future<void> setPage(int index) async {
+    _currentPageIndex = index;
+    await _sessionRepository.setCurrentPage(index);
+    notifyListeners();
   }
 }

@@ -1,46 +1,42 @@
 import 'package:sola/core/models/translation.dart';
 import 'package:sola/domain/services/file_service.dart';
 
-/// LibraryRepository manages metadata for available and downloaded translations.
-/// Handles retrieval, storage, and synchronization of translation lists.
 class LibraryRepository {
   final FileService _fileService;
   List<Translation>? _availableTranslationsCache;
   List<Translation>? _downloadedTranslationsCache;
 
-  static const String _downloadedTranslationsPath =
-      'downloaded_translations.json';
-  static const String _availableTranslationsPath =
-      'available_translations.json';
-
   LibraryRepository({required FileService fileService})
     : _fileService = fileService;
 
-  /// Retrieves the list of translations available for download.
-  /// Returns cached data if available; otherwise, loads from storage or remote.
-  Future<List<Translation>> getAvailableTranslations() {
-    throw UnimplementedError();
+  Future<List<Translation>> getAvailableTranslations() async {
+    if (_availableTranslationsCache != null) return _availableTranslationsCache!;
+    final data = await _fileService.deserializeAsset('assets/translations.json');
+    final list = (data as List)
+        .map((e) => Translation.fromJson(e as Map<String, dynamic>))
+        .where((t) => t.downloadable)
+        .toList();
+    _availableTranslationsCache = list;
+    return list;
   }
 
-  /// Retrieves the list of translations already downloaded locally.
-  Future<List<Translation>> getDownloadedTranslations() {
-    throw UnimplementedError();
+  Future<List<Translation>> getDownloadedTranslations() async {
+    if (_downloadedTranslationsCache != null) return _downloadedTranslationsCache!;
+    final available = await getAvailableTranslations();
+    final dirs = await _fileService.listDirectory('library');
+    final dirSet = dirs.toSet();
+    final list = available.where((t) => dirSet.contains(t.id)).toList();
+    _downloadedTranslationsCache = list;
+    return list;
   }
 
-  /// Downloads a translation from a remote source and stores it locally.
-  /// Updates the downloaded translations list upon successful completion.
-  Future<void> downloadTranslation(String translationId, String downloadUrl) {
-    throw UnimplementedError();
+  Future<void> downloadTranslation(String translationId, String downloadUrl) async {
+    await _fileService.extractRemote(downloadUrl, 'library/$translationId');
+    _downloadedTranslationsCache = null;
   }
 
-  /// Adds a translation to the list of downloaded translations.
-  /// Persists the updated list to storage.
-  Future<void> addDownloadedTranslation(Translation translation) {
-    throw UnimplementedError();
-  }
-
-  /// Clears the in-memory cache to force reloading from storage.
   void invalidateCache() {
-    throw UnimplementedError();
+    _availableTranslationsCache = null;
+    _downloadedTranslationsCache = null;
   }
 }

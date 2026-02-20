@@ -1,62 +1,85 @@
+import 'dart:ffi';
+import 'dart:typed_data';
+
 import 'package:sola/core/models/page_model.dart';
-import 'package:sola/core/models/book.dart';
-import 'package:sola/core/models/rendering_config.dart';
-import 'package:sola/core/models/rendering_config.dart' show RenderingProgress;
+import 'package:sola/data/repositories/bible_repository.dart';
+import 'package:sola/domain/services/bible_service.dart';
 import 'package:sola/domain/services/file_service.dart';
 import 'package:sola/domain/services/renderer_service.dart';
-import 'package:sola/data/repositories/bible_repository.dart';
 
-/// RendererRepository manages the storage and retrieval of rendered pages.
-/// Caches rendered data to avoid recomputation and handles the rendering pipeline.
-/// Index handling is done entirely on the Rust backend.
 class RendererRepository {
   final FileService _fileService;
   final RendererService _rendererService;
   final BibleRepository _bibleRepository;
-  final Map<String, PageModel> _pageCache = {};
+  final BibleService _bibleService;
+  final Map<String, List<PageModel>> _pageCache = {};
+
+  Pointer<Void>? archivedIndices;
+  Uint8List? verses;
+  int? numPages;
 
   RendererRepository({
     required FileService fileService,
     required RendererService rendererService,
     required BibleRepository bibleRepository,
+    required BibleService bibleService,
   }) : _fileService = fileService,
        _rendererService = rendererService,
-       _bibleRepository = bibleRepository;
+       _bibleRepository = bibleRepository,
+       _bibleService = bibleService;
 
-  /// Retrieves a specific rendered page for a translation and book.
-  /// Returns cached page if available; otherwise, loads from storage.
-  Future<PageModel?> getRenderedPage({
+  Future<List<PageModel>> renderAndLoadPages({
     required String translationId,
     required String bookId,
-    required int pageNumber,
-  }) {
-    throw UnimplementedError();
+    required double width,
+    required double height,
+  }) async {
+    final cacheKey = '$bookId-$width-$height';
+
+    if (_pageCache.containsKey(cacheKey)) return _pageCache[cacheKey]!;
+
+    final dir = 'rendered/$translationId/$cacheKey';
+    final dirExists = await _fileService.openDirectory(dir);
+
+    RendererResponse? response;
+    if (!dirExists) {
+      print("Hii");
+      await _rendererService.registerFontFamilies();
+      final bookBytes = await _bibleRepository.getSerializedBook(
+        translationId: translationId,
+        bookId: bookId,
+      );
+      final archivedBook = _bibleService.getArchivedBook(bookBytes);
+      response = _rendererService.layout(archivedBook, width, height);
+    }
+
+    final pagesBytes = await _fileService.readBytes(
+      '$dir/pages',
+      response != null ? () async => response!.getPages() : null,
+    );
+    final indicesBytes = await _fileService.readBytes(
+      '$dir/indices',
+      response != null ? () async => response!.getIndices() : null,
+    );
+    final versesBytes = await _fileService.readBytes(
+      '$dir/verses',
+      response != null ? () async => response!.getVerses() : null,
+    );
+
+    final archivedPages = _rendererService.getArchivedPages(pagesBytes);
+    archivedIndices = _rendererService.getArchivedIndices(indicesBytes);
+    verses = versesBytes;
+    numPages = _rendererService.getNumPages(archivedPages);
+
+    final pages = List.generate(
+      numPages!,
+      (n) => PageModel(_rendererService.getPage(archivedPages, n)),
+    );
+    _pageCache[cacheKey] = pages;
+    return pages;
   }
 
-  /// Checks if a translation has already been rendered.
-  Future<bool> isTranslationRendered({required String translationId}) {
-    throw UnimplementedError();
-  }
-
-  /// Renders a book and saves all pages.
-  /// Reports progress via the onProgress callback.
-  Future<void> renderAndSave({
-    required String translationId,
-    required String bookId,
-    required Book book,
-    required RenderingConfig config,
-    required Function(RenderingProgress) onProgress,
-  }) {
-    throw UnimplementedError();
-  }
-
-  /// Clears the in-memory page cache to force reloading from storage.
   void invalidateCache() {
-    throw UnimplementedError();
-  }
-
-  /// Gets the file path for a rendered page.
-  String _getPagePath(String translationId, String bookId, int pageNumber) {
-    throw UnimplementedError();
+    _pageCache.clear();
   }
 }

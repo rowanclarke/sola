@@ -1,12 +1,5 @@
-/// Application bootstrap and dependency injection setup.
-///
-/// Creates all dependencies in order:
-/// 1. Domain services (no dependencies on each other or UI)
-/// 2. Data repositories (depend on services)
-/// 3. Presentation viewmodels (depend on repositories)
-/// 4. Provider configuration (makes viewmodels available to widget tree)
-
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
 import '../core/session/session_state.dart';
@@ -26,24 +19,16 @@ import '../presentation/viewmodels/search_viewmodel.dart';
 import '../presentation/viewmodels/session_viewmodel.dart';
 import 'app_routes.dart';
 
-/// Initializes all application dependencies and returns the root widget tree.
-///
-/// Order matters:
-/// - FileService first (no dependencies)
-/// - Other services (depend on FileService)
-/// - SessionRepository first among repositories
-/// - Other repositories (depend on services and SessionRepository)
-/// - ViewModels (depend on repositories)
 class AppBootstrap {
-  /// Initializes all dependencies and returns the root widget wrapped in providers.
   static Future<Widget> initialize() async {
-    // 1. Domain services
-    final fileService = FileService();
+    final dir = await getApplicationSupportDirectory();
+    final fileService = FileService(dir);
     final bibleService = BibleService();
     final rendererService = RendererService();
     final searchService = SearchService();
 
-    // 2. Repositories
+    rendererService.registerStyles();
+
     final sessionRepository = SessionRepository(fileService: fileService);
     await sessionRepository.init();
 
@@ -56,19 +41,18 @@ class AppBootstrap {
       fileService: fileService,
       rendererService: rendererService,
       bibleRepository: bibleRepository,
+      bibleService: bibleService,
     );
     final searchRepository = SearchRepository(
       fileService: fileService,
       searchService: searchService,
-      bibleRepository: bibleRepository,
+      rendererRepository: rendererRepository,
     );
 
-    // 3. Session state
     final sessionState = SessionState(
       initialSession: sessionRepository.currentSession,
     );
 
-    // 4. ViewModels
     final sessionViewModel = SessionViewModel(
       sessionRepository: sessionRepository,
     );
@@ -76,20 +60,17 @@ class AppBootstrap {
       libraryRepository: libraryRepository,
       sessionRepository: sessionRepository,
     );
-    final renderingViewModel = RenderingViewModel(
-      rendererRepository: rendererRepository,
-      sessionRepository: sessionRepository,
-    );
+    final renderingViewModel = RenderingViewModel();
     final readerViewModel = ReaderViewModel(
       rendererRepository: rendererRepository,
       sessionRepository: sessionRepository,
+      bibleRepository: bibleRepository,
     );
     final searchViewModel = SearchViewModel(
       searchRepository: searchRepository,
       sessionRepository: sessionRepository,
     );
 
-    // 5. Build provider tree
     return MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: sessionState),
@@ -104,12 +85,19 @@ class AppBootstrap {
   }
 }
 
-/// Root widget for the Sola application.
 class SolaApp extends StatelessWidget {
   const SolaApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    throw UnimplementedError();
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
+        child: child!,
+      ),
+      onGenerateRoute: AppRouteGenerator.generateRoute,
+      initialRoute: AppRoutes.library,
+    );
   }
 }

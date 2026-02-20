@@ -1,43 +1,90 @@
+import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
-/// FileService provides low-level access to the device's file system.
-/// Handles reading, writing, and checking file existence for persistence operations.
+import 'package:archive/archive.dart';
+import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
+import 'package:path/path.dart' as p;
+
 class FileService {
-  /// Reads data from a file at the specified path.
-  /// Returns the file contents as a string.
+  final Directory _baseDir;
+
+  FileService(this._baseDir);
+
+  String _resolve(String path) => p.join(_baseDir.path, path);
+
   Future<String> readFile(String filePath) {
-    throw UnimplementedError();
+    return File(_resolve(filePath)).readAsString();
   }
 
-  /// Writes data to a file at the specified path.
-  /// Creates the file if it doesn't exist; overwrites if it does.
-  Future<void> writeFile(String filePath, String data) {
-    throw UnimplementedError();
+  Future<void> writeFile(String filePath, String data) async {
+    final file = File(_resolve(filePath));
+    await file.parent.create(recursive: true);
+    await file.writeAsString(data);
   }
 
-  /// Reads binary data from a file at the specified path.
-  Future<Uint8List> readBytes(String filePath) {
-    throw UnimplementedError();
+  Future<Uint8List> readBytes(String filePath, [Future<Uint8List> Function()? generator]) async {
+    final file = File(_resolve(filePath));
+    if (await file.exists()) {
+      return file.readAsBytes();
+    }
+    if (generator != null) {
+      final bytes = await generator();
+      await file.parent.create(recursive: true);
+      await file.writeAsBytes(bytes);
+      return bytes;
+    }
+    throw FileSystemException('File not found', _resolve(filePath));
   }
 
-  /// Writes binary data to a file at the specified path.
-  /// Creates the file if it doesn't exist; overwrites if it does.
-  Future<void> writeBytes(String filePath, Uint8List data) {
-    throw UnimplementedError();
+  Future<void> writeBytes(String filePath, Uint8List data) async {
+    final file = File(_resolve(filePath));
+    await file.parent.create(recursive: true);
+    await file.writeAsBytes(data);
   }
 
-  /// Checks whether a file exists at the specified path.
   Future<bool> fileExists(String filePath) {
-    throw UnimplementedError();
+    return File(_resolve(filePath)).exists();
   }
 
-  /// Lists the contents of a directory.
-  Future<List<String>> listDirectory(String directoryPath) {
-    throw UnimplementedError();
+  Future<List<String>> listDirectory(String directoryPath) async {
+    final dir = Directory(_resolve(directoryPath));
+    if (!await dir.exists()) return [];
+    return dir
+        .list()
+        .map((e) => p.basename(e.path))
+        .toList();
   }
 
-  /// Deletes a file at the specified path.
   Future<void> deleteFile(String filePath) {
-    throw UnimplementedError();
+    return File(_resolve(filePath)).delete();
+  }
+
+  Future<void> extractRemote(String url, String path) async {
+    final dir = Directory(_resolve(path));
+    if (await dir.exists()) return;
+    final response = await http.get(Uri.parse(url));
+    final archive = ZipDecoder().decodeBytes(response.bodyBytes);
+    for (final file in archive) {
+      final filePath = p.join(dir.path, file.name);
+      if (file.isFile) {
+        final outFile = File(filePath);
+        await outFile.parent.create(recursive: true);
+        await outFile.writeAsBytes(file.content as List<int>);
+      }
+    }
+  }
+
+  Future<dynamic> deserializeAsset(String assetPath) async {
+    final jsonString = await rootBundle.loadString(assetPath);
+    return json.decode(jsonString);
+  }
+
+  Future<bool> openDirectory(String path) async {
+    final dir = Directory(_resolve(path));
+    if (await dir.exists()) return true;
+    await dir.create(recursive: true);
+    return false;
   }
 }

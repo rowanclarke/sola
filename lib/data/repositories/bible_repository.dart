@@ -1,14 +1,12 @@
-import 'package:sola/core/models/book.dart';
-import 'package:sola/domain/services/file_service.dart';
-import 'package:sola/domain/services/bible_service.dart';
+import 'dart:typed_data';
 
-/// BibleRepository stores and retrieves serialized Bible book data.
-/// Caches serialized books to avoid re-parsing USFM files.
-/// Abstracts the serialization and persistence layer.
+import 'package:sola/domain/services/bible_service.dart';
+import 'package:sola/domain/services/file_service.dart';
+
 class BibleRepository {
   final FileService _fileService;
   final BibleService _bibleService;
-  final Map<String, String> _serializationCache = {};
+  final Map<String, Uint8List> _serializationCache = {};
 
   BibleRepository({
     required FileService fileService,
@@ -16,31 +14,48 @@ class BibleRepository {
   }) : _fileService = fileService,
        _bibleService = bibleService;
 
-  /// Retrieves a serialized book for a given translation and book ID.
-  /// Returns cached serialized data if available; otherwise, loads from storage.
-  Future<String> getSerializedBook({
+  Future<Uint8List> getSerializedBook({
     required String translationId,
     required String bookId,
-  }) {
-    throw UnimplementedError();
+  }) async {
+    final key = '$translationId/$bookId';
+    if (_serializationCache.containsKey(key)) return _serializationCache[key]!;
+    final bytes = await _fileService.readBytes(_getSerializedBookPath(translationId, bookId));
+    _serializationCache[key] = bytes;
+    return bytes;
   }
 
-  /// Saves a serialized book to local storage and updates the cache.
   Future<void> saveSerializedBook({
     required String translationId,
     required String bookId,
-    required String serializedData,
-  }) {
-    throw UnimplementedError();
+    required Uint8List data,
+  }) async {
+    final key = '$translationId/$bookId';
+    _serializationCache[key] = data;
+    await _fileService.writeBytes(_getSerializedBookPath(translationId, bookId), data);
   }
 
-  /// Clears the serialization cache to force reloading from storage.
+  Future<void> serializeTranslation(String translationId) async {
+    final files = await _fileService.listDirectory('library/$translationId');
+    final usfmFiles = files.where((f) => f.endsWith('.usfm')).toList();
+    for (final file in usfmFiles) {
+      final usfm = await _fileService.readFile('library/$translationId/$file');
+      final bytes = _bibleService.serializeUsfm(usfm);
+      final archived = _bibleService.getArchivedBook(bytes);
+      final bookId = _bibleService.getBookIdentifier(archived);
+      await saveSerializedBook(
+        translationId: translationId,
+        bookId: bookId,
+        data: bytes,
+      );
+    }
+  }
+
   void invalidateCache() {
-    throw UnimplementedError();
+    _serializationCache.clear();
   }
 
-  /// Gets the file path for a serialized book based on translation and book ID.
   String _getSerializedBookPath(String translationId, String bookId) {
-    throw UnimplementedError();
+    return 'serialized/$translationId/$bookId';
   }
 }

@@ -1,5 +1,3 @@
-/// Represents the persistent session state of the application.
-/// Stores the currently active translation, book, and page.
 class SessionModel {
   final String? currentTranslationId;
   final String? currentBookId;
@@ -16,6 +14,26 @@ class SessionModel {
     String? currentBookId,
     int? currentPageNumber,
   }) {
-    throw UnimplementedError();
+    return SessionModel(
+      currentTranslationId: currentTranslationId ?? this.currentTranslationId,
+      currentBookId: currentBookId ?? this.currentBookId,
+      currentPageNumber: currentPageNumber ?? this.currentPageNumber,
+    );
+  }
+
+  factory SessionModel.fromJson(Map<String, dynamic> json) {
+    return SessionModel(
+      currentTranslationId: json['currentTranslationId'] as String?,
+      currentBookId: json['currentBookId'] as String?,
+      currentPageNumber: json['currentPageNumber'] as int?,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'currentTranslationId': currentTranslationId,
+      'currentBookId': currentBookId,
+      'currentPageNumber': currentPageNumber,
+    };
   }
 }

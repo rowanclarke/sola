@@ -1,5 +1,3 @@
-/// Represents a Bible book with its chapters and verses.
-/// Used as the structured data model after USFM parsing.
 class Book {
   final String bookId;
   final String translationId;
@@ -11,43 +9,47 @@ class Book {
     required this.chapters,
   });
 
-  /// Creates a copy of this book with some fields replaced.
   Book copyWith({
     String? bookId,
     String? translationId,
     List<Chapter>? chapters,
   }) {
-    throw UnimplementedError();
+    return Book(
+      bookId: bookId ?? this.bookId,
+      translationId: translationId ?? this.translationId,
+      chapters: chapters ?? this.chapters,
+    );
   }
 }
 
-/// Represents a chapter within a book.
 class Chapter {
   final int chapterNumber;
   final List<Verse> verses;
 
   const Chapter({required this.chapterNumber, required this.verses});
 
-  /// Creates a copy of this chapter with some fields replaced.
   Chapter copyWith({int? chapterNumber, List<Verse>? verses}) {
-    throw UnimplementedError();
+    return Chapter(
+      chapterNumber: chapterNumber ?? this.chapterNumber,
+      verses: verses ?? this.verses,
+    );
   }
 }
 
-/// Represents a single verse within a chapter.
 class Verse {
   final int verseNumber;
   final String text;
 
   const Verse({required this.verseNumber, required this.text});
 
-  /// Creates a copy of this verse with some fields replaced.
   Verse copyWith({int? verseNumber, String? text}) {
-    throw UnimplementedError();
+    return Verse(
+      verseNumber: verseNumber ?? this.verseNumber,
+      text: text ?? this.text,
+    );
   }
 }
 
-/// Represents verse data for search results.
 class VerseData {
   final String bookId;
   final int chapterNumber;
@@ -61,8 +63,5 @@ class VerseData {
     required this.text,
   });
 
-  /// Returns a formatted verse reference (e.g., "Genesis 1:1").
-  String get reference {
-    throw UnimplementedError();
-  }
+  String get reference => '$bookId $chapterNumber:$verseNumber';
 }

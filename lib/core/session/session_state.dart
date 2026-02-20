@@ -11,8 +11,8 @@ class SessionState extends ChangeNotifier {
 
   SessionModel get session => _session;
 
-  /// Updates the current session state and notifies listeners.
   void updateSession(SessionModel newSession) {
-    throw UnimplementedError();
+    _session = newSession;
+    notifyListeners();
   }
 }

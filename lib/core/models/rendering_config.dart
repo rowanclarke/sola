@@ -1,5 +1,3 @@
-/// Represents rendering configuration options for formatting a Bible translation.
-/// Contains formatting preferences that affect how pages are rendered.
 class RenderingConfig {
   final int fontSize;
 
@@ -8,7 +6,6 @@ class RenderingConfig {
   });
 }
 
-/// Represents rendering progress information during the rendering process.
 class RenderingProgress {
   final int totalBooks;
   final int booksProcessed;
@@ -20,8 +17,6 @@ class RenderingProgress {
     required this.currentBook,
   });
 
-  /// Calculates the percentage progress (0.0 to 1.0).
-  double get percentComplete {
-    throw UnimplementedError();
-  }
+  double get percentComplete =>
+      totalBooks == 0 ? 0.0 : booksProcessed / totalBooks;
 }

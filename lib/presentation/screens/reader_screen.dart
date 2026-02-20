@@ -1,38 +1,11 @@
-/// Reader screen - displays rendered Bible pages.
-///
-/// This screen shows the current rendered page and allows navigation
-/// between pages via swiping, buttons, or chapter selection.
-/// Also provides access to search functionality.
-///
-/// Data flow:
-/// 1. ReaderViewModel loads current page from RendererRepository
-/// 2. User swipes or taps navigation
-/// 3. ReaderViewModel calls goToPage(pageNumber)
-/// 4. SessionRepository updates current page
-/// 5. Page content updates via widget rebuild
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../viewmodels/reader_viewmodel.dart';
+import '../viewmodels/search_viewmodel.dart';
 import '../widgets/page_view_widget.dart';
 
-/// Displays rendered Bible pages with navigation.
-///
-/// Shows a single rendered page at a time with gesture-based navigation.
-/// Features:
-/// - Swipe left/right to navigate pages
-/// - Top/bottom navigation buttons
-/// - Chapter selection dropdown
-/// - Search button (opens SearchScreen)
-/// - Display settings indicator
-///
-/// Layout:
-/// - AppBar with title (current book/chapter), search button
-/// - PageViewWidget (main content area with page display)
-/// - Bottom navigation (page counter, prev/next buttons)
 class ReaderScreen extends StatefulWidget {
-  /// Creates the reader screen.
   const ReaderScreen({super.key});
 
   @override
@@ -40,47 +13,168 @@ class ReaderScreen extends StatefulWidget {
 }
 
 class _ReaderScreenState extends State<ReaderScreen> {
+  PageController? _pageController;
+  double? _lastWidth;
+  double? _lastHeight;
+
+  // Swipe-down search gesture state
+  Offset? _startPosition;
+  bool _isVerticalDrag = false;
+  bool _hasDecidedDirection = false;
+  static const _directionThreshold = 10.0;
+  static const _verticalBias = 1.3;
+
+  @override
+  void dispose() {
+    _pageController?.dispose();
+    super.dispose();
+  }
+
+  void _triggerLoad(double width, double height) {
+    if (width == _lastWidth && height == _lastHeight) return;
+    _lastWidth = width;
+    _lastHeight = height;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<ReaderViewModel>().loadPages(width, height);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    throw UnimplementedError();
-  }
+    return Scaffold(
+      body: Consumer2<ReaderViewModel, SearchViewModel>(
+        builder: (context, readerVm, searchVm, _) {
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final padding = MediaQuery.of(context).padding.top;
+              final width = constraints.maxWidth - 2 * padding;
+              final height = constraints.maxHeight - 2 * padding;
 
-  /// Builds the app bar with title, search, and settings buttons.
-  static PreferredSizeWidget _buildAppBar(BuildContext context) {
-    throw UnimplementedError();
-  }
+              _triggerLoad(width, height);
 
-  /// Builds the main page display area using PageViewWidget.
-  ///
-  /// Handles page swiping and updates ReaderViewModel when page changes.
-  static Widget _buildPageContent(
-    BuildContext context,
-    ReaderViewModel viewModel,
-  ) {
-    throw UnimplementedError();
-  }
+              if (readerVm.isLoading || readerVm.pages.isEmpty) {
+                return const Center(child: CircularProgressIndicator());
+              }
 
-  /// Builds the bottom navigation bar with page counter and controls.
-  ///
-  /// Shows:
-  /// - Current page / total pages
-  /// - Previous button
-  /// - Next button
-  /// - Chapter selector
-  static Widget _buildBottomNavigation(
-    BuildContext context,
-    ReaderViewModel viewModel,
-  ) {
-    throw UnimplementedError();
-  }
+              // Sync page controller
+              if (_pageController == null ||
+                  _pageController!.initialPage != readerVm.currentPageIndex) {
+                _pageController?.dispose();
+                _pageController = PageController(
+                  initialPage: readerVm.currentPageIndex,
+                );
+              }
 
-  /// Shows loading indicator while page is rendering.
-  static Widget _buildLoadingState() {
-    throw UnimplementedError();
-  }
+              return Listener(
+                onPointerDown: (event) {
+                  _startPosition = event.position;
+                  _isVerticalDrag = false;
+                  _hasDecidedDirection = false;
+                },
+                onPointerMove: (event) {
+                  if (_startPosition == null) return;
+                  if (_hasDecidedDirection) {
+                    if (_isVerticalDrag) {
+                      searchVm.handleDragUpdate(event.delta.dy);
+                    }
+                    return;
+                  }
+                  final delta = event.position - _startPosition!;
+                  final distance = delta.distance;
+                  if (distance < _directionThreshold) return;
 
-  /// Shows error message if page failed to load.
-  static Widget _buildErrorState(String message) {
-    throw UnimplementedError();
+                  _hasDecidedDirection = true;
+                  _isVerticalDrag =
+                      (delta.dy.abs() * _verticalBias) > delta.dx.abs() &&
+                      delta.dy > 0;
+                  if (_isVerticalDrag) {
+                    setState(() {});
+                  }
+                },
+                onPointerUp: (_) {
+                  if (_isVerticalDrag) {
+                    searchVm.handleDragEnd();
+                  }
+                  _startPosition = null;
+                  _isVerticalDrag = false;
+                  _hasDecidedDirection = false;
+                  setState(() {});
+                },
+                child: AbsorbPointer(
+                  absorbing: _isVerticalDrag,
+                  child: Stack(
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.all(padding),
+                        child: PageView.builder(
+                          controller: _pageController,
+                          itemCount: readerVm.pages.length,
+                          onPageChanged: (i) => readerVm.setPage(i),
+                          itemBuilder: (_, i) => PageViewWidget(
+                            page: readerVm.pages[i],
+                            width: width,
+                            height: height,
+                          ),
+                        ),
+                      ),
+                      // Search icon indicator
+                      Positioned(
+                        top: searchVm.dragOffset + SearchViewModel.startDescent,
+                        left: 0,
+                        right: 0,
+                        child: Opacity(
+                          opacity:
+                              (searchVm.dragOffset /
+                                      SearchViewModel.triggerThreshold)
+                                  .clamp(0.0, 1.0),
+                          child: const Icon(
+                            Icons.search,
+                            size: 48,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ),
+                      // SearchAnchor (invisible builder)
+                      Positioned(
+                        top: 0,
+                        left: 0,
+                        child: SizedBox(
+                          width: 0,
+                          height: 0,
+                          child: SearchAnchor(
+                            searchController: searchVm.controller,
+                            builder: (context, controller) =>
+                                const SizedBox.shrink(),
+                            suggestionsBuilder: (context, controller) {
+                              final query = controller.text;
+                              if (query.isEmpty) return [];
+                              final result = searchVm.getResult(query);
+                              if (result == null) return [];
+                              return [
+                                ListTile(
+                                  title: Text(
+                                    '${result.book} ${result.chapter}:${result.verse}',
+                                  ),
+                                  subtitle: Text('Page ${result.page + 1}'),
+                                  onTap: () => searchVm.handleItemTap(
+                                    result.book,
+                                    result.page,
+                                  ),
+                                ),
+                              ];
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
   }
 }

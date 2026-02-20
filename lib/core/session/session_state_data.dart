@@ -1,5 +1,3 @@
-/// Represents a serializable format of session state for persistence.
-/// Used when saving/loading session data to/from storage.
 class SessionStateData {
   final String? currentTranslationId;
   final String? currentBookId;
@@ -11,13 +9,19 @@ class SessionStateData {
     this.currentPageNumber,
   });
 
-  /// Converts this to a JSON-compatible map for serialization.
   Map<String, dynamic> toJson() {
-    throw UnimplementedError();
+    return {
+      'currentTranslationId': currentTranslationId,
+      'currentBookId': currentBookId,
+      'currentPageNumber': currentPageNumber,
+    };
   }
 
-  /// Creates an instance from a JSON-compatible map.
   factory SessionStateData.fromJson(Map<String, dynamic> json) {
-    throw UnimplementedError();
+    return SessionStateData(
+      currentTranslationId: json['currentTranslationId'] as String?,
+      currentBookId: json['currentBookId'] as String?,
+      currentPageNumber: json['currentPageNumber'] as int?,
+    );
   }
 }
