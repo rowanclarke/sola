@@ -2,7 +2,7 @@ services:
   flutter:
     build: .
     container_name: flutter-cargokit
-    working_dir: /app
+    working_dir: ${PWD}
     stdin_open: true
     tty: true
 
@@ -13,7 +13,7 @@ services:
 
     volumes:
       # Project source
-      - .:/app
+      - ${PWD}:${PWD}
 
       # Flutter / pub cache
       - flutter-cache:/root/.pub-cache

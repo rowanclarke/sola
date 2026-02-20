@@ -26,4 +26,4 @@ RUN rustc --version && cargo --version
 # ----------------------------
 # Flutter project setup
 # ----------------------------
-WORKDIR /app
+WORKDIR /
