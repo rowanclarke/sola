@@ -208,16 +208,16 @@ impl Painter {
 
     fn done(&mut self) {}
 
-    pub fn get_pages(&self) -> AlignedVec {
-        rkyv::to_bytes::<Error>(self.layout.get_pages()).unwrap()
+    pub fn get_pages(&self) -> Result<AlignedVec, String> {
+        rkyv::to_bytes::<Error>(self.layout.get_pages()).map_err(|e| e.to_string())
     }
 
-    pub fn get_indices(&self) -> AlignedVec {
-        rkyv::to_bytes::<Error>(self.layout.get_indices()).unwrap()
+    pub fn get_indices(&self) -> Result<AlignedVec, String> {
+        rkyv::to_bytes::<Error>(self.layout.get_indices()).map_err(|e| e.to_string())
     }
 
-    pub fn get_verses(&self) -> AlignedVec {
-        rkyv::to_bytes::<Error>(self.layout.get_verses()).unwrap()
+    pub fn get_verses(&self) -> Result<AlignedVec, String> {
+        rkyv::to_bytes::<Error>(self.layout.get_verses()).map_err(|e| e.to_string())
     }
 }
 

@@ -10,8 +10,8 @@ class LibraryViewModel extends ChangeNotifier {
   List<Translation> _availableTranslations = [];
   List<Translation> _downloadedTranslations = [];
   bool _isLoading = false;
-  bool _isDownloading = false;
-  String? _downloadingTranslationId;
+  final Set<String> _downloadingIds = {};
+  String? _error;
 
   LibraryViewModel({
     required LibraryRepository libraryRepository,
@@ -22,36 +22,56 @@ class LibraryViewModel extends ChangeNotifier {
   List<Translation> get availableTranslations => _availableTranslations;
   List<Translation> get downloadedTranslations => _downloadedTranslations;
   bool get isLoading => _isLoading;
-  bool get isDownloading => _isDownloading;
-  String? get downloadingTranslationId => _downloadingTranslationId;
+  bool get isDownloading => _downloadingIds.isNotEmpty;
+  bool isDownloadingId(String id) => _downloadingIds.contains(id);
+  String? get error => _error;
 
   Future<void> loadTranslations() async {
+    debugPrint('[LibraryVM] Loading translations...');
     _isLoading = true;
+    _error = null;
     notifyListeners();
-    _availableTranslations = await _libraryRepository
-        .getAvailableTranslations();
-    _downloadedTranslations = await _libraryRepository
-        .getDownloadedTranslations();
-    _isLoading = false;
-    notifyListeners();
+    try {
+      _availableTranslations = await _libraryRepository
+          .getAvailableTranslations();
+      _downloadedTranslations = await _libraryRepository
+          .getDownloadedTranslations();
+      debugPrint('[LibraryVM] Loaded ${_availableTranslations.length} available, '
+          '${_downloadedTranslations.length} downloaded');
+    } catch (e) {
+      debugPrint('[LibraryVM] Load error: $e');
+      _error = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   Future<void> downloadTranslation(Translation translation) async {
-    _isDownloading = true;
-    _downloadingTranslationId = translation.id;
+    if (_downloadingIds.contains(translation.id)) return;
+    debugPrint('[LibraryVM] Downloading ${translation.id}...');
+    _downloadingIds.add(translation.id);
+    _error = null;
     notifyListeners();
-    await _libraryRepository.downloadTranslation(
-      translation.id,
-      translation.url,
-    );
-    _downloadedTranslations = await _libraryRepository
-        .getDownloadedTranslations();
-    _isDownloading = false;
-    _downloadingTranslationId = null;
-    notifyListeners();
+    try {
+      await _libraryRepository.downloadTranslation(
+        translation.id,
+        translation.url,
+      );
+      _downloadedTranslations = await _libraryRepository
+          .getDownloadedTranslations();
+      debugPrint('[LibraryVM] Download complete: ${translation.id}');
+    } catch (e) {
+      debugPrint('[LibraryVM] Download error (${translation.id}): $e');
+      _error = e.toString();
+    } finally {
+      _downloadingIds.remove(translation.id);
+      notifyListeners();
+    }
   }
 
   Future<void> openTranslation(Translation translation) async {
+    debugPrint('[LibraryVM] Opening translation: ${translation.id}');
     await _sessionRepository.setCurrentTranslation(translation.id);
   }
 

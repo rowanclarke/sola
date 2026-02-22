@@ -40,6 +40,21 @@ class _LibraryScreenState extends State<LibraryScreen> {
             if (vm.isLoading) {
               return const Center(child: CircularProgressIndicator());
             }
+            if (vm.error != null) {
+              return Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(vm.error!, style: const TextStyle(color: Colors.red)),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () => vm.refresh(),
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              );
+            }
             return TabBarView(
               children: [
                 _buildDownloadedList(context, vm),
@@ -76,9 +91,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
       itemCount: vm.availableTranslations.length,
       itemBuilder: (context, i) {
         final t = vm.availableTranslations[i];
-        final isDownloading = vm.isDownloading && vm.downloadingTranslationId == t.id;
+        final isDownloading = vm.isDownloadingId(t.id);
         return _buildTranslationTile(context, t, false, () {
-          if (!vm.isDownloading) vm.downloadTranslation(t);
+          vm.downloadTranslation(t);
         }, isDownloading: isDownloading);
       },
     );

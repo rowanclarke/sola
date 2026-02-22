@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
@@ -63,8 +64,13 @@ class FileService {
 
   Future<void> extractRemote(String url, String path) async {
     final dir = Directory(_resolve(path));
-    if (await dir.exists()) return;
+    if (await dir.exists()) {
+      debugPrint('[FileService] Already extracted: $path');
+      return;
+    }
+    debugPrint('[FileService] Downloading $url ...');
     final response = await http.get(Uri.parse(url));
+    debugPrint('[FileService] Downloaded ${response.bodyBytes.length} bytes, extracting...');
     final archive = ZipDecoder().decodeBytes(response.bodyBytes);
     for (final file in archive) {
       final filePath = p.join(dir.path, file.name);
@@ -74,6 +80,7 @@ class FileService {
         await outFile.writeAsBytes(file.content as List<int>);
       }
     }
+    debugPrint('[FileService] Extracted ${archive.length} entries to $path');
   }
 
   Future<dynamic> deserializeAsset(String assetPath) async {

@@ -13,6 +13,7 @@ class ReaderViewModel extends ChangeNotifier {
   int _currentPageIndex = 0;
   bool _isLoading = false;
   String? _currentCacheKey;
+  String? _error;
 
   ReaderViewModel({
     required RendererRepository rendererRepository,
@@ -25,35 +26,49 @@ class ReaderViewModel extends ChangeNotifier {
   List<PageModel> get pages => _pages;
   int get currentPageIndex => _currentPageIndex;
   bool get isLoading => _isLoading;
+  String? get error => _error;
 
   Future<void> loadPages(double width, double height) async {
     final translationId =
         _sessionRepository.currentSession.currentTranslationId;
     final bookId = _sessionRepository.currentSession.currentBookId;
-    print("$translationId $bookId");
-    if (translationId == null || bookId == null) return;
+    if (translationId == null || bookId == null) {
+      debugPrint('[ReaderVM] No translation or book selected, skipping load');
+      return;
+    }
 
-    final cacheKey = '$bookId-$width-$height';
-    print("$cacheKey");
-    if (cacheKey == _currentCacheKey) return;
+    final cacheKey = '$translationId/$bookId-$width-$height';
+    if (cacheKey == _currentCacheKey) {
+      debugPrint('[ReaderVM] Cache hit for $cacheKey, skipping load');
+      return;
+    }
 
+    debugPrint('[ReaderVM] Loading pages: translation=$translationId book=$bookId '
+        'size=${width.toInt()}x${height.toInt()}');
     _isLoading = true;
+    _error = null;
     notifyListeners();
 
-    print("Hiii");
-    await _bibleRepository.serializeTranslation(translationId);
-    _pages = await _rendererRepository.renderAndLoadPages(
-      translationId: translationId,
-      bookId: bookId,
-      width: width,
-      height: height,
-    );
+    try {
+      await _bibleRepository.serializeTranslation(translationId);
+      _pages = await _rendererRepository.renderAndLoadPages(
+        translationId: translationId,
+        bookId: bookId,
+        width: width,
+        height: height,
+      );
 
-    _currentCacheKey = cacheKey;
-    final savedPage = _sessionRepository.currentSession.currentPageNumber ?? 0;
-    _currentPageIndex = savedPage.clamp(0, _pages.length - 1);
-    _isLoading = false;
-    notifyListeners();
+      _currentCacheKey = cacheKey;
+      final savedPage = _sessionRepository.currentSession.currentPageNumber ?? 0;
+      _currentPageIndex = savedPage.clamp(0, _pages.length - 1);
+      debugPrint('[ReaderVM] Loaded ${_pages.length} pages, starting at page $_currentPageIndex');
+    } catch (e) {
+      debugPrint('[ReaderVM] Error loading pages: $e');
+      _error = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   Future<void> setPage(int index) async {

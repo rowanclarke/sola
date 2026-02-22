@@ -26,6 +26,22 @@ class RustBindings {
     ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName) lookup,
   ) : _lookup = lookup;
 
+  void free_error(
+    ffi.Pointer<ffi.Char> error,
+    int error_len,
+  ) {
+    return _free_error(error, error_len);
+  }
+
+  late final _free_errorPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(ffi.Pointer<ffi.Char>, ffi.Size)
+        >
+      >('free_error');
+  late final _free_error = _free_errorPtr
+      .asFunction<void Function(ffi.Pointer<ffi.Char>, int)>();
+
   ffi.Pointer<ffi.Void> renderer() {
     return _renderer();
   }
@@ -41,8 +57,10 @@ class RustBindings {
     int family_len,
     ffi.Pointer<ffi.Char> data,
     int len,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> out_error,
+    ffi.Pointer<ffi.Size> out_error_len,
   ) {
-    return _register_font_family(renderer, family, family_len, data, len);
+    return _register_font_family(renderer, family, family_len, data, len, out_error, out_error_len);
   }
 
   late final _register_font_familyPtr =
@@ -54,6 +72,8 @@ class RustBindings {
             ffi.Size,
             ffi.Pointer<ffi.Char>,
             ffi.Size,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+            ffi.Pointer<ffi.Size>,
           )
         >
       >('register_font_family');
@@ -65,6 +85,8 @@ class RustBindings {
           int,
           ffi.Pointer<ffi.Char>,
           int,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          ffi.Pointer<ffi.Size>,
         )
       >();
 
@@ -96,8 +118,10 @@ class RustBindings {
     int usfm_len,
     ffi.Pointer<ffi.Pointer<ffi.Char>> out,
     ffi.Pointer<ffi.Size> out_len,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> out_error,
+    ffi.Pointer<ffi.Size> out_error_len,
   ) {
-    return _serialize_usfm(usfm, usfm_len, out, out_len);
+    return _serialize_usfm(usfm, usfm_len, out, out_len, out_error, out_error_len);
   }
 
   late final _serialize_usfmPtr =
@@ -106,6 +130,8 @@ class RustBindings {
           ffi.Void Function(
             ffi.Pointer<ffi.Char>,
             ffi.Size,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+            ffi.Pointer<ffi.Size>,
             ffi.Pointer<ffi.Pointer<ffi.Char>>,
             ffi.Pointer<ffi.Size>,
           )
@@ -118,31 +144,49 @@ class RustBindings {
           int,
           ffi.Pointer<ffi.Pointer<ffi.Char>>,
           ffi.Pointer<ffi.Size>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          ffi.Pointer<ffi.Size>,
         )
       >();
 
   ffi.Pointer<ffi.Void> archived_book(
     ffi.Pointer<ffi.Char> book,
     int book_len,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> out_error,
+    ffi.Pointer<ffi.Size> out_error_len,
   ) {
-    return _archived_book(book, book_len);
+    return _archived_book(book, book_len, out_error, out_error_len);
   }
 
   late final _archived_bookPtr =
       _lookup<
         ffi.NativeFunction<
-          ffi.Pointer<ffi.Void> Function(ffi.Pointer<ffi.Char>, ffi.Size)
+          ffi.Pointer<ffi.Void> Function(
+            ffi.Pointer<ffi.Char>,
+            ffi.Size,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+            ffi.Pointer<ffi.Size>,
+          )
         >
       >('archived_book');
   late final _archived_book = _archived_bookPtr
-      .asFunction<ffi.Pointer<ffi.Void> Function(ffi.Pointer<ffi.Char>, int)>();
+      .asFunction<
+        ffi.Pointer<ffi.Void> Function(
+          ffi.Pointer<ffi.Char>,
+          int,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          ffi.Pointer<ffi.Size>,
+        )
+      >();
 
   void book_identifier(
     ffi.Pointer<ffi.Void> usfm,
     ffi.Pointer<ffi.Pointer<ffi.Char>> out,
     ffi.Pointer<ffi.Size> out_len,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> out_error,
+    ffi.Pointer<ffi.Size> out_error_len,
   ) {
-    return _book_identifier(usfm, out, out_len);
+    return _book_identifier(usfm, out, out_len, out_error, out_error_len);
   }
 
   late final _book_identifierPtr =
@@ -150,6 +194,8 @@ class RustBindings {
         ffi.NativeFunction<
           ffi.Void Function(
             ffi.Pointer<ffi.Void>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+            ffi.Pointer<ffi.Size>,
             ffi.Pointer<ffi.Pointer<ffi.Char>>,
             ffi.Pointer<ffi.Size>,
           )
@@ -161,6 +207,8 @@ class RustBindings {
           ffi.Pointer<ffi.Void>,
           ffi.Pointer<ffi.Pointer<ffi.Char>>,
           ffi.Pointer<ffi.Size>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          ffi.Pointer<ffi.Size>,
         )
       >();
 
@@ -168,8 +216,10 @@ class RustBindings {
     ffi.Pointer<ffi.Void> renderer,
     ffi.Pointer<ffi.Void> usfm,
     ffi.Pointer<Dimensions> dim,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> out_error,
+    ffi.Pointer<ffi.Size> out_error_len,
   ) {
-    return _layout(renderer, usfm, dim);
+    return _layout(renderer, usfm, dim, out_error, out_error_len);
   }
 
   late final _layoutPtr =
@@ -179,6 +229,8 @@ class RustBindings {
             ffi.Pointer<ffi.Void>,
             ffi.Pointer<ffi.Void>,
             ffi.Pointer<Dimensions>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+            ffi.Pointer<ffi.Size>,
           )
         >
       >('layout');
@@ -188,6 +240,8 @@ class RustBindings {
           ffi.Pointer<ffi.Void>,
           ffi.Pointer<ffi.Void>,
           ffi.Pointer<Dimensions>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          ffi.Pointer<ffi.Size>,
         )
       >();
 
@@ -195,8 +249,10 @@ class RustBindings {
     ffi.Pointer<ffi.Void> painter,
     ffi.Pointer<ffi.Pointer<ffi.Char>> out,
     ffi.Pointer<ffi.Size> out_len,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> out_error,
+    ffi.Pointer<ffi.Size> out_error_len,
   ) {
-    return _serialize_pages(painter, out, out_len);
+    return _serialize_pages(painter, out, out_len, out_error, out_error_len);
   }
 
   late final _serialize_pagesPtr =
@@ -204,6 +260,8 @@ class RustBindings {
         ffi.NativeFunction<
           ffi.Void Function(
             ffi.Pointer<ffi.Void>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+            ffi.Pointer<ffi.Size>,
             ffi.Pointer<ffi.Pointer<ffi.Char>>,
             ffi.Pointer<ffi.Size>,
           )
@@ -215,24 +273,40 @@ class RustBindings {
           ffi.Pointer<ffi.Void>,
           ffi.Pointer<ffi.Pointer<ffi.Char>>,
           ffi.Pointer<ffi.Size>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          ffi.Pointer<ffi.Size>,
         )
       >();
 
   ffi.Pointer<ffi.Void> archived_pages(
     ffi.Pointer<ffi.Char> pages,
     int pages_len,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> out_error,
+    ffi.Pointer<ffi.Size> out_error_len,
   ) {
-    return _archived_pages(pages, pages_len);
+    return _archived_pages(pages, pages_len, out_error, out_error_len);
   }
 
   late final _archived_pagesPtr =
       _lookup<
         ffi.NativeFunction<
-          ffi.Pointer<ffi.Void> Function(ffi.Pointer<ffi.Char>, ffi.Size)
+          ffi.Pointer<ffi.Void> Function(
+            ffi.Pointer<ffi.Char>,
+            ffi.Size,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+            ffi.Pointer<ffi.Size>,
+          )
         >
       >('archived_pages');
   late final _archived_pages = _archived_pagesPtr
-      .asFunction<ffi.Pointer<ffi.Void> Function(ffi.Pointer<ffi.Char>, int)>();
+      .asFunction<
+        ffi.Pointer<ffi.Void> Function(
+          ffi.Pointer<ffi.Char>,
+          int,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          ffi.Pointer<ffi.Size>,
+        )
+      >();
 
   int num_pages(ffi.Pointer<ffi.Void> archived_pages) {
     return _num_pages(archived_pages);
@@ -251,8 +325,10 @@ class RustBindings {
     int n,
     ffi.Pointer<ffi.Pointer<Text>> out,
     ffi.Pointer<ffi.Size> out_len,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> out_error,
+    ffi.Pointer<ffi.Size> out_error_len,
   ) {
-    return _page(renderer, archived_pages, n, out, out_len);
+    return _page(renderer, archived_pages, n, out, out_len, out_error, out_error_len);
   }
 
   late final _pagePtr =
@@ -263,6 +339,8 @@ class RustBindings {
             ffi.Pointer<ffi.Void>,
             ffi.Size,
             ffi.Pointer<ffi.Pointer<Text>>,
+            ffi.Pointer<ffi.Size>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
             ffi.Pointer<ffi.Size>,
           )
         >
@@ -275,6 +353,8 @@ class RustBindings {
           int,
           ffi.Pointer<ffi.Pointer<Text>>,
           ffi.Pointer<ffi.Size>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          ffi.Pointer<ffi.Size>,
         )
       >();
 
@@ -282,8 +362,10 @@ class RustBindings {
     ffi.Pointer<ffi.Void> painter,
     ffi.Pointer<ffi.Pointer<ffi.Char>> out,
     ffi.Pointer<ffi.Size> out_len,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> out_error,
+    ffi.Pointer<ffi.Size> out_error_len,
   ) {
-    return _serialize_indices(painter, out, out_len);
+    return _serialize_indices(painter, out, out_len, out_error, out_error_len);
   }
 
   late final _serialize_indicesPtr =
@@ -291,6 +373,8 @@ class RustBindings {
         ffi.NativeFunction<
           ffi.Void Function(
             ffi.Pointer<ffi.Void>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+            ffi.Pointer<ffi.Size>,
             ffi.Pointer<ffi.Pointer<ffi.Char>>,
             ffi.Pointer<ffi.Size>,
           )
@@ -302,24 +386,40 @@ class RustBindings {
           ffi.Pointer<ffi.Void>,
           ffi.Pointer<ffi.Pointer<ffi.Char>>,
           ffi.Pointer<ffi.Size>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          ffi.Pointer<ffi.Size>,
         )
       >();
 
   ffi.Pointer<ffi.Void> archived_indices(
     ffi.Pointer<ffi.Char> indices,
     int indices_len,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> out_error,
+    ffi.Pointer<ffi.Size> out_error_len,
   ) {
-    return _archived_indices(indices, indices_len);
+    return _archived_indices(indices, indices_len, out_error, out_error_len);
   }
 
   late final _archived_indicesPtr =
       _lookup<
         ffi.NativeFunction<
-          ffi.Pointer<ffi.Void> Function(ffi.Pointer<ffi.Char>, ffi.Size)
+          ffi.Pointer<ffi.Void> Function(
+            ffi.Pointer<ffi.Char>,
+            ffi.Size,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+            ffi.Pointer<ffi.Size>,
+          )
         >
       >('archived_indices');
   late final _archived_indices = _archived_indicesPtr
-      .asFunction<ffi.Pointer<ffi.Void> Function(ffi.Pointer<ffi.Char>, int)>();
+      .asFunction<
+        ffi.Pointer<ffi.Void> Function(
+          ffi.Pointer<ffi.Char>,
+          int,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          ffi.Pointer<ffi.Size>,
+        )
+      >();
 
   void get_index(
     ffi.Pointer<ffi.Void> archived_indices,
@@ -329,6 +429,8 @@ class RustBindings {
     ffi.Pointer<ffi.Size> out_book_len,
     ffi.Pointer<ffi.UnsignedShort> out_chapter,
     ffi.Pointer<ffi.UnsignedShort> out_verse,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> out_error,
+    ffi.Pointer<ffi.Size> out_error_len,
   ) {
     return _get_index(
       archived_indices,
@@ -338,6 +440,8 @@ class RustBindings {
       out_book_len,
       out_chapter,
       out_verse,
+      out_error,
+      out_error_len,
     );
   }
 
@@ -352,6 +456,8 @@ class RustBindings {
             ffi.Pointer<ffi.Size>,
             ffi.Pointer<ffi.UnsignedShort>,
             ffi.Pointer<ffi.UnsignedShort>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+            ffi.Pointer<ffi.Size>,
           )
         >
       >('get_index');
@@ -365,6 +471,8 @@ class RustBindings {
           ffi.Pointer<ffi.Size>,
           ffi.Pointer<ffi.UnsignedShort>,
           ffi.Pointer<ffi.UnsignedShort>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          ffi.Pointer<ffi.Size>,
         )
       >();
 
@@ -372,8 +480,10 @@ class RustBindings {
     ffi.Pointer<ffi.Void> painter,
     ffi.Pointer<ffi.Pointer<ffi.Char>> out,
     ffi.Pointer<ffi.Size> out_len,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> out_error,
+    ffi.Pointer<ffi.Size> out_error_len,
   ) {
-    return _serialize_verses(painter, out, out_len);
+    return _serialize_verses(painter, out, out_len, out_error, out_error_len);
   }
 
   late final _serialize_versesPtr =
@@ -383,6 +493,8 @@ class RustBindings {
             ffi.Pointer<ffi.Void>,
             ffi.Pointer<ffi.Pointer<ffi.Char>>,
             ffi.Pointer<ffi.Size>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+            ffi.Pointer<ffi.Size>,
           )
         >
       >('serialize_verses');
@@ -390,6 +502,8 @@ class RustBindings {
       .asFunction<
         void Function(
           ffi.Pointer<ffi.Void>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          ffi.Pointer<ffi.Size>,
           ffi.Pointer<ffi.Pointer<ffi.Char>>,
           ffi.Pointer<ffi.Size>,
         )
@@ -404,6 +518,8 @@ class RustBindings {
     int model_len,
     ffi.Pointer<ffi.Char> tokenizer,
     int tokenizer_len,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> out_error,
+    ffi.Pointer<ffi.Size> out_error_len,
   ) {
     return _load_model(
       embeddings,
@@ -414,6 +530,8 @@ class RustBindings {
       model_len,
       tokenizer,
       tokenizer_len,
+      out_error,
+      out_error_len,
     );
   }
 
@@ -429,6 +547,8 @@ class RustBindings {
             ffi.Size,
             ffi.Pointer<ffi.Char>,
             ffi.Size,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+            ffi.Pointer<ffi.Size>,
           )
         >
       >('load_model');
@@ -443,6 +563,8 @@ class RustBindings {
           int,
           ffi.Pointer<ffi.Char>,
           int,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          ffi.Pointer<ffi.Size>,
         )
       >();
 
@@ -450,8 +572,10 @@ class RustBindings {
     ffi.Pointer<ffi.Void> model,
     ffi.Pointer<ffi.Char> query,
     int query_len,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> out_error,
+    ffi.Pointer<ffi.Size> out_error_len,
   ) {
-    return _get_result(model, query, query_len);
+    return _get_result(model, query, query_len, out_error, out_error_len);
   }
 
   late final _get_resultPtr =
@@ -461,6 +585,8 @@ class RustBindings {
             ffi.Pointer<ffi.Void>,
             ffi.Pointer<ffi.Char>,
             ffi.Size,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+            ffi.Pointer<ffi.Size>,
           )
         >
       >('get_result');
@@ -470,6 +596,8 @@ class RustBindings {
           ffi.Pointer<ffi.Void>,
           ffi.Pointer<ffi.Char>,
           int,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          ffi.Pointer<ffi.Size>,
         )
       >();
 }

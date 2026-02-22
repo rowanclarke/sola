@@ -1,25 +1,27 @@
 import 'dart:typed_data';
 
-import 'package:sola/domain/services/bible_service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:sola/domain/services/file_service.dart';
+import 'package:sola/domain/services/render_isolate.dart';
 
 class BibleRepository {
   final FileService _fileService;
-  final BibleService _bibleService;
   final Map<String, Uint8List> _serializationCache = {};
 
   BibleRepository({
     required FileService fileService,
-    required BibleService bibleService,
-  }) : _fileService = fileService,
-       _bibleService = bibleService;
+  }) : _fileService = fileService;
 
   Future<Uint8List> getSerializedBook({
     required String translationId,
     required String bookId,
   }) async {
     final key = '$translationId/$bookId';
-    if (_serializationCache.containsKey(key)) return _serializationCache[key]!;
+    if (_serializationCache.containsKey(key)) {
+      debugPrint('[BibleRepo] Serialization cache hit: $key');
+      return _serializationCache[key]!;
+    }
+    debugPrint('[BibleRepo] Reading serialized book from disk: $key');
     final bytes = await _fileService.readBytes(_getSerializedBookPath(translationId, bookId));
     _serializationCache[key] = bytes;
     return bytes;
@@ -38,20 +40,37 @@ class BibleRepository {
   Future<void> serializeTranslation(String translationId) async {
     final files = await _fileService.listDirectory('library/$translationId');
     final usfmFiles = files.where((f) => f.endsWith('.usfm')).toList();
+
+    // Check if already serialized (all books cached or on disk)
+    if (usfmFiles.isEmpty) return;
+
+    debugPrint('[BibleRepo] Serializing ${usfmFiles.length} USFM files for $translationId');
+
+    // Read all USFM files on main isolate (async I/O)
+    final usfmContents = <String, String>{};
     for (final file in usfmFiles) {
-      final usfm = await _fileService.readFile('library/$translationId/$file');
-      final bytes = _bibleService.serializeUsfm(usfm);
-      final archived = _bibleService.getArchivedBook(bytes);
-      final bookId = _bibleService.getBookIdentifier(archived);
+      final content = await _fileService.readFile('library/$translationId/$file');
+      usfmContents[file] = content;
+    }
+
+    // Run Rust serialization on background isolate
+    final output = await compute(serializeInBackground, SerializeInput(
+      usfmFiles: usfmContents,
+    ));
+
+    // Save results on main isolate (async I/O)
+    for (final entry in output.serializedBooks.entries) {
       await saveSerializedBook(
         translationId: translationId,
-        bookId: bookId,
-        data: bytes,
+        bookId: entry.key,
+        data: entry.value,
       );
     }
+    debugPrint('[BibleRepo] Serialization complete: ${output.serializedBooks.length} books');
   }
 
   void invalidateCache() {
+    debugPrint('[BibleRepo] Cache invalidated');
     _serializationCache.clear();
   }
 

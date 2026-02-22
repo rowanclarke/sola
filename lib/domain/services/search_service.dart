@@ -1,6 +1,7 @@
 import 'dart:ffi';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:rust/rust.dart' as rust;
 
 class SearchService {
@@ -14,11 +15,14 @@ class SearchService {
     Uint8List model,
     Uint8List tokenizer,
   ) {
+    debugPrint('[SearchSvc] Loading model via FFI...');
     _indices = indices;
     _model = rust.loadModel(embeddings, verses, model, tokenizer);
+    debugPrint('[SearchSvc] Model loaded');
   }
 
   rust.Index getResult(String query) {
+    debugPrint('[SearchSvc] FFI getResult for "$query"');
     final resultPtr = rust.getResult(_model!, query);
     return rust.getIndex(_indices!, resultPtr);
   }

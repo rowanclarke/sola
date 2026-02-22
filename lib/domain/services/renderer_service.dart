@@ -1,6 +1,7 @@
 import 'dart:ffi';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart' show TextStyle;
 import 'package:flutter/services.dart';
 import 'package:rust/rust.dart' as rust;
@@ -21,6 +22,7 @@ class RendererService {
 
   Future<void> registerFontFamilies() async {
     if (_fontsRegistered) return;
+    debugPrint('[RendererSvc] Registering font families...');
     final fontData = await rootBundle.load(
       'assets/fonts/AveriaSerifLibre-Regular.ttf',
     );
@@ -30,9 +32,11 @@ class RendererService {
       fontData.buffer.asUint8List(),
     );
     _fontsRegistered = true;
+    debugPrint('[RendererSvc] Fonts registered');
   }
 
   void registerStyles() {
+    debugPrint('[RendererSvc] Registering text styles...');
     rust.registerStyle(
       renderer,
       rust.Style.NORMAL,
@@ -77,10 +81,11 @@ class RendererService {
         wordSpacing: 0,
       ),
     );
+    debugPrint('[RendererSvc] Styles registered');
   }
 
   RendererResponse layout(Pointer<Void> book, double width, double height) {
-    print("Hi");
+    debugPrint('[RendererSvc] Layout: ${width.toInt()}x${height.toInt()}');
     final painter = rust.layout(
       renderer,
       book,
@@ -91,7 +96,7 @@ class RendererService {
         dropCapPadding: 20,
       ),
     );
-    print("Hello");
+    debugPrint('[RendererSvc] Layout complete');
     return RendererResponse(painter);
   }
 

@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:sola/core/models/session_model.dart';
 import 'package:sola/domain/services/file_service.dart';
 
@@ -15,10 +16,16 @@ class SessionRepository {
   SessionModel get currentSession => _currentSession;
 
   Future<void> init() async {
+    debugPrint('[SessionRepo] Initializing...');
     _currentSession = await _loadSession();
+    debugPrint('[SessionRepo] Session loaded: '
+        'translation=${_currentSession.currentTranslationId} '
+        'book=${_currentSession.currentBookId} '
+        'page=${_currentSession.currentPageNumber}');
   }
 
   Future<void> setCurrentTranslation(String translationId) async {
+    debugPrint('[SessionRepo] Setting translation: $translationId');
     _currentSession = _currentSession.copyWith(
       currentTranslationId: translationId,
       currentBookId: "GEN",
@@ -28,6 +35,7 @@ class SessionRepository {
   }
 
   Future<void> setCurrentBook(String bookId) async {
+    debugPrint('[SessionRepo] Setting book: $bookId');
     _currentSession = _currentSession.copyWith(
       currentBookId: bookId,
       currentPageNumber: 0,
@@ -52,6 +60,7 @@ class SessionRepository {
       final data = await _fileService.readFile(_sessionFilePath);
       return SessionModel.fromJson(jsonDecode(data) as Map<String, dynamic>);
     } catch (_) {
+      debugPrint('[SessionRepo] No existing session, using defaults');
       return const SessionModel();
     }
   }

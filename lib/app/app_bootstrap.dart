@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
@@ -8,7 +9,6 @@ import '../data/repositories/library_repository.dart';
 import '../data/repositories/renderer_repository.dart';
 import '../data/repositories/search_repository.dart';
 import '../data/repositories/session_repository.dart';
-import '../domain/services/bible_service.dart';
 import '../domain/services/file_service.dart';
 import '../domain/services/renderer_service.dart';
 import '../domain/services/search_service.dart';
@@ -21,9 +21,10 @@ import 'app_routes.dart';
 
 class AppBootstrap {
   static Future<Widget> initialize() async {
+    debugPrint('[Bootstrap] Initializing app...');
     final dir = await getApplicationSupportDirectory();
+    debugPrint('[Bootstrap] App directory: ${dir.path}');
     final fileService = FileService(dir);
-    final bibleService = BibleService();
     final rendererService = RendererService();
     final searchService = SearchService();
 
@@ -35,13 +36,11 @@ class AppBootstrap {
     final libraryRepository = LibraryRepository(fileService: fileService);
     final bibleRepository = BibleRepository(
       fileService: fileService,
-      bibleService: bibleService,
     );
     final rendererRepository = RendererRepository(
       fileService: fileService,
       rendererService: rendererService,
       bibleRepository: bibleRepository,
-      bibleService: bibleService,
     );
     final searchRepository = SearchRepository(
       fileService: fileService,
@@ -71,6 +70,7 @@ class AppBootstrap {
       sessionRepository: sessionRepository,
     );
 
+    debugPrint('[Bootstrap] All services and viewmodels created');
     return MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: sessionState),

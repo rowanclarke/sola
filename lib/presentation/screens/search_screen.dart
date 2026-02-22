@@ -47,11 +47,19 @@ class _SearchScreenState extends State<SearchScreen> {
                       },
                     ),
                   ),
-                  onSubmitted: (query) {
-                    vm.getResult(query);
+                  onSubmitted: (query) async {
+                    await vm.getResult(query);
                   },
                 ),
               ),
+              if (vm.error != null)
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    vm.error!,
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                ),
               if (vm.lastResult != null)
                 SearchResultTile(
                   index: vm.lastResult!,
