@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:rust/rust.dart' as rust;
+import 'package:sola/core/models/model_info.dart';
 import 'package:sola/data/repositories/search_repository.dart';
 import 'package:sola/data/repositories/session_repository.dart';
 
@@ -10,6 +11,8 @@ class SearchViewModel extends ChangeNotifier {
   double dragOffset = 0.0;
   rust.Index? _lastResult;
   String? _error;
+  bool _isModelLoading = false;
+  bool _isModelReady = false;
 
   static const double startDescent = -50.0;
   static const double triggerThreshold = 125.0;
@@ -23,6 +26,8 @@ class SearchViewModel extends ChangeNotifier {
 
   rust.Index? get lastResult => _lastResult;
   String? get error => _error;
+  bool get isModelLoading => _isModelLoading;
+  bool get isModelReady => _isModelReady;
 
   void handleDragUpdate(double deltaY) {
     dragOffset = (dragOffset + deltaY).clamp(0, maxDescent);
@@ -37,19 +42,33 @@ class SearchViewModel extends ChangeNotifier {
   }
 
   Future<void> loadModel() async {
+    if (_isModelReady || _isModelLoading) return;
+    _isModelLoading = true;
     debugPrint('[SearchVM] Loading search model...');
+    notifyListeners();
     try {
-      await _searchRepository.loadModel();
-      debugPrint('[SearchVM] Model loaded');
+      await _searchRepository.loadModel(ModelInfo.defaultModel);
+      _isModelReady = true;
+      debugPrint('[SearchVM] Model loaded successfully');
     } catch (e) {
       debugPrint('[SearchVM] Model load error: $e');
-      _error = e.toString();
+      _error = 'Failed to load search model: $e';
+    } finally {
+      _isModelLoading = false;
       notifyListeners();
     }
   }
 
   Future<rust.Index?> getResult(String query) async {
     if (query.isEmpty) return null;
+    if (!_isModelReady) {
+      debugPrint('[SearchVM] Search attempted but model not ready');
+      _error = _isModelLoading
+          ? 'Search model is still loading. Please try again shortly.'
+          : 'Search model failed to load.';
+      notifyListeners();
+      return null;
+    }
     debugPrint('[SearchVM] Searching: "$query"');
     _error = null;
     try {

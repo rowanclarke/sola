@@ -10,6 +10,7 @@ import '../data/repositories/renderer_repository.dart';
 import '../data/repositories/search_repository.dart';
 import '../data/repositories/session_repository.dart';
 import '../domain/services/file_service.dart';
+import '../domain/services/model_service.dart';
 import '../domain/services/renderer_service.dart';
 import '../domain/services/search_service.dart';
 import '../presentation/viewmodels/library_viewmodel.dart';
@@ -42,10 +43,12 @@ class AppBootstrap {
       rendererService: rendererService,
       bibleRepository: bibleRepository,
     );
+    final modelService = ModelService(fileService: fileService);
     final searchRepository = SearchRepository(
       fileService: fileService,
       searchService: searchService,
       rendererRepository: rendererRepository,
+      modelService: modelService,
     );
 
     final sessionState = SessionState(

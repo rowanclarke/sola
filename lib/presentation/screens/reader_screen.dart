@@ -34,9 +34,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
     if (width == _lastWidth && height == _lastHeight) return;
     _lastWidth = width;
     _lastHeight = height;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
-      context.read<ReaderViewModel>().loadPages(width, height);
+      await context.read<ReaderViewModel>().loadPages(width, height);
+      if (!mounted) return;
+      context.read<SearchViewModel>().loadModel(); // fire-and-forget
     });
   }
 

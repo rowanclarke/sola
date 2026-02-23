@@ -1,24 +1,29 @@
 import 'package:flutter/foundation.dart';
 import 'package:rust/rust.dart' as rust;
+import 'package:sola/core/models/model_info.dart';
 import 'package:sola/data/repositories/renderer_repository.dart';
 import 'package:sola/domain/services/file_service.dart';
+import 'package:sola/domain/services/model_service.dart';
 import 'package:sola/domain/services/search_service.dart';
 
 class SearchRepository {
   final FileService _fileService;
   final SearchService _searchService;
   final RendererRepository _rendererRepository;
+  final ModelService _modelService;
   bool _modelLoaded = false;
 
   SearchRepository({
     required FileService fileService,
     required SearchService searchService,
     required RendererRepository rendererRepository,
+    required ModelService modelService,
   }) : _fileService = fileService,
        _searchService = searchService,
-       _rendererRepository = rendererRepository;
+       _rendererRepository = rendererRepository,
+       _modelService = modelService;
 
-  Future<void> loadModel() async {
+  Future<void> loadModel(ModelInfo model) async {
     if (_modelLoaded) {
       debugPrint('[SearchRepo] Model already loaded');
       return;
@@ -30,13 +35,17 @@ class SearchRepository {
       return;
     }
 
-    debugPrint('[SearchRepo] Loading model files from disk...');
-    final embeddings = await _fileService.readBytes('model/embeddings.npy');
-    final model = await _fileService.readBytes('model/all-minilm-l6-v2.onnx');
-    final tokenizer = await _fileService.readBytes('model/tokenizer/tokenizer.json');
+    debugPrint('[SearchRepo] Downloading model if needed...');
+    await _modelService.ensureAvailable(model);
+
+    final basePath = _modelService.getPath(model.id);
+    debugPrint('[SearchRepo] Loading model files from $basePath...');
+    final embeddings = await _fileService.readBytes('$basePath/embeddings.npy');
+    final onnxModel = await _fileService.readBytes('$basePath/all-minilm-l6-v2.onnx');
+    final tokenizer = await _fileService.readBytes('$basePath/tokenizer/tokenizer.json');
 
     debugPrint('[SearchRepo] Initializing ML model...');
-    _searchService.loadModel(indices, embeddings, verses, model, tokenizer);
+    _searchService.loadModel(indices, embeddings, verses, onnxModel, tokenizer);
     _modelLoaded = true;
     debugPrint('[SearchRepo] Model ready');
   }
