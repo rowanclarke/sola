@@ -94,7 +94,7 @@ class SearchViewModel extends ChangeNotifier {
     debugPrint('[SearchVM] Searching: "$query"');
     _error = null;
     try {
-      _lastResult = _searchRepository.getResult(query);
+      _lastResult = await _searchRepository.getResult(query);
       debugPrint('[SearchVM] Result: book=${_lastResult?.book} '
           'ch=${_lastResult?.chapter}:${_lastResult?.verse} page=${_lastResult?.page}');
     } catch (e) {

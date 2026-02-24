@@ -269,7 +269,6 @@ Pointer<Void> loadModel(
   Uint8List model,
   Uint8List tokenizer,
 ) {
-  _log('[FFI] loadModel: embeddings=${embeddings.length}B model=${model.length}B');
   final bEmbeddings = Bytes(embeddings);
   final bLines = Bytes(verses);
   final bModel = Bytes(model);

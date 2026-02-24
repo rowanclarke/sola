@@ -16,6 +16,7 @@ class RendererRepository {
   final Map<String, List<PageModel>> _pageCache = {};
 
   Pointer<Void>? archivedIndices;
+  Uint8List? rawIndices;
   Uint8List? verses;
   int? numPages;
 
@@ -76,6 +77,7 @@ class RendererRepository {
 
     // Deserialize on main isolate (fast pointer operations)
     final archivedPages = _rendererService.getArchivedPages(pagesBytes);
+    rawIndices = indicesBytes;
     archivedIndices = _rendererService.getArchivedIndices(indicesBytes);
     verses = versesBytes;
     numPages = _rendererService.getNumPages(archivedPages);

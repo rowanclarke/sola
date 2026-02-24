@@ -28,7 +28,7 @@ class FileService {
   Future<Uint8List> readBytes(String filePath, [Future<Uint8List> Function()? generator]) async {
     final file = File(_resolve(filePath));
     if (await file.exists()) {
-      return file.readAsBytes();
+      return await file.readAsBytes();
     }
     if (generator != null) {
       final bytes = await generator();

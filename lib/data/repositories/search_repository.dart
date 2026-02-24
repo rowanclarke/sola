@@ -23,28 +23,34 @@ class SearchRepository {
        _modelService = modelService;
 
   Future<void> loadModel(ModelInfo model) async {
-    final indices = _rendererRepository.archivedIndices;
+    final indicesBytes = _rendererRepository.rawIndices;
     final verses = _rendererRepository.verses;
-    if (indices == null || verses == null) {
+    if (indicesBytes == null || verses == null) {
       debugPrint('[SearchRepo] Cannot load model: indices/verses not available');
       return;
     }
 
     debugPrint('[SearchRepo] Downloading model if needed...');
-    await _modelService.ensureAvailable(model);
+    // final stopwatch = Stopwatch()..start();
+    // await _modelService.ensureAvailable(model);
+    // stopwatch.stop();
+    // debugPrint('Total load time: ${stopwatch.elapsedMilliseconds} ms');
 
     final basePath = _modelService.getPath(model.id);
     debugPrint('[SearchRepo] Loading model files from $basePath...');
+
+
     final embeddings = await _fileService.readBytes('$basePath/embeddings.npy');
     final onnxModel = await _fileService.readBytes('$basePath/all-minilm-l6-v2.onnx');
     final tokenizer = await _fileService.readBytes('$basePath/tokenizer/tokenizer.json');
 
+
     debugPrint('[SearchRepo] Initializing ML model...');
-    _searchService.loadModel(indices, embeddings, verses, onnxModel, tokenizer);
+    _searchService.loadModel(indicesBytes, embeddings, verses, onnxModel, tokenizer);
     debugPrint('[SearchRepo] Model ready');
   }
 
-  rust.Index getResult(String query) {
-    return _searchService.getResult(query);
+  Future<rust.Index> getResult(String query) async {
+    return await _searchService.getResult(query);
   }
 }
