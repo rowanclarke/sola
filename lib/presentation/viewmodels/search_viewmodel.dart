@@ -13,6 +13,7 @@ class SearchViewModel extends ChangeNotifier {
   String? _error;
   bool _isModelLoading = false;
   bool _isModelReady = false;
+  String? _loadedTranslationId;
 
   static const double startDescent = -50.0;
   static const double triggerThreshold = 125.0;
@@ -42,17 +43,38 @@ class SearchViewModel extends ChangeNotifier {
   }
 
   Future<void> loadModel() async {
-    if (_isModelReady || _isModelLoading) return;
+    if (_isModelLoading) return;
+
+    final currentTranslationId =
+        _sessionRepository.currentSession.currentTranslationId;
+
+    // Skip if already loaded for this exact translation
+    if (_isModelReady && _loadedTranslationId == currentTranslationId) {
+      debugPrint('[SearchVM] Model already loaded for $currentTranslationId');
+      return;
+    }
+
+    // Reset stale state from previous translation
+    if (_isModelReady) {
+      debugPrint('[SearchVM] Translation changed '
+          '($_loadedTranslationId → $currentTranslationId), reloading model');
+    }
+    _isModelReady = false;
     _isModelLoading = true;
-    debugPrint('[SearchVM] Loading search model...');
+    _lastResult = null;
+    _error = null;
+    debugPrint('[SearchVM] Loading search model for $currentTranslationId...');
     notifyListeners();
+
     try {
       await _searchRepository.loadModel(ModelInfo.defaultModel);
       _isModelReady = true;
-      debugPrint('[SearchVM] Model loaded successfully');
+      _loadedTranslationId = currentTranslationId;
+      debugPrint('[SearchVM] Model loaded for $currentTranslationId');
     } catch (e) {
       debugPrint('[SearchVM] Model load error: $e');
       _error = 'Failed to load search model: $e';
+      _loadedTranslationId = null;
     } finally {
       _isModelLoading = false;
       notifyListeners();

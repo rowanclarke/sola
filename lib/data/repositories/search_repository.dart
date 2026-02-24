@@ -11,7 +11,6 @@ class SearchRepository {
   final SearchService _searchService;
   final RendererRepository _rendererRepository;
   final ModelService _modelService;
-  bool _modelLoaded = false;
 
   SearchRepository({
     required FileService fileService,
@@ -24,10 +23,6 @@ class SearchRepository {
        _modelService = modelService;
 
   Future<void> loadModel(ModelInfo model) async {
-    if (_modelLoaded) {
-      debugPrint('[SearchRepo] Model already loaded');
-      return;
-    }
     final indices = _rendererRepository.archivedIndices;
     final verses = _rendererRepository.verses;
     if (indices == null || verses == null) {
@@ -46,7 +41,6 @@ class SearchRepository {
 
     debugPrint('[SearchRepo] Initializing ML model...');
     _searchService.loadModel(indices, embeddings, verses, onnxModel, tokenizer);
-    _modelLoaded = true;
     debugPrint('[SearchRepo] Model ready');
   }
 

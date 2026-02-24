@@ -17,6 +17,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
   double? _lastWidth;
   double? _lastHeight;
 
+  // Search bar state
+  final FocusNode _searchFocusNode = FocusNode();
+  final TextEditingController _searchController = TextEditingController();
+
   // Swipe-down search gesture state
   Offset? _startPosition;
   bool _isVerticalDrag = false;
@@ -27,6 +31,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
   @override
   void dispose() {
     _pageController?.dispose();
+    _searchFocusNode.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -42,19 +48,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
     });
   }
 
-  void _showSearchDialog(SearchViewModel searchVm) {
-    showDialog(
-      context: context,
-      builder: (_) => _SearchDialog(searchVm: searchVm),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    // Use screen size directly instead of LayoutBuilder constraints.
-    // MediaQuery.sizeOf returns the logical screen dimensions, which are
-    // invariant to keyboard visibility, overlays, and Scaffold resizing.
-    // This prevents the Reader from re-rendering when the search keyboard opens.
     final screenSize = MediaQuery.sizeOf(context);
     final safePadding = MediaQuery.paddingOf(context);
     final topPadding = safePadding.top;
@@ -64,8 +59,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
     _triggerLoad(width, height);
 
     return Scaffold(
-      // Keep body at full height when keyboard opens. The Reader has no text
-      // inputs — the search dialog lives in the Overlay layer above.
       resizeToAvoidBottomInset: false,
       body: Consumer2<ReaderViewModel, SearchViewModel>(
         builder: (context, readerVm, searchVm, _) {
@@ -95,49 +88,50 @@ class _ReaderScreenState extends State<ReaderScreen> {
             );
           }
 
-          return Listener(
-            onPointerDown: (event) {
-              _startPosition = event.position;
-              _isVerticalDrag = false;
-              _hasDecidedDirection = false;
-            },
-            onPointerMove: (event) {
-              if (_startPosition == null) return;
-              if (_hasDecidedDirection) {
-                if (_isVerticalDrag) {
-                  searchVm.handleDragUpdate(event.delta.dy);
-                }
-                return;
-              }
-              final delta = event.position - _startPosition!;
-              final distance = delta.distance;
-              if (distance < _directionThreshold) return;
+          return Stack(
+            children: [
+              // Layer 1: Reader content with swipe gesture
+              Listener(
+                onPointerDown: (event) {
+                  _startPosition = event.position;
+                  _isVerticalDrag = false;
+                  _hasDecidedDirection = false;
+                },
+                onPointerMove: (event) {
+                  if (_startPosition == null) return;
+                  if (_hasDecidedDirection) {
+                    if (_isVerticalDrag) {
+                      searchVm.handleDragUpdate(event.delta.dy);
+                    }
+                    return;
+                  }
+                  final delta = event.position - _startPosition!;
+                  final distance = delta.distance;
+                  if (distance < _directionThreshold) return;
 
-              _hasDecidedDirection = true;
-              _isVerticalDrag =
-                  (delta.dy.abs() * _verticalBias) > delta.dx.abs() &&
-                  delta.dy > 0;
-              if (_isVerticalDrag) {
-                setState(() {});
-              }
-            },
-            onPointerUp: (_) {
-              if (_isVerticalDrag) {
-                final triggered = searchVm.handleDragEnd();
-                if (triggered) {
-                  _showSearchDialog(searchVm);
-                }
-              }
-              _startPosition = null;
-              _isVerticalDrag = false;
-              _hasDecidedDirection = false;
-              setState(() {});
-            },
-            child: AbsorbPointer(
-              absorbing: _isVerticalDrag,
-              child: Stack(
-                children: [
-                  PageView.builder(
+                  _hasDecidedDirection = true;
+                  _isVerticalDrag =
+                      (delta.dy.abs() * _verticalBias) > delta.dx.abs() &&
+                      delta.dy > 0;
+                  if (_isVerticalDrag) {
+                    setState(() {});
+                  }
+                },
+                onPointerUp: (_) {
+                  if (_isVerticalDrag) {
+                    final triggered = searchVm.handleDragEnd();
+                    if (triggered) {
+                      _searchFocusNode.requestFocus();
+                    }
+                  }
+                  _startPosition = null;
+                  _isVerticalDrag = false;
+                  _hasDecidedDirection = false;
+                  setState(() {});
+                },
+                child: AbsorbPointer(
+                  absorbing: _isVerticalDrag,
+                  child: PageView.builder(
                     controller: _pageController,
                     itemCount: readerVm.pages.length,
                     onPageChanged: (i) => readerVm.setPage(i),
@@ -150,25 +144,40 @@ class _ReaderScreenState extends State<ReaderScreen> {
                       ),
                     ),
                   ),
-                  // Search icon indicator
-                  Positioned(
-                    top: searchVm.dragOffset + SearchViewModel.startDescent,
-                    left: 0,
-                    right: 0,
-                    child: Opacity(
-                      opacity: (searchVm.dragOffset /
-                              SearchViewModel.triggerThreshold)
-                          .clamp(0.0, 1.0),
-                      child: const Icon(
-                        Icons.search,
-                        size: 48,
-                        color: Colors.grey,
-                      ),
+                ),
+              ),
+
+              // Layer 2: Swipe-down search icon indicator
+              Positioned(
+                top: searchVm.dragOffset + SearchViewModel.startDescent,
+                left: 0,
+                right: 0,
+                child: IgnorePointer(
+                  child: Opacity(
+                    opacity: (searchVm.dragOffset /
+                            SearchViewModel.triggerThreshold)
+                        .clamp(0.0, 1.0),
+                    child: const Icon(
+                      Icons.search,
+                      size: 48,
+                      color: Colors.grey,
                     ),
                   ),
-                ],
+                ),
               ),
-            ),
+
+              // Layer 3: Search bar at top
+              Positioned(
+                top: topPadding + 8,
+                left: 16,
+                right: 16,
+                child: _SearchBar(
+                  focusNode: _searchFocusNode,
+                  controller: _searchController,
+                  searchVm: searchVm,
+                ),
+              ),
+            ],
           );
         },
       ),
@@ -176,69 +185,158 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 }
 
-class _SearchDialog extends StatefulWidget {
+class _SearchBar extends StatefulWidget {
+  final FocusNode focusNode;
+  final TextEditingController controller;
   final SearchViewModel searchVm;
 
-  const _SearchDialog({required this.searchVm});
+  const _SearchBar({
+    required this.focusNode,
+    required this.controller,
+    required this.searchVm,
+  });
 
   @override
-  State<_SearchDialog> createState() => _SearchDialogState();
+  State<_SearchBar> createState() => _SearchBarState();
 }
 
-class _SearchDialogState extends State<_SearchDialog> {
-  final _controller = TextEditingController();
+class _SearchBarState extends State<_SearchBar> {
+  bool _hasFocus = false;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.focusNode.addListener(_onFocusChange);
+  }
 
   @override
   void dispose() {
-    _controller.dispose();
+    widget.focusNode.removeListener(_onFocusChange);
     super.dispose();
+  }
+
+  void _onFocusChange() {
+    setState(() {
+      _hasFocus = widget.focusNode.hasFocus;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Search'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: _controller,
-            autofocus: true,
-            decoration: const InputDecoration(hintText: 'Search verses...'),
+    final vm = widget.searchVm;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Search input
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.95),
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: TextField(
+            focusNode: widget.focusNode,
+            controller: widget.controller,
+            decoration: InputDecoration(
+              hintText: 'Search verses...',
+              prefixIcon: vm.isModelLoading
+                  ? const Padding(
+                      padding: EdgeInsets.all(12),
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    )
+                  : const Icon(Icons.search),
+              suffixIcon: _hasFocus
+                  ? IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () {
+                        widget.controller.clear();
+                        widget.focusNode.unfocus();
+                      },
+                    )
+                  : null,
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
+            ),
             onSubmitted: (query) async {
-              await widget.searchVm.getResult(query);
-              setState(() {});
+              final result = await vm.getResult(query);
+              if (result != null) {
+                setState(() {});
+              }
             },
           ),
-          const SizedBox(height: 16),
-          if (widget.searchVm.error != null)
-            Text(
-              widget.searchVm.error!,
-              style: const TextStyle(color: Colors.red),
+        ),
+
+        // Search result (shown below the bar when focused and result exists)
+        if (_hasFocus && vm.error != null)
+          Container(
+            margin: const EdgeInsets.only(top: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.95),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-          if (widget.searchVm.lastResult != null)
-            ListTile(
-              title: Text(
-                '${widget.searchVm.lastResult!.book} '
-                '${widget.searchVm.lastResult!.chapter}:'
-                '${widget.searchVm.lastResult!.verse}',
+            child: Text(
+              vm.error!,
+              style: const TextStyle(color: Colors.red, fontSize: 13),
+            ),
+          ),
+
+        if (_hasFocus && vm.lastResult != null)
+          Container(
+            margin: const EdgeInsets.only(top: 4),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.95),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: ListTile(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
-              subtitle: Text('Page ${widget.searchVm.lastResult!.page + 1}'),
+              title: Text(
+                '${vm.lastResult!.book} '
+                '${vm.lastResult!.chapter}:'
+                '${vm.lastResult!.verse}',
+              ),
+              subtitle: Text('Page ${vm.lastResult!.page + 1}'),
+              trailing: const Icon(Icons.arrow_forward, size: 18),
               onTap: () {
-                widget.searchVm.handleItemTap(
-                  widget.searchVm.lastResult!.book,
-                  widget.searchVm.lastResult!.page,
+                vm.handleItemTap(
+                  vm.lastResult!.book,
+                  vm.lastResult!.page,
                 );
-                Navigator.pop(context);
+                widget.controller.clear();
+                widget.focusNode.unfocus();
               },
             ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Close'),
-        ),
+          ),
       ],
     );
   }
