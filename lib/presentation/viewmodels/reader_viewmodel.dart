@@ -1,13 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:sola/core/models/page_model.dart';
-import 'package:sola/data/repositories/bible_repository.dart';
 import 'package:sola/data/repositories/renderer_repository.dart';
 import 'package:sola/data/repositories/session_repository.dart';
 
 class ReaderViewModel extends ChangeNotifier {
   final RendererRepository _rendererRepository;
   final SessionRepository _sessionRepository;
-  final BibleRepository _bibleRepository;
 
   List<PageModel> _pages = [];
   int _currentPageIndex = 0;
@@ -18,10 +16,8 @@ class ReaderViewModel extends ChangeNotifier {
   ReaderViewModel({
     required RendererRepository rendererRepository,
     required SessionRepository sessionRepository,
-    required BibleRepository bibleRepository,
   }) : _rendererRepository = rendererRepository,
-       _sessionRepository = sessionRepository,
-       _bibleRepository = bibleRepository;
+       _sessionRepository = sessionRepository;
 
   List<PageModel> get pages => _pages;
   int get currentPageIndex => _currentPageIndex;
@@ -50,7 +46,6 @@ class ReaderViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _bibleRepository.serializeTranslation(translationId);
       _pages = await _rendererRepository.renderAndLoadPages(
         translationId: translationId,
         bookId: bookId,

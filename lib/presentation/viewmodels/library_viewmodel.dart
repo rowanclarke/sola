@@ -1,11 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:sola/core/models/translation.dart';
+import 'package:sola/data/repositories/bible_repository.dart';
 import 'package:sola/data/repositories/library_repository.dart';
 import 'package:sola/data/repositories/session_repository.dart';
 
 class LibraryViewModel extends ChangeNotifier {
   final LibraryRepository _libraryRepository;
   final SessionRepository _sessionRepository;
+  final BibleRepository _bibleRepository;
 
   List<Translation> _availableTranslations = [];
   List<Translation> _downloadedTranslations = [];
@@ -16,8 +18,10 @@ class LibraryViewModel extends ChangeNotifier {
   LibraryViewModel({
     required LibraryRepository libraryRepository,
     required SessionRepository sessionRepository,
+    required BibleRepository bibleRepository,
   }) : _libraryRepository = libraryRepository,
-       _sessionRepository = sessionRepository;
+       _sessionRepository = sessionRepository,
+       _bibleRepository = bibleRepository;
 
   List<Translation> get availableTranslations => _availableTranslations;
   List<Translation> get downloadedTranslations => _downloadedTranslations;
@@ -58,6 +62,7 @@ class LibraryViewModel extends ChangeNotifier {
         translation.id,
         translation.url,
       );
+      await _bibleRepository.serializeTranslation(translation.id);
       _downloadedTranslations = await _libraryRepository
           .getDownloadedTranslations();
       debugPrint('[LibraryVM] Download complete: ${translation.id}');

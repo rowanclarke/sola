@@ -61,12 +61,12 @@ class AppBootstrap {
     final libraryViewModel = LibraryViewModel(
       libraryRepository: libraryRepository,
       sessionRepository: sessionRepository,
+      bibleRepository: bibleRepository,
     );
     final renderingViewModel = RenderingViewModel();
     final readerViewModel = ReaderViewModel(
       rendererRepository: rendererRepository,
       sessionRepository: sessionRepository,
-      bibleRepository: bibleRepository,
     );
     final searchViewModel = SearchViewModel(
       searchRepository: searchRepository,
