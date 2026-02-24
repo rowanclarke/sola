@@ -31,10 +31,8 @@ class SearchRepository {
     }
 
     debugPrint('[SearchRepo] Downloading model if needed...');
-    // final stopwatch = Stopwatch()..start();
-    // await _modelService.ensureAvailable(model);
-    // stopwatch.stop();
-    // debugPrint('Total load time: ${stopwatch.elapsedMilliseconds} ms');
+    await _modelService.ensureAvailable(model);
+    debugPrint('Total load time: ${stopwatch.elapsedMilliseconds} ms');
 
     final basePath = _modelService.getPath(model.id);
     debugPrint('[SearchRepo] Loading model files from $basePath...');

@@ -6,6 +6,7 @@ FROM instrumentisto/flutter:latest
 # ----------------------------
 RUN apt-get update && apt-get install -y \
     curl \
+    socat \
     build-essential \
     pkg-config \
     libssl-dev \

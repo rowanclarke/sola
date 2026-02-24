@@ -31,7 +31,8 @@ services:
     devices:
       # Physical Android devices
       - /dev/bus/usb:/dev/bus/usb
-
+    ports:
+      - "3000:3000"
     privileged: true
 
 volumes:
