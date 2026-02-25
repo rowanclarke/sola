@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/models/page_model.dart';
 import '../viewmodels/reader_viewmodel.dart';
 import '../viewmodels/search_viewmodel.dart';
 import '../widgets/page_view_widget.dart';
@@ -13,7 +14,9 @@ class ReaderScreen extends StatefulWidget {
 }
 
 class _ReaderScreenState extends State<ReaderScreen> {
-  PageController? _pageController;
+  PageController _pageController = PageController();
+  List<PageModel>? _lastPages;
+  Key _pageViewKey = UniqueKey();
   double? _lastWidth;
   double? _lastHeight;
 
@@ -30,7 +33,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   @override
   void dispose() {
-    _pageController?.dispose();
+    _pageController.dispose();
     _searchFocusNode.dispose();
     _searchController.dispose();
     super.dispose();
@@ -79,14 +82,22 @@ class _ReaderScreenState extends State<ReaderScreen> {
             return const Center(child: CircularProgressIndicator());
           }
 
-          // Sync page controller
-          if (_pageController == null ||
-              _pageController!.initialPage != readerVm.currentPageIndex) {
-            _pageController?.dispose();
-            _pageController = PageController(
-              initialPage: readerVm.currentPageIndex,
-            );
+          // Detect if pages array changed (new book loaded)
+          if (!identical(readerVm.pages, _lastPages)) {
+            _lastPages = readerVm.pages;
+            _pageController.dispose();
+            _pageController =
+                PageController(initialPage: readerVm.currentPageIndex);
+            _pageViewKey = UniqueKey();
           }
+
+          // Handle same-book page jump (navigateTo or search result tap)
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted || !_pageController.hasClients) return;
+            if (_pageController.page?.round() != readerVm.currentPageIndex) {
+              _pageController.jumpToPage(readerVm.currentPageIndex);
+            }
+          });
 
           return Stack(
             children: [
@@ -132,6 +143,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 child: AbsorbPointer(
                   absorbing: _isVerticalDrag,
                   child: PageView.builder(
+                    key: _pageViewKey,
                     controller: _pageController,
                     itemCount: readerVm.pages.length,
                     onPageChanged: (i) => readerVm.setPage(i),
@@ -328,7 +340,7 @@ class _SearchBarState extends State<_SearchBar> {
               subtitle: Text('Page ${vm.lastResult!.page + 1}'),
               trailing: const Icon(Icons.arrow_forward, size: 18),
               onTap: () {
-                vm.handleItemTap(
+                context.read<ReaderViewModel>().navigateTo(
                   vm.lastResult!.book,
                   vm.lastResult!.page,
                 );

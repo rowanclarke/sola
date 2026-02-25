@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../viewmodels/reader_viewmodel.dart';
 import '../viewmodels/search_viewmodel.dart';
 import '../widgets/search_result_tile.dart';
 
@@ -64,7 +65,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 SearchResultTile(
                   index: vm.lastResult!,
                   onTap: () {
-                    vm.handleItemTap(
+                    context.read<ReaderViewModel>().navigateTo(
                       vm.lastResult!.book,
                       vm.lastResult!.page,
                     );

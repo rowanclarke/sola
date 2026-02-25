@@ -32,19 +32,16 @@ class SearchRepository {
 
     debugPrint('[SearchRepo] Downloading model if needed...');
     await _modelService.ensureAvailable(model);
-    debugPrint('Total load time: ${stopwatch.elapsedMilliseconds} ms');
 
     final basePath = _modelService.getPath(model.id);
     debugPrint('[SearchRepo] Loading model files from $basePath...');
-
 
     final embeddings = await _fileService.readBytes('$basePath/embeddings.npy');
     final onnxModel = await _fileService.readBytes('$basePath/all-minilm-l6-v2.onnx');
     final tokenizer = await _fileService.readBytes('$basePath/tokenizer/tokenizer.json');
 
-
     debugPrint('[SearchRepo] Initializing ML model...');
-    _searchService.loadModel(indicesBytes, embeddings, verses, onnxModel, tokenizer);
+    await _searchService.loadModel(indicesBytes, embeddings, verses, onnxModel, tokenizer);
     debugPrint('[SearchRepo] Model ready');
   }
 

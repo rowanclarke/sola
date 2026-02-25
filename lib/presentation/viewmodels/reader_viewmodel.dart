@@ -12,6 +12,8 @@ class ReaderViewModel extends ChangeNotifier {
   bool _isLoading = false;
   String? _currentCacheKey;
   String? _error;
+  double _lastWidth = 0;
+  double _lastHeight = 0;
 
   ReaderViewModel({
     required RendererRepository rendererRepository,
@@ -25,6 +27,9 @@ class ReaderViewModel extends ChangeNotifier {
   String? get error => _error;
 
   Future<void> loadPages(double width, double height) async {
+    _lastWidth = width;
+    _lastHeight = height;
+
     final translationId =
         _sessionRepository.currentSession.currentTranslationId;
     final bookId = _sessionRepository.currentSession.currentBookId;
@@ -70,5 +75,21 @@ class ReaderViewModel extends ChangeNotifier {
     _currentPageIndex = index;
     await _sessionRepository.setCurrentPage(index);
     notifyListeners();
+  }
+
+  Future<void> navigateTo(String bookId, int pageNumber) async {
+    debugPrint('[ReaderVM] navigateTo: book=$bookId page=$pageNumber');
+    final currentBookId = _sessionRepository.currentSession.currentBookId;
+
+    await _sessionRepository.setCurrentBook(bookId);
+    await _sessionRepository.setCurrentPage(pageNumber);
+
+    if (bookId != currentBookId) {
+      _currentCacheKey = null;
+      await loadPages(_lastWidth, _lastHeight);
+    } else {
+      _currentPageIndex = pageNumber.clamp(0, _pages.length - 1);
+      notifyListeners();
+    }
   }
 }

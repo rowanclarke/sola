@@ -106,9 +106,4 @@ class SearchViewModel extends ChangeNotifier {
     return _lastResult;
   }
 
-  Future<void> handleItemTap(String bookId, int pageNumber) async {
-    debugPrint('[SearchVM] Navigating to book=$bookId page=$pageNumber');
-    await _sessionRepository.setCurrentBook(bookId);
-    await _sessionRepository.setCurrentPage(pageNumber);
-  }
 }
