@@ -28,11 +28,15 @@ services:
       # Android SDK cache (optional)
       - android-cache:/opt/android-sdk
 
+      # Helix config
+      - ${HOME}/dotfiles/helix/.config/helix:/root/.config/helix
+
     devices:
       # Physical Android devices
       - /dev/bus/usb:/dev/bus/usb
     ports:
       - "3000:3000"
+      - "2222:22"
     privileged: true
 
 volumes:
