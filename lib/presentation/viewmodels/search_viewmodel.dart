@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:rust/rust.dart' as rust;
 import 'package:sola/core/models/model_info.dart';
@@ -15,9 +17,15 @@ class SearchViewModel extends ChangeNotifier {
   bool _isModelReady = false;
   String? _loadedTranslationId;
 
+  // Debounced search state
+  Timer? _debounceTimer;
+  bool _isSearching = false;
+  int _queryVersion = 0;
+
   static const double startDescent = -50.0;
   static const double triggerThreshold = 125.0;
   static const double maxDescent = 150.0;
+  static const _debounceDuration = Duration(milliseconds: 400);
 
   SearchViewModel({
     required SearchRepository searchRepository,
@@ -29,6 +37,7 @@ class SearchViewModel extends ChangeNotifier {
   String? get error => _error;
   bool get isModelLoading => _isModelLoading;
   bool get isModelReady => _isModelReady;
+  bool get isSearching => _isSearching;
 
   void handleDragUpdate(double deltaY) {
     dragOffset = (dragOffset + deltaY).clamp(0, maxDescent);
@@ -81,29 +90,68 @@ class SearchViewModel extends ChangeNotifier {
     }
   }
 
-  Future<rust.Index?> getResult(String query) async {
-    if (query.isEmpty) return null;
+  void clearSearch() {
+    _queryVersion++;
+    _lastResult = null;
+    _error = null;
+    _isSearching = false;
+    notifyListeners();
+  }
+
+  void onQueryChanged(String query) {
+    _debounceTimer?.cancel();
+
+    if (query.isEmpty) {
+      clearSearch();
+      return;
+    }
+
+    _debounceTimer = Timer(_debounceDuration, () {
+      _executeSearch(query);
+    });
+  }
+
+  Future<void> _executeSearch(String query) async {
     if (!_isModelReady) {
       debugPrint('[SearchVM] Search attempted but model not ready');
       _error = _isModelLoading
           ? 'Search model is still loading. Please try again shortly.'
           : 'Search model failed to load.';
       notifyListeners();
-      return null;
+      return;
     }
-    debugPrint('[SearchVM] Searching: "$query"');
+
+    final version = ++_queryVersion;
+    _isSearching = true;
     _error = null;
+    notifyListeners();
+
+    debugPrint('[SearchVM] Searching: "$query"');
     try {
-      _lastResult = await _searchRepository.getResult(query);
-      debugPrint('[SearchVM] Result: book=${_lastResult?.book} '
-          'ch=${_lastResult?.chapter}:${_lastResult?.verse} page=${_lastResult?.page}');
+      final result = await _searchRepository.getResult(query);
+      if (version != _queryVersion) {
+        debugPrint('[SearchVM] Stale result for "$query", ignoring');
+        return;
+      }
+      _lastResult = result;
+      debugPrint('[SearchVM] Result: book=${result.book} '
+          'ch=${result.chapter}:${result.verse} page=${result.page}');
     } catch (e) {
+      if (version != _queryVersion) return;
       debugPrint('[SearchVM] Search error: $e');
       _error = e.toString();
       _lastResult = null;
+    } finally {
+      if (version == _queryVersion) {
+        _isSearching = false;
+        notifyListeners();
+      }
     }
-    notifyListeners();
-    return _lastResult;
   }
 
+  @override
+  void dispose() {
+    _debounceTimer?.cancel();
+    super.dispose();
+  }
 }

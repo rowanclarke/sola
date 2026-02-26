@@ -48,9 +48,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       },
                     ),
                   ),
-                  onSubmitted: (query) async {
-                    await vm.getResult(query);
-                  },
+                  onChanged: (query) => vm.onQueryChanged(query),
                 ),
               ),
               if (vm.error != null)

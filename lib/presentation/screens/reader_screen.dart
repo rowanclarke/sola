@@ -278,42 +278,53 @@ class _SearchBarState extends State<_SearchBar> {
               ),
             ],
           ),
-          child: TextField(
-            focusNode: widget.focusNode,
-            controller: widget.controller,
-            decoration: InputDecoration(
-              hintText: 'Search verses...',
-              prefixIcon: vm.isModelLoading
-                  ? const Padding(
-                      padding: EdgeInsets.all(12),
-                      child: SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    )
-                  : const Icon(Icons.search),
-              suffixIcon: _hasFocus
-                  ? IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () {
-                        widget.controller.clear();
-                        widget.focusNode.unfocus();
-                      },
-                    )
-                  : null,
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 14,
+          clipBehavior: Clip.antiAlias,
+          child: Stack(
+            children: [
+              TextField(
+                focusNode: widget.focusNode,
+                controller: widget.controller,
+                decoration: InputDecoration(
+                  hintText: vm.isModelLoading
+                      ? 'Loading...' : 'Search anything...',
+                  prefixIcon: vm.isModelLoading
+                      ? const Padding(
+                          padding: EdgeInsets.all(12),
+                          child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        )
+                      : const Icon(Icons.search),
+                  suffixIcon: _hasFocus
+                      ? IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () {
+                            widget.controller.clear();
+                            widget.focusNode.unfocus();
+                          },
+                        )
+                      : null,
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                ),
+                onChanged: (query) => vm.onQueryChanged(query),
+                onTapOutside: (event) {
+                  widget.focusNode.unfocus();
+                },
               ),
-            ),
-            onSubmitted: (query) async {
-              final result = await vm.getResult(query);
-              if (result != null) {
-                setState(() {});
-              }
-            },
+              if (vm.isSearching)
+                const Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: LinearProgressIndicator(minHeight: 2),
+                ),
+            ],
           ),
         ),
       ),
@@ -393,6 +404,7 @@ class _SearchBarState extends State<_SearchBar> {
                           vm.lastResult!.page,
                         );
                         widget.controller.clear();
+                        vm.clearSearch();
                         widget.focusNode.unfocus();
                       },
                     ),
