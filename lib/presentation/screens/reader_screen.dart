@@ -70,15 +70,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
                     searchVm: searchVm,
                   ),
                 ),
-                Expanded(
-                  child: _buildReaderContent(readerVm, searchVm),
-                ),
+                Expanded(child: _buildReaderContent(readerVm, searchVm)),
                 const Padding(
                   padding: EdgeInsets.all(16),
-                  child: Text(
-                    'Placeholder',
-                    textAlign: TextAlign.center,
-                  ),
+                  child: Text('Placeholder', textAlign: TextAlign.center),
                 ),
               ],
             );
@@ -120,8 +115,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
         if (!identical(readerVm.pages, _lastPages)) {
           _lastPages = readerVm.pages;
           _pageController.dispose();
-          _pageController =
-              PageController(initialPage: readerVm.currentPageIndex);
+          _pageController = PageController(
+            initialPage: readerVm.currentPageIndex,
+          );
           _pageViewKey = UniqueKey();
         }
 
@@ -183,7 +179,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   itemBuilder: (_, i) => Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: _horizontalPadding,
-                      vertical: _verticalPadding
+                      vertical: _verticalPadding,
                     ),
                     child: PageViewWidget(
                       page: readerVm.pages[i],
@@ -200,14 +196,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
               right: 0,
               child: IgnorePointer(
                 child: Opacity(
-                  opacity: (searchVm.dragOffset /
-                          SearchViewModel.triggerThreshold)
-                      .clamp(0.0, 1.0),
-                  child: const Icon(
-                    Icons.search,
-                    size: 48,
-                    color: Colors.grey,
-                  ),
+                  opacity:
+                      (searchVm.dragOffset / SearchViewModel.triggerThreshold)
+                          .clamp(0.0, 1.0),
+                  child: const Icon(Icons.search, size: 48, color: Colors.grey),
                 ),
               ),
             ),
@@ -261,73 +253,87 @@ class _SearchBarState extends State<_SearchBar> {
   Widget build(BuildContext context) {
     final vm = widget.searchVm;
 
-    return CompositedTransformTarget(
-      link: _link,
-      child: OverlayPortal(
-        controller: _overlayController,
-        overlayChildBuilder: (_) => _buildOverlayContent(vm),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.95),
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Stack(
-            children: [
-              TextField(
-                focusNode: widget.focusNode,
-                controller: widget.controller,
-                decoration: InputDecoration(
-                  hintText: vm.isModelLoading
-                      ? 'Loading...' : 'Search anything...',
-                  prefixIcon: vm.isModelLoading
-                      ? const Padding(
-                          padding: EdgeInsets.all(12),
-                          child: SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                        )
-                      : const Icon(Icons.search),
-                  suffixIcon: _hasFocus
-                      ? IconButton(
-                          icon: const Icon(Icons.close),
-                          onPressed: () {
-                            widget.controller.clear();
-                            widget.focusNode.unfocus();
-                          },
-                        )
-                      : null,
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 14,
-                  ),
-                ),
-                onChanged: (query) => vm.onQueryChanged(query),
-                onTapOutside: (event) {
-                  widget.focusNode.unfocus();
-                },
-              ),
-              if (vm.isSearching)
-                const Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: LinearProgressIndicator(minHeight: 2),
-                ),
-            ],
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTap: () {
+              widget.focusNode.unfocus();
+            },
           ),
         ),
-      ),
+
+        CompositedTransformTarget(
+          link: _link,
+          child: OverlayPortal(
+            controller: _overlayController,
+            overlayChildBuilder: (_) => _buildOverlayContent(vm),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.95),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Stack(
+                children: [
+                  TextField(
+                    focusNode: widget.focusNode,
+                    controller: widget.controller,
+                    decoration: InputDecoration(
+                      hintText: vm.isModelLoading
+                          ? 'Loading...'
+                          : 'Search anything...',
+                      prefixIcon: vm.isModelLoading
+                          ? const Padding(
+                              padding: EdgeInsets.all(12),
+                              child: SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                            )
+                          : const Icon(Icons.search),
+                      suffixIcon: _hasFocus
+                          ? IconButton(
+                              icon: const Icon(Icons.close),
+                              onPressed: () {
+                                widget.controller.clear();
+                                vm.clearSearch();
+                                widget.focusNode.unfocus();
+                              },
+                            )
+                          : null,
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
+                    ),
+                    onChanged: (query) => vm.onQueryChanged(query),
+                  ),
+                  if (vm.isSearching)
+                    const Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: LinearProgressIndicator(minHeight: 2),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -375,38 +381,40 @@ class _SearchBarState extends State<_SearchBar> {
                     ),
                   ),
                 if (vm.lastResult != null)
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.95),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: ListTile(
-                      shape: RoundedRectangleBorder(
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.95),
                         borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
-                      title: Text(
-                        '${vm.lastResult!.book} '
-                        '${vm.lastResult!.chapter}:'
-                        '${vm.lastResult!.verse}',
+                      child: ListView.builder(
+                        itemCount: vm.lastResult!.length,
+                        shrinkWrap: true,
+                        itemBuilder: (context, i) => ListTile(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          title: Text(vm.lastResult![i].reference),
+                          subtitle: Text('Page ${vm.lastResult![i].page + 1}'),
+                          trailing: const Icon(Icons.arrow_forward, size: 18),
+                          onTap: () {
+                            context.read<ReaderViewModel>().navigateTo(
+                              vm.lastResult![i].book,
+                              vm.lastResult![i].page,
+                            );
+                            widget.controller.clear();
+                            vm.clearSearch();
+                            widget.focusNode.unfocus();
+                          },
+                        ),
                       ),
-                      subtitle: Text('Page ${vm.lastResult!.page + 1}'),
-                      trailing: const Icon(Icons.arrow_forward, size: 18),
-                      onTap: () {
-                        context.read<ReaderViewModel>().navigateTo(
-                          vm.lastResult!.book,
-                          vm.lastResult!.page,
-                        );
-                        widget.controller.clear();
-                        vm.clearSearch();
-                        widget.focusNode.unfocus();
-                      },
                     ),
                   ),
               ],

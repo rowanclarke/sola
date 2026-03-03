@@ -4,6 +4,8 @@ import 'dart:typed_data';
 
 import 'package:rust/rust.dart' as rust;
 
+import '../../core/models/index.dart';
+
 class _LoadMsg {
   final Uint8List indicesBytes;
   final Uint8List embeddings;
@@ -12,8 +14,14 @@ class _LoadMsg {
   final Uint8List tokenizer;
   final SendPort replyPort;
 
-  _LoadMsg(this.indicesBytes, this.embeddings, this.verses, this.model,
-      this.tokenizer, this.replyPort);
+  _LoadMsg(
+    this.indicesBytes,
+    this.embeddings,
+    this.verses,
+    this.model,
+    this.tokenizer,
+    this.replyPort,
+  );
 }
 
 class _QueryMsg {
@@ -49,8 +57,14 @@ class SearchService {
 
     final replyPort = ReceivePort();
     _commandPort!.send(
-      _LoadMsg(indicesBytes, embeddings, verses, model, tokenizer,
-          replyPort.sendPort),
+      _LoadMsg(
+        indicesBytes,
+        embeddings,
+        verses,
+        model,
+        tokenizer,
+        replyPort.sendPort,
+      ),
     );
     print('[SearchSvc] Waiting for model load...');
     final result = await replyPort.first;
@@ -58,13 +72,14 @@ class SearchService {
     print('[SearchSvc] Model loaded on isolate');
   }
 
-  Future<rust.Index> getResult(String query) async {
+  Future<Index> getResult(String query) async {
     if (_commandPort == null) throw StateError('Model not loaded');
     final replyPort = ReceivePort();
     _commandPort!.send(_QueryMsg(query, replyPort.sendPort));
     final result = await replyPort.first;
     if (result is _ErrorResult) throw Exception(result.message);
-    return result as rust.Index;
+    final index = result as rust.Index;
+    return VerseIndex(index.book, index.page, index.chapter, index.verse);
   }
 
   void dispose() {
@@ -105,8 +120,10 @@ class SearchService {
           print('[SearchIsolate] Query: "${message.query}"');
           final resultPtr = rust.getResult(model!, message.query);
           final index = rust.getIndex(indices!, resultPtr);
-          print('[SearchIsolate] Result: ${index.book} '
-              '${index.chapter}:${index.verse}');
+          print(
+            '[SearchIsolate] Result: ${index.book} '
+            '${index.chapter}:${index.verse}',
+          );
           message.replyPort.send(index);
         } catch (e) {
           print('[SearchIsolate] Query error: $e');

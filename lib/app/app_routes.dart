@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../presentation/screens/library_screen.dart';
 import '../presentation/screens/reader_screen.dart';
 import '../presentation/screens/rendering_config_screen.dart';
-import '../presentation/screens/search_screen.dart';
 
 abstract class AppRoutes {
   static const String library = '/';
@@ -21,8 +20,6 @@ abstract class AppRouteGenerator {
         return MaterialPageRoute(builder: (_) => const ReaderScreen());
       case AppRoutes.renderingConfig:
         return MaterialPageRoute(builder: (_) => const RenderingConfigScreen());
-      case AppRoutes.search:
-        return MaterialPageRoute(builder: (_) => const SearchScreen());
       default:
         return null;
     }
@@ -33,13 +30,10 @@ extension NavigationExtension on BuildContext {
   void goToLibrary() =>
       Navigator.pushNamedAndRemoveUntil(this, AppRoutes.library, (_) => false);
 
-  void goToReader() =>
-      Navigator.pushNamed(this, AppRoutes.reader);
+  void goToReader() => Navigator.pushNamed(this, AppRoutes.reader);
 
   void goToRenderingConfig() =>
       Navigator.pushNamed(this, AppRoutes.renderingConfig);
-
-  void goToSearch() => Navigator.pushNamed(this, AppRoutes.search);
 
   void goBack() => Navigator.pop(this);
 }

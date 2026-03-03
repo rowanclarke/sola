@@ -1,17 +1,19 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:rust/rust.dart' as rust;
+import 'package:sola/core/models/index.dart';
 import 'package:sola/core/models/model_info.dart';
+import 'package:sola/data/repositories/index_repository.dart';
 import 'package:sola/data/repositories/search_repository.dart';
 import 'package:sola/data/repositories/session_repository.dart';
 
 class SearchViewModel extends ChangeNotifier {
   final SearchRepository _searchRepository;
   final SessionRepository _sessionRepository;
+  final IndexRepository _indexRepository;
 
   double dragOffset = 0.0;
-  rust.Index? _lastResult;
+  List<Index>? _lastResult;
   String? _error;
   bool _isModelLoading = false;
   bool _isModelReady = false;
@@ -30,10 +32,12 @@ class SearchViewModel extends ChangeNotifier {
   SearchViewModel({
     required SearchRepository searchRepository,
     required SessionRepository sessionRepository,
+    required IndexRepository indexRepository,
   }) : _searchRepository = searchRepository,
-       _sessionRepository = sessionRepository;
+       _sessionRepository = sessionRepository,
+       _indexRepository = indexRepository;
 
-  rust.Index? get lastResult => _lastResult;
+  List<Index>? get lastResult => _lastResult;
   String? get error => _error;
   bool get isModelLoading => _isModelLoading;
   bool get isModelReady => _isModelReady;
@@ -65,8 +69,10 @@ class SearchViewModel extends ChangeNotifier {
 
     // Reset stale state from previous translation
     if (_isModelReady) {
-      debugPrint('[SearchVM] Translation changed '
-          '($_loadedTranslationId → $currentTranslationId), reloading model');
+      debugPrint(
+        '[SearchVM] Translation changed '
+        '($_loadedTranslationId → $currentTranslationId), reloading model',
+      );
     }
     _isModelReady = false;
     _isModelLoading = true;
@@ -128,14 +134,19 @@ class SearchViewModel extends ChangeNotifier {
 
     debugPrint('[SearchVM] Searching: "$query"');
     try {
-      final result = await _searchRepository.getResult(query);
-      if (version != _queryVersion) {
-        debugPrint('[SearchVM] Stale result for "$query", ignoring');
-        return;
+      final results = _indexRepository.searchIndex(
+        _sessionRepository.currentSession.currentTranslationId!,
+        query,
+      );
+      if (results.isEmpty) {
+        final result = await _searchRepository.getResult(query);
+        if (version != _queryVersion) {
+          debugPrint('[SearchVM] Stale result for "$query", ignoring');
+          return;
+        }
+        results.add(result);
       }
-      _lastResult = result;
-      debugPrint('[SearchVM] Result: book=${result.book} '
-          'ch=${result.chapter}:${result.verse} page=${result.page}');
+      _lastResult = results;
     } catch (e) {
       if (version != _queryVersion) return;
       debugPrint('[SearchVM] Search error: $e');

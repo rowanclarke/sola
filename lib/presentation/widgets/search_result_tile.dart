@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:rust/rust.dart' as rust;
+import 'package:sola/core/models/index.dart';
 
 class SearchResultTile extends StatelessWidget {
-  final rust.Index index;
+  final Index index;
   final VoidCallback onTap;
 
   const SearchResultTile({super.key, required this.index, required this.onTap});
@@ -10,7 +10,7 @@ class SearchResultTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      title: Text('${index.book} ${index.chapter}:${index.verse}'),
+      title: Text(index.reference),
       subtitle: Text('Page ${index.page + 1}'),
       onTap: onTap,
     );

@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:sola/data/repositories/index_repository.dart';
+import 'package:sola/domain/services/index_service.dart';
 
 import '../core/session/session_state.dart';
 import '../data/repositories/bible_repository.dart';
@@ -28,6 +30,7 @@ class AppBootstrap {
     final fileService = FileService(dir);
     final rendererService = RendererService();
     final searchService = SearchService();
+    final indexService = IndexService();
 
     rendererService.registerStyles();
 
@@ -35,9 +38,7 @@ class AppBootstrap {
     await sessionRepository.init();
 
     final libraryRepository = LibraryRepository(fileService: fileService);
-    final bibleRepository = BibleRepository(
-      fileService: fileService,
-    );
+    final bibleRepository = BibleRepository(fileService: fileService);
     final rendererRepository = RendererRepository(
       fileService: fileService,
       rendererService: rendererService,
@@ -49,6 +50,10 @@ class AppBootstrap {
       searchService: searchService,
       rendererRepository: rendererRepository,
       modelService: modelService,
+    );
+    final indexRepository = IndexRepository(
+      fileService: fileService,
+      indexService: indexService,
     );
 
     final sessionState = SessionState(
@@ -62,6 +67,7 @@ class AppBootstrap {
       libraryRepository: libraryRepository,
       sessionRepository: sessionRepository,
       bibleRepository: bibleRepository,
+      indexRepository: indexRepository,
     );
     final renderingViewModel = RenderingViewModel();
     final readerViewModel = ReaderViewModel(
@@ -71,6 +77,7 @@ class AppBootstrap {
     final searchViewModel = SearchViewModel(
       searchRepository: searchRepository,
       sessionRepository: sessionRepository,
+      indexRepository: indexRepository,
     );
 
     debugPrint('[Bootstrap] All services and viewmodels created');

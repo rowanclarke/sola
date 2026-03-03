@@ -1,14 +1,15 @@
 mod error;
 mod painter;
+mod search;
 
 use error::SolaError;
 use painter::{
     ArchivedIndex, ArchivedIndices, ArchivedPages, Dimensions, Index, Paint, Painter, Renderer,
     Style, Text, TextStyle,
 };
+use rkyv::deserialize;
 use rkyv::rancor::Error as RkyvError;
 use rkyv::vec::ArchivedVec;
-use rkyv::deserialize;
 use skia_safe::FontMgr;
 use std::ffi::{c_char, c_void};
 use std::panic::AssertUnwindSafe;
@@ -30,11 +31,7 @@ unsafe fn write_error(msg: String, out_error: *mut *mut c_char, out_error_len: *
     }
 }
 
-fn run_ffi<F, T>(
-    f: F,
-    out_error: *mut *mut c_char,
-    out_error_len: *mut usize,
-) -> Option<T>
+fn run_ffi<F, T>(f: F, out_error: *mut *mut c_char, out_error_len: *mut usize) -> Option<T>
 where
     F: FnOnce() -> Result<T, SolaError>,
 {
@@ -151,8 +148,7 @@ pub extern "C" fn serialize_usfm(
         || {
             let usfm = unsafe { from_utf8_unchecked(from_raw_parts(usfm, usfm_len)) };
             let book = parse(&usfm);
-            rkyv::to_bytes::<RkyvError>(&book)
-                .map_err(|e| SolaError::Serialization(e.to_string()))
+            rkyv::to_bytes::<RkyvError>(&book).map_err(|e| SolaError::Serialization(e.to_string()))
         },
         out_error,
         out_error_len,
@@ -260,9 +256,7 @@ pub extern "C" fn serialize_pages(
     let Some(pages) = run_ffi(
         || {
             let painter = unsafe { &*(painter as *const Painter) };
-            painter
-                .get_pages()
-                .map_err(|e| SolaError::Serialization(e))
+            painter.get_pages().map_err(|e| SolaError::Serialization(e))
         },
         out_error,
         out_error_len,
@@ -403,7 +397,13 @@ pub extern "C" fn get_index(
             let deserialized: Index = deserialize::<_, RkyvError>(index)
                 .map_err(|e| SolaError::Deserialization(e.to_string()))?;
             let book = deserialized.book.to_identifier();
-            Ok((page_val, book.as_ptr(), book.len(), deserialized.chapter, deserialized.verse))
+            Ok((
+                page_val,
+                book.as_ptr(),
+                book.len(),
+                deserialized.chapter,
+                deserialized.verse,
+            ))
         },
         out_error,
         out_error_len,
@@ -456,10 +456,11 @@ use std::io::Cursor;
 use tokenizers::Tokenizer;
 use tract_onnx::prelude::*;
 
+use crate::search::{BookIndex, Indexer};
+
 fn load_embeddings(npy_bytes: &[u8]) -> Result<Array2<f32>, SolaError> {
     let reader = Cursor::new(npy_bytes);
-    let array = Array2::<f32>::read_npy(reader)
-        .map_err(|e| SolaError::ModelLoad(e.to_string()))?;
+    let array = Array2::<f32>::read_npy(reader).map_err(|e| SolaError::ModelLoad(e.to_string()))?;
     let tensor = tract_ndarray::Array::into_tensor(array);
     let view = tensor
         .to_array_view::<f32>()
@@ -488,9 +489,7 @@ fn mean_pooling(last_hidden: &Tensor, attention_mask: &Tensor) -> Result<Tensor,
 
     let masked = &last_hidden * &expanded_mask;
     let sum_embeddings = masked.sum_axis(Axis(1));
-    let sum_mask = expanded_mask
-        .sum_axis(Axis(1))
-        .mapv(|x| x.max(1e-9));
+    let sum_mask = expanded_mask.sum_axis(Axis(1)).mapv(|x| x.max(1e-9));
 
     let pooled = &sum_embeddings / &sum_mask;
     Ok(tract_ndarray::Array::into_tensor(pooled))
@@ -518,7 +517,12 @@ pub extern "C" fn load_model(
     out_error: *mut *mut c_char,
     out_error_len: *mut usize,
 ) -> *mut c_void {
-    log!("[FFI] load_model: embeddings={}B model={}B tokenizer={}B", embeddings_len, model_len, tokenizer_len);
+    log!(
+        "[FFI] load_model: embeddings={}B model={}B tokenizer={}B",
+        embeddings_len,
+        model_len,
+        tokenizer_len
+    );
     run_ffi(
         || {
             let embeddings = unsafe { from_raw_parts(embeddings, embeddings_len) };
@@ -623,6 +627,39 @@ pub extern "C" fn get_result(
         out_error_len,
     )
     .unwrap_or(std::ptr::null())
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn get_search() -> *mut c_void {
+    let search = Indexer::new();
+    Box::into_raw(Box::new(search)) as *mut c_void
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn add_book(search: *mut c_void, id: *const u8, id_len: usize, book: *const c_void) {
+    let search = unsafe { &mut *(search as *mut Indexer) };
+    let id = unsafe { from_utf8_unchecked(from_raw_parts(id, id_len)).trim() };
+
+    let book = unsafe { &*(book as *const ArchivedBook) };
+    search.add_book(id, book);
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn search_index(
+    indexer: *const c_void,
+    query: *const u8,
+    query_len: usize,
+    out: *mut *const BookIndex,
+    out_len: *mut usize,
+) {
+    let indexer = unsafe { &*(indexer as *const Indexer) };
+    let input = unsafe { from_utf8_unchecked(from_raw_parts(query, query_len)).trim() };
+    let indices = indexer.search(input);
+    let leaked = Box::leak(indices.into_boxed_slice());
+    unsafe {
+        *out = leaked.as_ptr();
+        *out_len = leaked.len();
+    }
 }
 
 // ---------------------------------------------------------------------------

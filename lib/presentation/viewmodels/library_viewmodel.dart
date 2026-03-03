@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:sola/core/models/translation.dart';
 import 'package:sola/data/repositories/bible_repository.dart';
+import 'package:sola/data/repositories/index_repository.dart';
 import 'package:sola/data/repositories/library_repository.dart';
 import 'package:sola/data/repositories/session_repository.dart';
 
@@ -8,6 +9,7 @@ class LibraryViewModel extends ChangeNotifier {
   final LibraryRepository _libraryRepository;
   final SessionRepository _sessionRepository;
   final BibleRepository _bibleRepository;
+  final IndexRepository _indexRepository;
 
   List<Translation> _availableTranslations = [];
   List<Translation> _downloadedTranslations = [];
@@ -19,9 +21,11 @@ class LibraryViewModel extends ChangeNotifier {
     required LibraryRepository libraryRepository,
     required SessionRepository sessionRepository,
     required BibleRepository bibleRepository,
+    required IndexRepository indexRepository,
   }) : _libraryRepository = libraryRepository,
        _sessionRepository = sessionRepository,
-       _bibleRepository = bibleRepository;
+       _bibleRepository = bibleRepository,
+       _indexRepository = indexRepository;
 
   List<Translation> get availableTranslations => _availableTranslations;
   List<Translation> get downloadedTranslations => _downloadedTranslations;
@@ -40,8 +44,10 @@ class LibraryViewModel extends ChangeNotifier {
           .getAvailableTranslations();
       _downloadedTranslations = await _libraryRepository
           .getDownloadedTranslations();
-      debugPrint('[LibraryVM] Loaded ${_availableTranslations.length} available, '
-          '${_downloadedTranslations.length} downloaded');
+      debugPrint(
+        '[LibraryVM] Loaded ${_availableTranslations.length} available, '
+        '${_downloadedTranslations.length} downloaded',
+      );
     } catch (e) {
       debugPrint('[LibraryVM] Load error: $e');
       _error = e.toString();
@@ -65,6 +71,10 @@ class LibraryViewModel extends ChangeNotifier {
       await _bibleRepository.serializeTranslation(translation.id);
       _downloadedTranslations = await _libraryRepository
           .getDownloadedTranslations();
+      final books = await _bibleRepository.getSerializedBooks(
+        translationId: translation.id,
+      );
+      _indexRepository.indexBooks(translation.id, books);
       debugPrint('[LibraryVM] Download complete: ${translation.id}');
     } catch (e) {
       debugPrint('[LibraryVM] Download error (${translation.id}): $e');

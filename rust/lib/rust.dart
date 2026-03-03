@@ -51,7 +51,9 @@ class Index {
 /// frees the Rust-allocated string, and throws an [Exception].
 void _checkError(Pointer<Pointer<Char>> outError, Pointer<Size> outErrorLen) {
   if (outErrorLen.value > 0) {
-    final msg = outError.value.cast<Utf8>().toDartString(length: outErrorLen.value);
+    final msg = outError.value.cast<Utf8>().toDartString(
+      length: outErrorLen.value,
+    );
     _bindings.free_error(outError.value, outErrorLen.value);
     _log('[FFI] Error from Rust: $msg');
     throw Exception('Rust error: $msg');
@@ -135,7 +137,12 @@ Uint8List serializeUsfm(String usfm) {
 Pointer<Void> getArchivedBook(Uint8List book) {
   final bBook = Bytes(book);
   final e = _allocError();
-  final result = _bindings.archived_book(bBook.bytes, bBook.length, e.error, e.errorLen);
+  final result = _bindings.archived_book(
+    bBook.bytes,
+    bBook.length,
+    e.error,
+    e.errorLen,
+  );
   _checkError(e.error, e.errorLen);
   return result;
 }
@@ -144,7 +151,13 @@ String getBookIdentifier(Pointer<Void> book) {
   final out = malloc<Pointer<Uint8>>();
   final outLen = malloc<Size>();
   final e = _allocError();
-  _bindings.book_identifier(book, out.cast<Pointer<Char>>(), outLen, e.error, e.errorLen);
+  _bindings.book_identifier(
+    book,
+    out.cast<Pointer<Char>>(),
+    outLen,
+    e.error,
+    e.errorLen,
+  );
   _checkError(e.error, e.errorLen);
   return out.value.cast<Utf8>().toDartString(length: outLen.value);
 }
@@ -171,7 +184,13 @@ Uint8List serializePages(Pointer<Void> painter) {
   final outLen = malloc<Size>();
   final e = _allocError();
 
-  _bindings.serialize_pages(painter, out.cast<Pointer<Char>>(), outLen, e.error, e.errorLen);
+  _bindings.serialize_pages(
+    painter,
+    out.cast<Pointer<Char>>(),
+    outLen,
+    e.error,
+    e.errorLen,
+  );
   _checkError(e.error, e.errorLen);
   return out.value.asTypedList(outLen.value);
 }
@@ -181,7 +200,12 @@ Pointer<Void> getArchivedPages(Uint8List pages) {
   final bytePtr = ptr.asTypedList(pages.length);
   bytePtr.setAll(0, pages);
   final e = _allocError();
-  final result = _bindings.archived_pages(ptr.cast<Char>(), pages.length, e.error, e.errorLen);
+  final result = _bindings.archived_pages(
+    ptr.cast<Char>(),
+    pages.length,
+    e.error,
+    e.errorLen,
+  );
   _checkError(e.error, e.errorLen);
   return result;
 }
@@ -213,7 +237,13 @@ Uint8List serializeIndices(Pointer<Void> painter) {
   final outLen = malloc<Size>();
   final e = _allocError();
 
-  _bindings.serialize_indices(painter, out.cast<Pointer<Char>>(), outLen, e.error, e.errorLen);
+  _bindings.serialize_indices(
+    painter,
+    out.cast<Pointer<Char>>(),
+    outLen,
+    e.error,
+    e.errorLen,
+  );
   _checkError(e.error, e.errorLen);
   return out.value.asTypedList(outLen.value);
 }
@@ -221,7 +251,12 @@ Uint8List serializeIndices(Pointer<Void> painter) {
 Pointer<Void> getArchivedIndices(Uint8List indices) {
   final bIndices = Bytes(indices);
   final e = _allocError();
-  final result = _bindings.archived_indices(bIndices.bytes, bIndices.length, e.error, e.errorLen);
+  final result = _bindings.archived_indices(
+    bIndices.bytes,
+    bIndices.length,
+    e.error,
+    e.errorLen,
+  );
   _checkError(e.error, e.errorLen);
   return result;
 }
@@ -258,7 +293,13 @@ Uint8List serializeVerses(Pointer<Void> painter) {
   final outLen = malloc<Size>();
   final e = _allocError();
 
-  _bindings.serialize_verses(painter, out.cast<Pointer<Char>>(), outLen, e.error, e.errorLen);
+  _bindings.serialize_verses(
+    painter,
+    out.cast<Pointer<Char>>(),
+    outLen,
+    e.error,
+    e.errorLen,
+  );
   _checkError(e.error, e.errorLen);
   return out.value.asTypedList(outLen.value);
 }
@@ -294,8 +335,43 @@ Pointer<Void> getResult(Pointer<Void> model, String query) {
   _log('[FFI] getResult: "$query"');
   final native = query.toNativeUtf8();
   final e = _allocError();
-  final result = _bindings.get_result(model, native.cast<Char>(), native.length, e.error, e.errorLen);
+  final result = _bindings.get_result(
+    model,
+    native.cast<Char>(),
+    native.length,
+    e.error,
+    e.errorLen,
+  );
   _checkError(e.error, e.errorLen);
+  return result;
+}
+
+Pointer<Void> getSearch() {
+  _log('[FFI] getSearch');
+  return _bindings.get_search();
+}
+
+void addBook(Pointer<Void> search, String bookId, Pointer<Void> book) {
+  _log('[FFI] addBook');
+  final native = bookId.toNativeUtf8();
+  _bindings.add_book(search, native.cast<Char>(), native.length, book);
+}
+
+List<bind.BookIndex> searchIndex(Pointer<Void> indexer, String query) {
+  final native = query.toNativeUtf8();
+  final out = malloc<Pointer<bind.BookIndex>>();
+  final outLen = malloc<Size>();
+  _bindings.search_index(
+    indexer,
+    native.cast<Char>(),
+    native.length,
+    out,
+    outLen,
+  );
+  final result = List.generate(outLen.value, (i) => (out.value + i).ref);
+  malloc.free(out);
+  malloc.free(outLen);
+  malloc.free(native);
   return result;
 }
 

@@ -26,18 +26,13 @@ class RustBindings {
     ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName) lookup,
   ) : _lookup = lookup;
 
-  void free_error(
-    ffi.Pointer<ffi.Char> error,
-    int error_len,
-  ) {
+  void free_error(ffi.Pointer<ffi.Char> error, int error_len) {
     return _free_error(error, error_len);
   }
 
   late final _free_errorPtr =
       _lookup<
-        ffi.NativeFunction<
-          ffi.Void Function(ffi.Pointer<ffi.Char>, ffi.Size)
-        >
+        ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Char>, ffi.Size)>
       >('free_error');
   late final _free_error = _free_errorPtr
       .asFunction<void Function(ffi.Pointer<ffi.Char>, int)>();
@@ -60,7 +55,15 @@ class RustBindings {
     ffi.Pointer<ffi.Pointer<ffi.Char>> out_error,
     ffi.Pointer<ffi.Size> out_error_len,
   ) {
-    return _register_font_family(renderer, family, family_len, data, len, out_error, out_error_len);
+    return _register_font_family(
+      renderer,
+      family,
+      family_len,
+      data,
+      len,
+      out_error,
+      out_error_len,
+    );
   }
 
   late final _register_font_familyPtr =
@@ -121,7 +124,14 @@ class RustBindings {
     ffi.Pointer<ffi.Pointer<ffi.Char>> out_error,
     ffi.Pointer<ffi.Size> out_error_len,
   ) {
-    return _serialize_usfm(usfm, usfm_len, out, out_len, out_error, out_error_len);
+    return _serialize_usfm(
+      usfm,
+      usfm_len,
+      out,
+      out_len,
+      out_error,
+      out_error_len,
+    );
   }
 
   late final _serialize_usfmPtr =
@@ -328,7 +338,15 @@ class RustBindings {
     ffi.Pointer<ffi.Pointer<ffi.Char>> out_error,
     ffi.Pointer<ffi.Size> out_error_len,
   ) {
-    return _page(renderer, archived_pages, n, out, out_len, out_error, out_error_len);
+    return _page(
+      renderer,
+      archived_pages,
+      n,
+      out,
+      out_len,
+      out_error,
+      out_error_len,
+    );
   }
 
   late final _pagePtr =
@@ -600,6 +618,80 @@ class RustBindings {
           ffi.Pointer<ffi.Size>,
         )
       >();
+
+  ffi.Pointer<ffi.Void> get_search() {
+    return _get_search();
+  }
+
+  late final _get_searchPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Void> Function()>>(
+        'get_search',
+      );
+  late final _get_search = _get_searchPtr
+      .asFunction<ffi.Pointer<ffi.Void> Function()>();
+
+  void add_book(
+    ffi.Pointer<ffi.Void> search,
+    ffi.Pointer<ffi.Char> id,
+    int id_len,
+    ffi.Pointer<ffi.Void> book,
+  ) {
+    return _add_book(search, id, id_len, book);
+  }
+
+  late final _add_bookPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(
+            ffi.Pointer<ffi.Void>,
+            ffi.Pointer<ffi.Char>,
+            ffi.Size,
+            ffi.Pointer<ffi.Void>,
+          )
+        >
+      >('add_book');
+  late final _add_book = _add_bookPtr
+      .asFunction<
+        void Function(
+          ffi.Pointer<ffi.Void>,
+          ffi.Pointer<ffi.Char>,
+          int,
+          ffi.Pointer<ffi.Void>,
+        )
+      >();
+
+  void search_index(
+    ffi.Pointer<ffi.Void> indexer,
+    ffi.Pointer<ffi.Char> query,
+    int query_len,
+    ffi.Pointer<ffi.Pointer<BookIndex>> out,
+    ffi.Pointer<ffi.Size> out_len,
+  ) {
+    return _search_index(indexer, query, query_len, out, out_len);
+  }
+
+  late final _search_indexPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(
+            ffi.Pointer<ffi.Void>,
+            ffi.Pointer<ffi.Char>,
+            ffi.Size,
+            ffi.Pointer<ffi.Pointer<BookIndex>>,
+            ffi.Pointer<ffi.Size>,
+          )
+        >
+      >('search_index');
+  late final _search_index = _search_indexPtr
+      .asFunction<
+        void Function(
+          ffi.Pointer<ffi.Void>,
+          ffi.Pointer<ffi.Char>,
+          int,
+          ffi.Pointer<ffi.Pointer<BookIndex>>,
+          ffi.Pointer<ffi.Size>,
+        )
+      >();
 }
 
 final class TextStyle extends ffi.Struct {
@@ -676,4 +768,16 @@ final class Dimensions extends ffi.Struct {
 
   @ffi.Float()
   external double drop_cap_padding;
+}
+
+final class BookIndex extends ffi.Struct {
+  external ffi.Pointer<ffi.Char> book;
+
+  @ffi.Size()
+  external int book_len;
+
+  external ffi.Pointer<ffi.Char> header;
+
+  @ffi.Size()
+  external int header_len;
 }
