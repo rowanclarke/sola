@@ -60,27 +60,26 @@ class _ReaderScreenState extends State<ReaderScreen> {
       body: SafeArea(
         child: Consumer2<ReaderViewModel, SearchViewModel>(
           builder: (context, readerVm, searchVm, _) {
-            return Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                  child: _SearchBar(
-                    focusNode: _searchFocusNode,
-                    controller: _searchController,
-                    searchVm: searchVm,
+            return GestureDetector(
+              onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+              behavior: HitTestBehavior.translucent,
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                    child: _SearchBar(
+                      focusNode: _searchFocusNode,
+                      controller: _searchController,
+                      searchVm: searchVm,
+                    ),
                   ),
-                ),
-                Expanded(
-                  child: _buildReaderContent(readerVm, searchVm),
-                ),
-                const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Text(
-                    'Placeholder',
-                    textAlign: TextAlign.center,
+                  Expanded(child: _buildReaderContent(readerVm, searchVm)),
+                  const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Text('Placeholder', textAlign: TextAlign.center),
                   ),
-                ),
-              ],
+                ],
+              ),
             );
           },
         ),
@@ -120,8 +119,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
         if (!identical(readerVm.pages, _lastPages)) {
           _lastPages = readerVm.pages;
           _pageController.dispose();
-          _pageController =
-              PageController(initialPage: readerVm.currentPageIndex);
+          _pageController = PageController(
+            initialPage: readerVm.currentPageIndex,
+          );
           _pageViewKey = UniqueKey();
         }
 
@@ -183,7 +183,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   itemBuilder: (_, i) => Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: _horizontalPadding,
-                      vertical: _verticalPadding
+                      vertical: _verticalPadding,
                     ),
                     child: PageViewWidget(
                       page: readerVm.pages[i],
@@ -200,14 +200,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
               right: 0,
               child: IgnorePointer(
                 child: Opacity(
-                  opacity: (searchVm.dragOffset /
-                          SearchViewModel.triggerThreshold)
-                      .clamp(0.0, 1.0),
-                  child: const Icon(
-                    Icons.search,
-                    size: 48,
-                    color: Colors.grey,
-                  ),
+                  opacity:
+                      (searchVm.dragOffset / SearchViewModel.triggerThreshold)
+                          .clamp(0.0, 1.0),
+                  child: const Icon(Icons.search, size: 48, color: Colors.grey),
                 ),
               ),
             ),
@@ -286,7 +282,8 @@ class _SearchBarState extends State<_SearchBar> {
                 controller: widget.controller,
                 decoration: InputDecoration(
                   hintText: vm.isModelLoading
-                      ? 'Loading...' : 'Search anything...',
+                      ? 'Loading...'
+                      : 'Search anything...',
                   prefixIcon: vm.isModelLoading
                       ? const Padding(
                           padding: EdgeInsets.all(12),
@@ -302,6 +299,7 @@ class _SearchBarState extends State<_SearchBar> {
                           icon: const Icon(Icons.close),
                           onPressed: () {
                             widget.controller.clear();
+                            vm.clearSearch();
                             widget.focusNode.unfocus();
                           },
                         )
@@ -313,9 +311,6 @@ class _SearchBarState extends State<_SearchBar> {
                   ),
                 ),
                 onChanged: (query) => vm.onQueryChanged(query),
-                onTapOutside: (event) {
-                  widget.focusNode.unfocus();
-                },
               ),
               if (vm.isSearching)
                 const Positioned(
@@ -332,7 +327,7 @@ class _SearchBarState extends State<_SearchBar> {
   }
 
   Widget _buildOverlayContent(SearchViewModel vm) {
-    if (!_hasFocus || (vm.error == null && vm.lastResult == null)) {
+    if (!_hasFocus || (vm.error == null && vm.results.isEmpty)) {
       return const SizedBox.shrink();
     }
 
@@ -374,7 +369,7 @@ class _SearchBarState extends State<_SearchBar> {
                       style: const TextStyle(color: Colors.red, fontSize: 13),
                     ),
                   ),
-                if (vm.lastResult != null)
+                if (vm.results.isNotEmpty)
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.95),
@@ -387,26 +382,26 @@ class _SearchBarState extends State<_SearchBar> {
                         ),
                       ],
                     ),
-                    child: ListTile(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                    child: ListView.builder(
+                      itemCount: vm.results.length,
+                      shrinkWrap: true,
+                      itemBuilder: (context, i) => ListTile(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        title: Text(vm.results[i].reference),
+                        subtitle: Text('Page ${vm.results[i].page + 1}'),
+                        trailing: const Icon(Icons.arrow_forward, size: 18),
+                        onTap: () {
+                          context.read<ReaderViewModel>().navigateTo(
+                            vm.results[i].book,
+                            vm.results[i].page,
+                          );
+                          widget.controller.clear();
+                          vm.clearSearch();
+                          widget.focusNode.unfocus();
+                        },
                       ),
-                      title: Text(
-                        '${vm.lastResult!.book} '
-                        '${vm.lastResult!.chapter}:'
-                        '${vm.lastResult!.verse}',
-                      ),
-                      subtitle: Text('Page ${vm.lastResult!.page + 1}'),
-                      trailing: const Icon(Icons.arrow_forward, size: 18),
-                      onTap: () {
-                        context.read<ReaderViewModel>().navigateTo(
-                          vm.lastResult!.book,
-                          vm.lastResult!.page,
-                        );
-                        widget.controller.clear();
-                        vm.clearSearch();
-                        widget.focusNode.unfocus();
-                      },
                     ),
                   ),
               ],

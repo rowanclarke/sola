@@ -11,9 +11,10 @@ impl Paint for ArchivedElement {
         let header_height = painter.get_dimensions().header_height;
         for contents in self.contents.iter() {
             match (&self.ty, contents) {
-                (Header, C::Line(s)) => painter
+                (Header, C::Line(header)) => painter
                     .push_style(Style::Header)
-                    .add_text(s)
+                    .index_header(header)
+                    .add_text(header)
                     .pop_style()
                     .paint_region(Format::Center, header_height),
                 _ => (),

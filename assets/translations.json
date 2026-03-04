@@ -1,5 +1,28 @@
 [
   {
+    "code": "aaa",
+    "id": "aaa",
+    "fcbh_id": "AAAAA",
+    "lang": "English",
+    "lang_en": "English",
+    "dialect": "",
+    "domain": "github",
+    "title": "Test Bible",
+    "description": "",
+    "redistributable": true,
+    "copyright": "Copyright © 2009 anonymous",
+    "last_updated": "2022-04-14",
+    "ot": 39,
+    "nt": 27,
+    "dc": 0,
+    "certified": true,
+    "downloadable": true,
+    "script": "Latin",
+    "text_direction": "ltr",
+    "date": "2013-01-05",
+    "url": "https://github.com/rowanclarke/sola/releases/download/asset-test-translation-v0.0.1/aaa.zip"
+  },
+  {
     "code": "aai",
     "id": "aai",
     "fcbh_id": "AAIWBT",

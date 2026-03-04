@@ -12,7 +12,10 @@ pub use layout::{ArchivedIndex, ArchivedIndices, ArchivedPages, Index};
 pub use paint::Paint;
 use renderer::{Inline, inline};
 pub use renderer::{Renderer, TextStyle};
-use rkyv::{Archive, Deserialize, Serialize, deserialize, rancor::Error, util::AlignedVec};
+use rkyv::{
+    Archive, Deserialize, Serialize, deserialize, rancor::Error, string::ArchivedString,
+    util::AlignedVec,
+};
 use skia_safe::textlayout::ParagraphBuilder;
 use usfm::{ArchivedBookIdentifier, BookIdentifier};
 use writer::{LineFormat, Writer};
@@ -32,13 +35,14 @@ pub struct Painter {
 #[derive(Default)]
 struct PartialIndex {
     book: Option<BookIdentifier>,
+    header: Option<String>,
     chapter: Option<u16>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Properties {
     style: Style,
-    action: Option<Action>,
+    actions: Vec<Action>,
 }
 
 impl Painter {
@@ -151,7 +155,7 @@ impl Painter {
     fn push_style(&mut self, style: Style) -> &mut Self {
         let properties = Properties {
             style,
-            action: None,
+            actions: vec![],
         };
         self.queue.push(properties.clone());
         self.builder.push_style(&self.renderer.get_style(&style));
@@ -186,24 +190,49 @@ impl Painter {
         self
     }
 
+    pub fn index_header(&mut self, header: &ArchivedString) -> &mut Self {
+        self.index.header = Some(deserialize::<_, Error>(header).unwrap());
+        let index = Index::new(
+            self.index.book.clone().unwrap(),
+            self.index.header.clone().unwrap(),
+            None,
+            None,
+        );
+        self.add_action(Action::Index(index));
+        self
+    }
+
     pub fn index_chapter(&mut self, chapter: u16) -> &mut Self {
         self.index.chapter = Some(chapter);
+        let index = Index::new(
+            self.index.book.clone().unwrap(),
+            self.index.header.clone().unwrap(),
+            self.index.chapter,
+            None,
+        );
+        self.add_action(Action::Index(index));
         self
     }
 
     pub fn index_verse(&mut self, verse: u16) -> &mut Self {
         let index = Index::new(
             self.index.book.clone().unwrap(),
-            self.index.chapter.unwrap(),
-            verse,
+            self.index.header.clone().unwrap(),
+            self.index.chapter,
+            Some(verse),
         );
-        self.set_action(Action::Index(index));
+        self.add_action(Action::Index(index));
         self
     }
 
-    fn set_action(&mut self, action: Action) {
-        self.properties.last_mut().unwrap().1.action = Some(action.clone());
-        self.queue.last_mut().unwrap().action = Some(action);
+    fn add_action(&mut self, action: Action) {
+        self.properties
+            .last_mut()
+            .unwrap()
+            .1
+            .actions
+            .push(action.clone());
+        self.queue.last_mut().unwrap().actions.push(action);
     }
 
     fn done(&mut self) {}

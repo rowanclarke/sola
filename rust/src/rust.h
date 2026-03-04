@@ -61,6 +61,8 @@ void get_index(
   size_t* out_page,
   const char** out_book,
   size_t* out_book_len,
+  const char** out_header,
+  size_t* out_header_len,
   unsigned short* out_chapter,
   unsigned short* out_verse,
   char** out_error,

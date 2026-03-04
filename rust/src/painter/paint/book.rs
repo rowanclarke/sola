@@ -14,8 +14,8 @@ impl Paint for ArchivedBook {
                 C::Poetry(poetry) => poetry.paint(painter),
                 C::Element(element) => element.paint(painter),
                 C::Chapter(n) => painter
-                    .index_chapter(n.to_native())
                     .push_style(Style::Chapter)
+                    .index_chapter(n.to_native())
                     .add_text(n.to_string())
                     .pop_style()
                     .paint_drop_cap(),

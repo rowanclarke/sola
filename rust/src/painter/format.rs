@@ -104,9 +104,10 @@ pub fn left(layout: &mut Layout, unformatted: &[Unformatted]) {
 
 impl<'a> Unformatted<'a> {
     fn write_line(&self, layout: &mut Layout, spacing: f32, word_spacing: f32) {
-        match self.properties.action {
-            Some(Action::Index(ref index)) => layout.add_index(index.clone(), self.line),
-            None => (),
+        for action in self.properties.actions.iter() {
+            match action {
+                Action::Index(index) => layout.add_index(index.clone(), self.line),
+            }
         }
         layout.write_line(
             self.line,

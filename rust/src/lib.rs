@@ -6,9 +6,9 @@ use painter::{
     ArchivedIndex, ArchivedIndices, ArchivedPages, Dimensions, Index, Paint, Painter, Renderer,
     Style, Text, TextStyle,
 };
+use rkyv::deserialize;
 use rkyv::rancor::Error as RkyvError;
 use rkyv::vec::ArchivedVec;
-use rkyv::deserialize;
 use skia_safe::FontMgr;
 use std::ffi::{c_char, c_void};
 use std::panic::AssertUnwindSafe;
@@ -30,11 +30,7 @@ unsafe fn write_error(msg: String, out_error: *mut *mut c_char, out_error_len: *
     }
 }
 
-fn run_ffi<F, T>(
-    f: F,
-    out_error: *mut *mut c_char,
-    out_error_len: *mut usize,
-) -> Option<T>
+fn run_ffi<F, T>(f: F, out_error: *mut *mut c_char, out_error_len: *mut usize) -> Option<T>
 where
     F: FnOnce() -> Result<T, SolaError>,
 {
@@ -151,8 +147,7 @@ pub extern "C" fn serialize_usfm(
         || {
             let usfm = unsafe { from_utf8_unchecked(from_raw_parts(usfm, usfm_len)) };
             let book = parse(&usfm);
-            rkyv::to_bytes::<RkyvError>(&book)
-                .map_err(|e| SolaError::Serialization(e.to_string()))
+            rkyv::to_bytes::<RkyvError>(&book).map_err(|e| SolaError::Serialization(e.to_string()))
         },
         out_error,
         out_error_len,
@@ -260,9 +255,7 @@ pub extern "C" fn serialize_pages(
     let Some(pages) = run_ffi(
         || {
             let painter = unsafe { &*(painter as *const Painter) };
-            painter
-                .get_pages()
-                .map_err(|e| SolaError::Serialization(e))
+            painter.get_pages().map_err(|e| SolaError::Serialization(e))
         },
         out_error,
         out_error_len,
@@ -388,12 +381,14 @@ pub extern "C" fn get_index(
     out_page: *mut usize,
     out_book: *mut *const u8,
     out_book_len: *mut usize,
+    out_header: *mut *const u8,
+    out_header_len: *mut usize,
     out_chapter: *mut u16,
     out_verse: *mut u16,
     out_error: *mut *mut c_char,
     out_error_len: *mut usize,
 ) {
-    let Some((page_val, book_ptr, book_len, chapter, verse)) = run_ffi(
+    let Some((page_val, book_ptr, book_len, header_ptr, header_len, chapter, verse)) = run_ffi(
         || {
             let archived_indices = unsafe { &*(archived_indices as *const ArchivedIndices) };
             let index = unsafe { &*(index as *const ArchivedIndex) };
@@ -403,7 +398,16 @@ pub extern "C" fn get_index(
             let deserialized: Index = deserialize::<_, RkyvError>(index)
                 .map_err(|e| SolaError::Deserialization(e.to_string()))?;
             let book = deserialized.book.to_identifier();
-            Ok((page_val, book.as_ptr(), book.len(), deserialized.chapter, deserialized.verse))
+            let header = deserialized.header;
+            Ok((
+                page_val,
+                book.as_ptr(),
+                book.len(),
+                header.as_ptr(),
+                header.len(),
+                deserialized.chapter,
+                deserialized.verse,
+            ))
         },
         out_error,
         out_error_len,
@@ -414,8 +418,14 @@ pub extern "C" fn get_index(
         *out_page = page_val;
         *out_book = book_ptr;
         *out_book_len = book_len;
-        *out_chapter = chapter;
-        *out_verse = verse;
+        *out_header = header_ptr;
+        *out_header_len = header_len;
+        if let Some(chapter) = chapter {
+            *out_chapter = chapter;
+        }
+        if let Some(verse) = verse {
+            *out_verse = verse;
+        }
     }
 }
 
@@ -458,8 +468,7 @@ use tract_onnx::prelude::*;
 
 fn load_embeddings(npy_bytes: &[u8]) -> Result<Array2<f32>, SolaError> {
     let reader = Cursor::new(npy_bytes);
-    let array = Array2::<f32>::read_npy(reader)
-        .map_err(|e| SolaError::ModelLoad(e.to_string()))?;
+    let array = Array2::<f32>::read_npy(reader).map_err(|e| SolaError::ModelLoad(e.to_string()))?;
     let tensor = tract_ndarray::Array::into_tensor(array);
     let view = tensor
         .to_array_view::<f32>()
@@ -488,9 +497,7 @@ fn mean_pooling(last_hidden: &Tensor, attention_mask: &Tensor) -> Result<Tensor,
 
     let masked = &last_hidden * &expanded_mask;
     let sum_embeddings = masked.sum_axis(Axis(1));
-    let sum_mask = expanded_mask
-        .sum_axis(Axis(1))
-        .mapv(|x| x.max(1e-9));
+    let sum_mask = expanded_mask.sum_axis(Axis(1)).mapv(|x| x.max(1e-9));
 
     let pooled = &sum_embeddings / &sum_mask;
     Ok(tract_ndarray::Array::into_tensor(pooled))
@@ -518,7 +525,12 @@ pub extern "C" fn load_model(
     out_error: *mut *mut c_char,
     out_error_len: *mut usize,
 ) -> *mut c_void {
-    log!("[FFI] load_model: embeddings={}B model={}B tokenizer={}B", embeddings_len, model_len, tokenizer_len);
+    log!(
+        "[FFI] load_model: embeddings={}B model={}B tokenizer={}B",
+        embeddings_len,
+        model_len,
+        tokenizer_len
+    );
     run_ffi(
         || {
             let embeddings = unsafe { from_raw_parts(embeddings, embeddings_len) };

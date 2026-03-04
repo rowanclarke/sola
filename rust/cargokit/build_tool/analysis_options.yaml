@@ -20,9 +20,11 @@ linter:
     - prefer_relative_imports
     - directives_ordering
 
-# analyzer:
-#   exclude:
-#     - path/to/excluded/files/**
+analyzer:
+  exclude:
+    - bin/**
+    - lib/**
+    - test/**
 
 # For more information about the core and recommended set of lints, see
 # https://dart.dev/go/core-lints

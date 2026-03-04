@@ -27,17 +27,24 @@ pub struct Layout {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash, Serialize, Archive, Deserialize)]
-#[rkyv(derive(Debug, PartialEq, Eq, Clone, Hash))]
+#[rkyv(derive(Debug, PartialEq, Eq, Hash))]
 pub struct Index {
     pub book: BookIdentifier,
-    pub chapter: u16,
-    pub verse: u16,
+    pub header: String,
+    pub chapter: Option<u16>,
+    pub verse: Option<u16>,
 }
 
 impl Index {
-    pub fn new(book: BookIdentifier, chapter: u16, verse: u16) -> Self {
+    pub fn new(
+        book: BookIdentifier,
+        header: String,
+        chapter: Option<u16>,
+        verse: Option<u16>,
+    ) -> Self {
         Self {
             book,
+            header,
             chapter,
             verse,
         }
@@ -106,7 +113,10 @@ impl Layout {
     }
 
     pub fn add_index(&mut self, index: Index, line: usize) {
-        self.verses.push(index.clone());
+        if index.verse.is_some() {
+            // TODO push index to verses when verse is embedded, before renderering, since Verse -> Index map is layout-agnostic
+            self.verses.push(index.clone());
+        }
         self.indices.insert(index, self.lines[line].page);
     }
 

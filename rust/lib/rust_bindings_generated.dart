@@ -26,18 +26,13 @@ class RustBindings {
     ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName) lookup,
   ) : _lookup = lookup;
 
-  void free_error(
-    ffi.Pointer<ffi.Char> error,
-    int error_len,
-  ) {
+  void free_error(ffi.Pointer<ffi.Char> error, int error_len) {
     return _free_error(error, error_len);
   }
 
   late final _free_errorPtr =
       _lookup<
-        ffi.NativeFunction<
-          ffi.Void Function(ffi.Pointer<ffi.Char>, ffi.Size)
-        >
+        ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Char>, ffi.Size)>
       >('free_error');
   late final _free_error = _free_errorPtr
       .asFunction<void Function(ffi.Pointer<ffi.Char>, int)>();
@@ -60,7 +55,15 @@ class RustBindings {
     ffi.Pointer<ffi.Pointer<ffi.Char>> out_error,
     ffi.Pointer<ffi.Size> out_error_len,
   ) {
-    return _register_font_family(renderer, family, family_len, data, len, out_error, out_error_len);
+    return _register_font_family(
+      renderer,
+      family,
+      family_len,
+      data,
+      len,
+      out_error,
+      out_error_len,
+    );
   }
 
   late final _register_font_familyPtr =
@@ -121,7 +124,14 @@ class RustBindings {
     ffi.Pointer<ffi.Pointer<ffi.Char>> out_error,
     ffi.Pointer<ffi.Size> out_error_len,
   ) {
-    return _serialize_usfm(usfm, usfm_len, out, out_len, out_error, out_error_len);
+    return _serialize_usfm(
+      usfm,
+      usfm_len,
+      out,
+      out_len,
+      out_error,
+      out_error_len,
+    );
   }
 
   late final _serialize_usfmPtr =
@@ -328,7 +338,15 @@ class RustBindings {
     ffi.Pointer<ffi.Pointer<ffi.Char>> out_error,
     ffi.Pointer<ffi.Size> out_error_len,
   ) {
-    return _page(renderer, archived_pages, n, out, out_len, out_error, out_error_len);
+    return _page(
+      renderer,
+      archived_pages,
+      n,
+      out,
+      out_len,
+      out_error,
+      out_error_len,
+    );
   }
 
   late final _pagePtr =
@@ -427,6 +445,8 @@ class RustBindings {
     ffi.Pointer<ffi.Size> out_page,
     ffi.Pointer<ffi.Pointer<ffi.Char>> out_book,
     ffi.Pointer<ffi.Size> out_book_len,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> out_header,
+    ffi.Pointer<ffi.Size> out_header_len,
     ffi.Pointer<ffi.UnsignedShort> out_chapter,
     ffi.Pointer<ffi.UnsignedShort> out_verse,
     ffi.Pointer<ffi.Pointer<ffi.Char>> out_error,
@@ -438,6 +458,8 @@ class RustBindings {
       out_page,
       out_book,
       out_book_len,
+      out_header,
+      out_header_len,
       out_chapter,
       out_verse,
       out_error,
@@ -454,6 +476,8 @@ class RustBindings {
             ffi.Pointer<ffi.Size>,
             ffi.Pointer<ffi.Pointer<ffi.Char>>,
             ffi.Pointer<ffi.Size>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+            ffi.Pointer<ffi.Size>,
             ffi.Pointer<ffi.UnsignedShort>,
             ffi.Pointer<ffi.UnsignedShort>,
             ffi.Pointer<ffi.Pointer<ffi.Char>>,
@@ -466,6 +490,8 @@ class RustBindings {
         void Function(
           ffi.Pointer<ffi.Void>,
           ffi.Pointer<ffi.Void>,
+          ffi.Pointer<ffi.Size>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
           ffi.Pointer<ffi.Size>,
           ffi.Pointer<ffi.Pointer<ffi.Char>>,
           ffi.Pointer<ffi.Size>,

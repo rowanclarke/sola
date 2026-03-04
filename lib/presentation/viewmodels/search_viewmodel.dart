@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:rust/rust.dart' as rust;
+import 'package:sola/core/models/index.dart';
 import 'package:sola/core/models/model_info.dart';
 import 'package:sola/data/repositories/search_repository.dart';
 import 'package:sola/data/repositories/session_repository.dart';
@@ -11,7 +11,7 @@ class SearchViewModel extends ChangeNotifier {
   final SessionRepository _sessionRepository;
 
   double dragOffset = 0.0;
-  rust.Index? _lastResult;
+  List<Index> _results = [];
   String? _error;
   bool _isModelLoading = false;
   bool _isModelReady = false;
@@ -33,7 +33,7 @@ class SearchViewModel extends ChangeNotifier {
   }) : _searchRepository = searchRepository,
        _sessionRepository = sessionRepository;
 
-  rust.Index? get lastResult => _lastResult;
+  List<Index> get results => _results;
   String? get error => _error;
   bool get isModelLoading => _isModelLoading;
   bool get isModelReady => _isModelReady;
@@ -65,12 +65,14 @@ class SearchViewModel extends ChangeNotifier {
 
     // Reset stale state from previous translation
     if (_isModelReady) {
-      debugPrint('[SearchVM] Translation changed '
-          '($_loadedTranslationId → $currentTranslationId), reloading model');
+      debugPrint(
+        '[SearchVM] Translation changed '
+        '($_loadedTranslationId → $currentTranslationId), reloading model',
+      );
     }
     _isModelReady = false;
     _isModelLoading = true;
-    _lastResult = null;
+    _results = [];
     _error = null;
     debugPrint('[SearchVM] Loading search model for $currentTranslationId...');
     notifyListeners();
@@ -92,7 +94,7 @@ class SearchViewModel extends ChangeNotifier {
 
   void clearSearch() {
     _queryVersion++;
-    _lastResult = null;
+    _results = [];
     _error = null;
     _isSearching = false;
     notifyListeners();
@@ -121,6 +123,7 @@ class SearchViewModel extends ChangeNotifier {
       return;
     }
 
+    _results = [];
     final version = ++_queryVersion;
     _isSearching = true;
     _error = null;
@@ -133,14 +136,16 @@ class SearchViewModel extends ChangeNotifier {
         debugPrint('[SearchVM] Stale result for "$query", ignoring');
         return;
       }
-      _lastResult = result;
-      debugPrint('[SearchVM] Result: book=${result.book} '
-          'ch=${result.chapter}:${result.verse} page=${result.page}');
+      _results.add(result);
+      debugPrint(
+        '[SearchVM] Result: book=${result.book} '
+        'ch=${result.chapter}:${result.verse} page=${result.page}',
+      );
     } catch (e) {
       if (version != _queryVersion) return;
       debugPrint('[SearchVM] Search error: $e');
       _error = e.toString();
-      _lastResult = null;
+      _results = [];
     } finally {
       if (version == _queryVersion) {
         _isSearching = false;

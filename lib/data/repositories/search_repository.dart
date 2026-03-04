@@ -1,10 +1,11 @@
 import 'package:flutter/foundation.dart';
-import 'package:rust/rust.dart' as rust;
 import 'package:sola/core/models/model_info.dart';
 import 'package:sola/data/repositories/renderer_repository.dart';
 import 'package:sola/domain/services/file_service.dart';
 import 'package:sola/domain/services/model_service.dart';
 import 'package:sola/domain/services/search_service.dart';
+
+import '../../core/models/index.dart';
 
 class SearchRepository {
   final FileService _fileService;
@@ -26,7 +27,9 @@ class SearchRepository {
     final indicesBytes = _rendererRepository.rawIndices;
     final verses = _rendererRepository.verses;
     if (indicesBytes == null || verses == null) {
-      debugPrint('[SearchRepo] Cannot load model: indices/verses not available');
+      debugPrint(
+        '[SearchRepo] Cannot load model: indices/verses not available',
+      );
       return;
     }
 
@@ -37,15 +40,25 @@ class SearchRepository {
     debugPrint('[SearchRepo] Loading model files from $basePath...');
 
     final embeddings = await _fileService.readBytes('$basePath/embeddings.npy');
-    final onnxModel = await _fileService.readBytes('$basePath/all-minilm-l6-v2.onnx');
-    final tokenizer = await _fileService.readBytes('$basePath/tokenizer/tokenizer.json');
+    final onnxModel = await _fileService.readBytes(
+      '$basePath/all-minilm-l6-v2.onnx',
+    );
+    final tokenizer = await _fileService.readBytes(
+      '$basePath/tokenizer/tokenizer.json',
+    );
 
     debugPrint('[SearchRepo] Initializing ML model...');
-    await _searchService.loadModel(indicesBytes, embeddings, verses, onnxModel, tokenizer);
+    await _searchService.loadModel(
+      indicesBytes,
+      embeddings,
+      verses,
+      onnxModel,
+      tokenizer,
+    );
     debugPrint('[SearchRepo] Model ready');
   }
 
-  Future<rust.Index> getResult(String query) async {
+  Future<Index> getResult(String query) async {
     return await _searchService.getResult(query);
   }
 }
