@@ -79,7 +79,15 @@ impl Painter {
             .layout
             .request_height(height + 2.0 * self.layout.get_line_height());
         self.layout.mutate_body(height);
-
+        for action in self.properties.last_mut().unwrap().1.actions.iter() {
+            // HACK better management of actions
+            match action {
+                Action::Index(index) => {
+                    log!("{:?}", index);
+                    self.layout.add_index(index.clone(), page);
+                }
+            }
+        }
         match format {
             Format::Center => {
                 let total_height = unformatted.len() as f32 * line_height;
@@ -120,6 +128,15 @@ impl Painter {
         self.layout.get_line(1).mutate(width, -width).lock();
         self.layout
             .write(page, raw.to_string(), rect, properties.style, 0.0);
+        for action in self.properties.last_mut().unwrap().1.actions.iter() {
+            // HACK better management of actions
+            match action {
+                Action::Index(index) => {
+                    log!("{:?}", index);
+                    self.layout.add_index(index.clone(), page);
+                }
+            }
+        }
         self.properties.drain(..);
         self.builder.reset();
     }

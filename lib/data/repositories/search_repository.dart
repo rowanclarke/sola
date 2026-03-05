@@ -61,4 +61,8 @@ class SearchRepository {
   Future<Index> getResult(String query) async {
     return await _searchService.getResult(query);
   }
+
+  Future<List<Index>> searchIndex(String query) async {
+    return await _searchService.searchIndex(query);
+  }
 }

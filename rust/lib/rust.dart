@@ -271,6 +271,8 @@ Index getIndex(Pointer<Void> indices, Pointer<Void> index) {
   final chapter = malloc<UnsignedShort>();
   final verse = malloc<UnsignedShort>();
   final e = _allocError();
+  chapter.value = 0;
+  verse.value = 0;
   _bindings.get_index(
     indices,
     index,
@@ -289,8 +291,8 @@ Index getIndex(Pointer<Void> indices, Pointer<Void> index) {
     page.value,
     book.value.toDartString(length: bookLen.value),
     header.value.toDartString(length: headerLen.value),
-    chapter.value,
-    verse.value,
+    chapter.value == 0 ? null : chapter.value,
+    verse.value == 0 ? null : verse.value,
   );
 }
 
@@ -350,6 +352,25 @@ Pointer<Void> getResult(Pointer<Void> model, String query) {
   );
   _checkError(e.error, e.errorLen);
   return result;
+}
+
+List<Pointer<Void>> searchIndex(Pointer<Void> archivedIndices, String query) {
+  _log('[FFI] searchIndex: "$query"');
+  final native = query.toNativeUtf8();
+  final out = malloc<Pointer<Pointer<Void>>>();
+  final outLen = malloc<Size>();
+  final e = _allocError();
+  _bindings.search_index(
+    archivedIndices,
+    native.cast<Char>(),
+    native.length,
+    out,
+    outLen,
+    e.error,
+    e.errorLen,
+  );
+  _checkError(e.error, e.errorLen);
+  return List.generate(outLen.value, (i) => out.value[i]);
 }
 
 class Bytes {

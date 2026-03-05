@@ -131,15 +131,20 @@ class SearchViewModel extends ChangeNotifier {
 
     debugPrint('[SearchVM] Searching: "$query"');
     try {
-      final result = await _searchRepository.getResult(query);
-      if (version != _queryVersion) {
-        debugPrint('[SearchVM] Stale result for "$query", ignoring');
-        return;
+      final results = await _searchRepository.searchIndex(query);
+      if (results.isNotEmpty) {
+        _results.addAll(results);
+      } else {
+        final result = await _searchRepository.getResult(query);
+        if (version != _queryVersion) {
+          debugPrint('[SearchVM] Stale result for "$query", ignoring');
+          return;
+        }
+        _results.add(result);
       }
-      _results.add(result);
       debugPrint(
-        '[SearchVM] Result: book=${result.book} '
-        'ch=${result.chapter}:${result.verse} page=${result.page}',
+        '[SearchVM] First result: book=${_results[0].book} '
+        'ch=${_results[0].chapter}:${_results[0].verse} page=${_results[0].page}',
       );
     } catch (e) {
       if (version != _queryVersion) return;

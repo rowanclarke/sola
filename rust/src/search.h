@@ -20,3 +20,13 @@ void* get_result(
   char** out_error,
   size_t* out_error_len
 );
+
+void search_index(
+  const void* archived_indices,
+  const char* query,
+  size_t query_len,
+  void*** out,
+  size_t* out_len,
+  char** out_error,
+  size_t* out_error_len
+);

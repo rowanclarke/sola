@@ -112,12 +112,13 @@ impl Layout {
         self.body.top += height;
     }
 
-    pub fn add_index(&mut self, index: Index, line: usize) {
-        if index.verse.is_some() {
-            // TODO push index to verses when verse is embedded, before renderering, since Verse -> Index map is layout-agnostic
-            self.verses.push(index.clone());
-        }
-        self.indices.insert(index, self.lines[line].page);
+    pub fn add_verse_index(&mut self, index: Index, line: usize) {
+        self.verses.push(index.clone());
+        self.add_index(index, self.lines[line].page);
+    }
+
+    pub fn add_index(&mut self, index: Index, page: usize) {
+        self.indices.insert(index, page);
     }
 
     pub fn get_pages(&self) -> &Vec<Page> {

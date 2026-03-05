@@ -2,6 +2,7 @@ import 'dart:ffi';
 import 'dart:isolate';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:rust/rust.dart' as rust;
 import 'package:sola/core/models/index.dart';
 
@@ -28,6 +29,13 @@ class _QueryMsg {
   final SendPort replyPort;
 
   _QueryMsg(this.query, this.replyPort);
+}
+
+class _IndexMsg {
+  final String query;
+  final SendPort replyPort;
+
+  _IndexMsg(this.query, this.replyPort);
 }
 
 class _ErrorResult {
@@ -71,19 +79,33 @@ class SearchService {
     print('[SearchSvc] Model loaded on isolate');
   }
 
+  Index toIndex(rust.Index index) {
+    return Index(
+      index.page,
+      index.book,
+      index.header,
+      index.chapter,
+      index.verse,
+    );
+  }
+
   Future<Index> getResult(String query) async {
     if (_commandPort == null) throw StateError('Model not loaded');
     final replyPort = ReceivePort();
     _commandPort!.send(_QueryMsg(query, replyPort.sendPort));
     final result = await replyPort.first;
     if (result is _ErrorResult) throw Exception(result.message);
-    return Index(
-      result.page,
-      result.book,
-      result.header,
-      result.chapter,
-      result.verse,
-    );
+    return toIndex(result);
+  }
+
+  Future<List<Index>> searchIndex(String query) async {
+    if (_commandPort == null) throw StateError('Indices not loaded');
+    final replyPort = ReceivePort();
+    _commandPort!.send(_IndexMsg(query, replyPort.sendPort));
+    final results = await replyPort.first;
+    if (results is _ErrorResult) throw Exception(results.message);
+    if (results is List<rust.Index>) return results.map(toIndex).toList();
+    return [];
   }
 
   void dispose() {
@@ -131,6 +153,19 @@ class SearchService {
           message.replyPort.send(index);
         } catch (e) {
           print('[SearchIsolate] Query error: $e');
+          message.replyPort.send(_ErrorResult(e.toString()));
+        }
+      } else if (message is _IndexMsg) {
+        try {
+          print('[SearchIsolate] Index search: "${message.query}"');
+          final results = rust.searchIndex(indices!, message.query);
+          print('[SearchIsolate] Raw result: $results');
+          final indexes = results
+              .map((result) => rust.getIndex(indices!, result))
+              .toList();
+          message.replyPort.send(indexes);
+        } catch (e) {
+          print('[SearchIsolate] Index search error: $e');
           message.replyPort.send(_ErrorResult(e.toString()));
         }
       }

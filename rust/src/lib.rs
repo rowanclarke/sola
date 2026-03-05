@@ -11,6 +11,7 @@ use rkyv::rancor::Error as RkyvError;
 use rkyv::vec::ArchivedVec;
 use skia_safe::FontMgr;
 use std::ffi::{c_char, c_void};
+use std::num::TryFromIntError;
 use std::panic::AssertUnwindSafe;
 use std::slice::from_raw_parts;
 use std::str::from_utf8_unchecked;
@@ -392,9 +393,13 @@ pub extern "C" fn get_index(
         || {
             let archived_indices = unsafe { &*(archived_indices as *const ArchivedIndices) };
             let index = unsafe { &*(index as *const ArchivedIndex) };
-            let page_val: usize = archived_indices[index]
+            log!("get_index {:?}", index);
+            let page_val: usize = archived_indices
+                .get(index)
+                .ok_or(SolaError::MissingIndex)?
+                .to_native()
                 .try_into()
-                .map_err(|e| SolaError::Deserialization(format!("{e}")))?;
+                .map_err(|e: TryFromIntError| SolaError::Deserialization(e.to_string()))?;
             let deserialized: Index = deserialize::<_, RkyvError>(index)
                 .map_err(|e| SolaError::Deserialization(e.to_string()))?;
             let book = deserialized.book.to_identifier();
@@ -629,12 +634,48 @@ pub extern "C" fn get_result(
                 .indexed_iter()
                 .max_by(|a, b| a.1.partial_cmp(b.1).unwrap_or(std::cmp::Ordering::Equal))
                 .ok_or(SolaError::Search("No results found".into()))?;
-            Ok(&verses[idx.0] as *const ArchivedIndex as *const c_void)
+            let idx: &ArchivedIndex = &verses[idx.0];
+            Ok(idx as *const ArchivedIndex as *const c_void)
         },
         out_error,
         out_error_len,
     )
     .unwrap_or(std::ptr::null())
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn search_index(
+    archived_indices: *const c_void,
+    query: *const u8,
+    query_len: usize,
+    out: *mut *const *const c_void,
+    out_len: *mut usize,
+    out_error: *mut *mut c_char,
+    out_error_len: *mut usize,
+) {
+    let results: Vec<_> = run_ffi(
+        || {
+            let archived_indices = unsafe { &*(archived_indices as *const ArchivedIndices) };
+            let query = unsafe { from_utf8_unchecked(from_raw_parts(query, query_len)).trim() };
+            let results: Vec<*const c_void> = archived_indices
+                .keys()
+                .filter(|i| i.verse.is_none() && i.chapter.is_none())
+                .filter(|i| i.header.to_lowercase().contains(&query.to_lowercase()))
+                .map(|i: &ArchivedIndex| i as *const ArchivedIndex as *const c_void)
+                .take(5)
+                .collect();
+            log!("{:?}", results);
+            Ok(results)
+        },
+        out_error,
+        out_error_len,
+    )
+    .unwrap_or(vec![]);
+    unsafe {
+        *out = results.as_ptr();
+        *out_len = results.len();
+    }
+    mem::forget(results);
 }
 
 // ---------------------------------------------------------------------------

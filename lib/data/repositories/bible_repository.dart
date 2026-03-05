@@ -27,6 +27,21 @@ class BibleRepository {
     return bytes;
   }
 
+  Future<Map<String, Uint8List>> getSerializedBooks({
+    required String translationId,
+  }) async {
+    final books = <String, Uint8List>{};
+    for (final bookId in await _fileService.listDirectory(
+      'serialized/$translationId',
+    )) {
+      books[bookId] = await getSerializedBook(
+        translationId: translationId,
+        bookId: bookId,
+      );
+    }
+    return books;
+  }
+
   Future<void> saveSerializedBook({
     required String translationId,
     required String bookId,

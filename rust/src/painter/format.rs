@@ -106,7 +106,10 @@ impl<'a> Unformatted<'a> {
     fn write_line(&self, layout: &mut Layout, spacing: f32, word_spacing: f32) {
         for action in self.properties.actions.iter() {
             match action {
-                Action::Index(index) => layout.add_index(index.clone(), self.line),
+                Action::Index(index) => {
+                    log!("{:?}", index);
+                    layout.add_verse_index(index.clone(), self.line);
+                }
             }
         }
         layout.write_line(

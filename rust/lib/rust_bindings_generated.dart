@@ -626,6 +626,53 @@ class RustBindings {
           ffi.Pointer<ffi.Size>,
         )
       >();
+
+  void search_index(
+    ffi.Pointer<ffi.Void> archived_indices,
+    ffi.Pointer<ffi.Char> query,
+    int query_len,
+    ffi.Pointer<ffi.Pointer<ffi.Pointer<ffi.Void>>> out,
+    ffi.Pointer<ffi.Size> out_len,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> out_error,
+    ffi.Pointer<ffi.Size> out_error_len,
+  ) {
+    return _search_index(
+      archived_indices,
+      query,
+      query_len,
+      out,
+      out_len,
+      out_error,
+      out_error_len,
+    );
+  }
+
+  late final _search_indexPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(
+            ffi.Pointer<ffi.Void>,
+            ffi.Pointer<ffi.Char>,
+            ffi.Size,
+            ffi.Pointer<ffi.Pointer<ffi.Pointer<ffi.Void>>>,
+            ffi.Pointer<ffi.Size>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+            ffi.Pointer<ffi.Size>,
+          )
+        >
+      >('search_index');
+  late final _search_index = _search_indexPtr
+      .asFunction<
+        void Function(
+          ffi.Pointer<ffi.Void>,
+          ffi.Pointer<ffi.Char>,
+          int,
+          ffi.Pointer<ffi.Pointer<ffi.Pointer<ffi.Void>>>,
+          ffi.Pointer<ffi.Size>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          ffi.Pointer<ffi.Size>,
+        )
+      >();
 }
 
 final class TextStyle extends ffi.Struct {
