@@ -51,7 +51,11 @@ class SearchViewModel extends ChangeNotifier {
     return triggered;
   }
 
-  Future<void> loadModel() async {
+  Future<void> loadModel({
+    required List<String> bookIds,
+    required double width,
+    required double height,
+  }) async {
     if (_isModelLoading) return;
 
     final currentTranslationId =
@@ -69,6 +73,7 @@ class SearchViewModel extends ChangeNotifier {
         '[SearchVM] Translation changed '
         '($_loadedTranslationId → $currentTranslationId), reloading model',
       );
+      _searchRepository.dispose();
     }
     _isModelReady = false;
     _isModelLoading = true;
@@ -78,7 +83,13 @@ class SearchViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _searchRepository.loadModel(ModelInfo.defaultModel);
+      await _searchRepository.loadModel(
+        model: ModelInfo.defaultModel,
+        translationId: currentTranslationId!,
+        bookIds: bookIds,
+        width: width,
+        height: height,
+      );
       _isModelReady = true;
       _loadedTranslationId = currentTranslationId;
       debugPrint('[SearchVM] Model loaded for $currentTranslationId');
@@ -135,17 +146,19 @@ class SearchViewModel extends ChangeNotifier {
       if (results.isNotEmpty) {
         _results.addAll(results);
       } else {
-        final result = await _searchRepository.getResult(query);
+        final semanticResults = await _searchRepository.getResult(query);
         if (version != _queryVersion) {
           debugPrint('[SearchVM] Stale result for "$query", ignoring');
           return;
         }
-        _results.add(result);
+        _results.addAll(semanticResults);
       }
-      debugPrint(
-        '[SearchVM] First result: book=${_results[0].book} '
-        'ch=${_results[0].chapter}:${_results[0].verse} page=${_results[0].page}',
-      );
+      if (_results.isNotEmpty) {
+        debugPrint(
+          '[SearchVM] First result: book=${_results[0].book} '
+          'ch=${_results[0].chapter}:${_results[0].verse} page=${_results[0].page}',
+        );
+      }
     } catch (e) {
       if (version != _queryVersion) return;
       debugPrint('[SearchVM] Search error: $e');

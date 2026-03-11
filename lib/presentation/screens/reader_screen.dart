@@ -49,7 +49,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
       if (!mounted) return;
       await context.read<ReaderViewModel>().loadPages(width, height);
       if (!mounted) return;
-      context.read<SearchViewModel>().loadModel(); // fire-and-forget
+      final bookIds =
+          await context.read<ReaderViewModel>().loadAll(width, height);
+      if (!mounted) return;
+      context.read<SearchViewModel>().loadModel(
+        bookIds: bookIds,
+        width: width,
+        height: height,
+      ); // fire-and-forget
     });
   }
 

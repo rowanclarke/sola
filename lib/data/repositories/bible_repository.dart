@@ -8,9 +8,8 @@ class BibleRepository {
   final FileService _fileService;
   final Map<String, Uint8List> _serializationCache = {};
 
-  BibleRepository({
-    required FileService fileService,
-  }) : _fileService = fileService;
+  BibleRepository({required FileService fileService})
+    : _fileService = fileService;
 
   Future<Uint8List> getSerializedBook({
     required String translationId,
@@ -22,7 +21,9 @@ class BibleRepository {
       return _serializationCache[key]!;
     }
     debugPrint('[BibleRepo] Reading serialized book from disk: $key');
-    final bytes = await _fileService.readBytes(_getSerializedBookPath(translationId, bookId));
+    final bytes = await _fileService.readBytes(
+      _getSerializedBookPath(translationId, bookId),
+    );
     _serializationCache[key] = bytes;
     return bytes;
   }
@@ -49,7 +50,10 @@ class BibleRepository {
   }) async {
     final key = '$translationId/$bookId';
     _serializationCache[key] = data;
-    await _fileService.writeBytes(_getSerializedBookPath(translationId, bookId), data);
+    await _fileService.writeBytes(
+      _getSerializedBookPath(translationId, bookId),
+      data,
+    );
   }
 
   Future<void> serializeTranslation(String translationId) async {
@@ -59,19 +63,24 @@ class BibleRepository {
     // Check if already serialized (all books cached or on disk)
     if (usfmFiles.isEmpty) return;
 
-    debugPrint('[BibleRepo] Serializing ${usfmFiles.length} USFM files for $translationId');
+    debugPrint(
+      '[BibleRepo] Serializing ${usfmFiles.length} USFM files for $translationId',
+    );
 
     // Read all USFM files on main isolate (async I/O)
     final usfmContents = <String, String>{};
     for (final file in usfmFiles) {
-      final content = await _fileService.readFile('library/$translationId/$file');
+      final content = await _fileService.readFile(
+        'library/$translationId/$file',
+      );
       usfmContents[file] = content;
     }
 
     // Run Rust serialization on background isolate
-    final output = await compute(serializeInBackground, SerializeInput(
-      usfmFiles: usfmContents,
-    ));
+    final output = await compute(
+      serializeInBackground,
+      SerializeInput(usfmFiles: usfmContents),
+    );
 
     // Save results on main isolate (async I/O)
     for (final entry in output.serializedBooks.entries) {
@@ -81,7 +90,9 @@ class BibleRepository {
         data: entry.value,
       );
     }
-    debugPrint('[BibleRepo] Serialization complete: ${output.serializedBooks.length} books');
+    debugPrint(
+      '[BibleRepo] Serialization complete: ${output.serializedBooks.length} books',
+    );
   }
 
   void invalidateCache() {

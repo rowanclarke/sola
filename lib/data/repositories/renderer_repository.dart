@@ -1,6 +1,3 @@
-import 'dart:ffi';
-import 'dart:typed_data';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:sola/core/models/page_model.dart';
@@ -15,11 +12,6 @@ class RendererRepository {
   final BibleRepository _bibleRepository;
   final Map<String, List<PageModel>> _pageCache = {};
 
-  Pointer<Void>? archivedIndices;
-  Uint8List? rawIndices;
-  Uint8List? verses;
-  int? numPages;
-
   RendererRepository({
     required FileService fileService,
     required RendererService rendererService,
@@ -27,6 +19,55 @@ class RendererRepository {
   }) : _fileService = fileService,
        _rendererService = rendererService,
        _bibleRepository = bibleRepository;
+
+  Future<String> _renderBook(
+    String translationId,
+    String bookId,
+    double width,
+    double height, [
+    Uint8List? bytes,
+  ]) async {
+    final dir = 'rendered/$translationId/$bookId-$width-$height';
+    final dirExists = await _fileService.openDirectory(dir);
+
+    if (!dirExists) {
+      debugPrint(
+        '[RendererRepo] Rendering $bookId at ${width.toInt()}x${height.toInt()}',
+      );
+      // Gather inputs on main isolate
+      final bookBytes =
+          bytes ??
+          await _bibleRepository.getSerializedBook(
+            translationId: translationId,
+            bookId: bookId,
+          );
+      final fontData = await rootBundle.load(
+        // TODO cache fonts
+        'assets/fonts/AveriaSerifLibre-Regular.ttf',
+      );
+
+      // Run heavy rendering on background isolate
+      final output = await compute(
+        renderInBackground,
+        RenderInput(
+          bookBytes: bookBytes,
+          fontBytes: fontData.buffer.asUint8List(),
+          width: width,
+          height: height,
+        ),
+      );
+
+      // Write serialized results to disk on main isolate
+      await _fileService.writeBytes('$dir/pages', output.pages);
+      await _fileService.writeBytes('$dir/indices', output.indices);
+      await _fileService.writeBytes('$dir/verses', output.verses);
+      debugPrint('[RendererRepo] Render complete of $bookId, saved to disk');
+    } else {
+      debugPrint('[RendererRepo] Disk cache hit: $dir');
+    }
+
+    return dir;
+  }
 
   Future<List<PageModel>> renderAndLoadPages({
     required String translationId,
@@ -41,54 +82,36 @@ class RendererRepository {
       return _pageCache[cacheKey]!;
     }
 
-    final dir = 'rendered/$translationId/$bookId-$width-$height';
-    final dirExists = await _fileService.openDirectory(dir);
-
-    if (!dirExists) {
-      debugPrint('[RendererRepo] Rendering $bookId at ${width.toInt()}x${height.toInt()}');
-      // Gather inputs on main isolate
-      final bookBytes = await _bibleRepository.getSerializedBook(
-        translationId: translationId,
-        bookId: bookId,
-      );
-      final fontData = await rootBundle.load('assets/fonts/AveriaSerifLibre-Regular.ttf');
-
-      // Run heavy rendering on background isolate
-      final output = await compute(renderInBackground, RenderInput(
-        bookBytes: bookBytes,
-        fontBytes: fontData.buffer.asUint8List(),
-        width: width,
-        height: height,
-      ));
-
-      // Write serialized results to disk on main isolate
-      await _fileService.writeBytes('$dir/pages', output.pages);
-      await _fileService.writeBytes('$dir/indices', output.indices);
-      await _fileService.writeBytes('$dir/verses', output.verses);
-      debugPrint('[RendererRepo] Render complete, saved to disk');
-    } else {
-      debugPrint('[RendererRepo] Disk cache hit: $dir');
-    }
+    final dir = await _renderBook(translationId, bookId, width, height);
 
     // Read from disk (fast if just written, or from cache on re-open)
     final pagesBytes = await _fileService.readBytes('$dir/pages');
-    final indicesBytes = await _fileService.readBytes('$dir/indices');
-    final versesBytes = await _fileService.readBytes('$dir/verses');
 
     // Deserialize on main isolate (fast pointer operations)
     final archivedPages = _rendererService.getArchivedPages(pagesBytes);
-    rawIndices = indicesBytes;
-    archivedIndices = _rendererService.getArchivedIndices(indicesBytes);
-    verses = versesBytes;
-    numPages = _rendererService.getNumPages(archivedPages);
+    final numPages = _rendererService.getNumPages(archivedPages);
 
     final pages = List.generate(
-      numPages!,
+      numPages,
       (n) => PageModel(_rendererService.getPage(archivedPages, n)),
     );
     _pageCache[cacheKey] = pages;
     debugPrint('[RendererRepo] Deserialized $numPages pages');
     return pages;
+  }
+
+  Future<List<String>> renderAll({
+    required String translationId,
+    required double width,
+    required double height,
+  }) async {
+    final books = await _bibleRepository.getSerializedBooks(
+      translationId: translationId,
+    );
+    for (final book in books.entries) {
+      await _renderBook(translationId, book.key, width, height, book.value);
+    }
+    return books.keys.toList();
   }
 
   void invalidateCache() {

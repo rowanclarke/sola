@@ -47,7 +47,6 @@ class AppBootstrap {
     final searchRepository = SearchRepository(
       fileService: fileService,
       searchService: searchService,
-      rendererRepository: rendererRepository,
       modelService: modelService,
     );
 

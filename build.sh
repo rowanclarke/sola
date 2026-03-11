@@ -12,7 +12,13 @@ case "$1" in
   run)
     docker exec -it "$CONTAINER" flutter run --vm-service-port=3001
     ;;
+  pair)
+    docker exec -it "$CONTAINER" adb pair "$2"
+    ;;
   connect)
+    docker exec -it "$CONTAINER" adb connect "$2"
+    ;;
+  list)
     docker exec -it "$CONTAINER" adb devices
     ;;
   serve)

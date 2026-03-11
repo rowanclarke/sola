@@ -44,8 +44,10 @@ class ReaderViewModel extends ChangeNotifier {
       return;
     }
 
-    debugPrint('[ReaderVM] Loading pages: translation=$translationId book=$bookId '
-        'size=${width.toInt()}x${height.toInt()}');
+    debugPrint(
+      '[ReaderVM] Loading pages: translation=$translationId book=$bookId '
+      'size=${width.toInt()}x${height.toInt()}',
+    );
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -59,12 +61,38 @@ class ReaderViewModel extends ChangeNotifier {
       );
 
       _currentCacheKey = cacheKey;
-      final savedPage = _sessionRepository.currentSession.currentPageNumber ?? 0;
+      final savedPage =
+          _sessionRepository.currentSession.currentPageNumber ?? 0;
       _currentPageIndex = savedPage.clamp(0, _pages.length - 1);
-      debugPrint('[ReaderVM] Loaded ${_pages.length} pages, starting at page $_currentPageIndex');
+      debugPrint(
+        '[ReaderVM] Loaded ${_pages.length} pages, starting at page $_currentPageIndex',
+      );
     } catch (e) {
       debugPrint('[ReaderVM] Error loading pages: $e');
       _error = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<List<String>> loadAll(double width, double height) async {
+    final translationId =
+        _sessionRepository.currentSession.currentTranslationId;
+    if (translationId == null) {
+      debugPrint('[ReaderVM] No translation selected, skipping load');
+      return [];
+    }
+    try {
+      return await _rendererRepository.renderAll(
+        translationId: translationId,
+        width: width,
+        height: height,
+      );
+    } catch (e) {
+      debugPrint('[ReaderVM] Error loading pages: $e');
+      _error = e.toString();
+      return [];
     } finally {
       _isLoading = false;
       notifyListeners();
