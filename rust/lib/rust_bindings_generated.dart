@@ -536,10 +536,6 @@ class RustBindings {
       >();
 
   ffi.Pointer<ffi.Void> load_model(
-    ffi.Pointer<ffi.Char> embeddings,
-    int embeddings_len,
-    ffi.Pointer<ffi.Char> verses,
-    int verses_len,
     ffi.Pointer<ffi.Char> model,
     int model_len,
     ffi.Pointer<ffi.Char> tokenizer,
@@ -548,10 +544,6 @@ class RustBindings {
     ffi.Pointer<ffi.Size> out_error_len,
   ) {
     return _load_model(
-      embeddings,
-      embeddings_len,
-      verses,
-      verses_len,
       model,
       model_len,
       tokenizer,
@@ -569,10 +561,6 @@ class RustBindings {
             ffi.Size,
             ffi.Pointer<ffi.Char>,
             ffi.Size,
-            ffi.Pointer<ffi.Char>,
-            ffi.Size,
-            ffi.Pointer<ffi.Char>,
-            ffi.Size,
             ffi.Pointer<ffi.Pointer<ffi.Char>>,
             ffi.Pointer<ffi.Size>,
           )
@@ -585,10 +573,6 @@ class RustBindings {
           int,
           ffi.Pointer<ffi.Char>,
           int,
-          ffi.Pointer<ffi.Char>,
-          int,
-          ffi.Pointer<ffi.Char>,
-          int,
           ffi.Pointer<ffi.Pointer<ffi.Char>>,
           ffi.Pointer<ffi.Size>,
         )
@@ -596,18 +580,30 @@ class RustBindings {
 
   ffi.Pointer<ffi.Void> get_result(
     ffi.Pointer<ffi.Void> model,
+    ffi.Pointer<ffi.Void> embeddings,
+    ffi.Pointer<ffi.Void> verses,
     ffi.Pointer<ffi.Char> query,
     int query_len,
     ffi.Pointer<ffi.Pointer<ffi.Char>> out_error,
     ffi.Pointer<ffi.Size> out_error_len,
   ) {
-    return _get_result(model, query, query_len, out_error, out_error_len);
+    return _get_result(
+      model,
+      embeddings,
+      verses,
+      query,
+      query_len,
+      out_error,
+      out_error_len,
+    );
   }
 
   late final _get_resultPtr =
       _lookup<
         ffi.NativeFunction<
           ffi.Pointer<ffi.Void> Function(
+            ffi.Pointer<ffi.Void>,
+            ffi.Pointer<ffi.Void>,
             ffi.Pointer<ffi.Void>,
             ffi.Pointer<ffi.Char>,
             ffi.Size,
@@ -619,6 +615,8 @@ class RustBindings {
   late final _get_result = _get_resultPtr
       .asFunction<
         ffi.Pointer<ffi.Void> Function(
+          ffi.Pointer<ffi.Void>,
+          ffi.Pointer<ffi.Void>,
           ffi.Pointer<ffi.Void>,
           ffi.Pointer<ffi.Char>,
           int,
@@ -671,6 +669,143 @@ class RustBindings {
           ffi.Pointer<ffi.Size>,
           ffi.Pointer<ffi.Pointer<ffi.Char>>,
           ffi.Pointer<ffi.Size>,
+        )
+      >();
+
+  ffi.Pointer<ffi.Void> get_model(
+    ffi.Pointer<ffi.Char> model,
+    int model_len,
+    ffi.Pointer<ffi.Char> tokenizer,
+    int tokenizer_len,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> out_error,
+    ffi.Pointer<ffi.Size> out_error_len,
+  ) {
+    return _get_model(
+      model,
+      model_len,
+      tokenizer,
+      tokenizer_len,
+      out_error,
+      out_error_len,
+    );
+  }
+
+  late final _get_modelPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<ffi.Void> Function(
+            ffi.Pointer<ffi.Char>,
+            ffi.Size,
+            ffi.Pointer<ffi.Char>,
+            ffi.Size,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+            ffi.Pointer<ffi.Size>,
+          )
+        >
+      >('get_model');
+  late final _get_model = _get_modelPtr
+      .asFunction<
+        ffi.Pointer<ffi.Void> Function(
+          ffi.Pointer<ffi.Char>,
+          int,
+          ffi.Pointer<ffi.Char>,
+          int,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          ffi.Pointer<ffi.Size>,
+        )
+      >();
+
+  void get_embeddings(
+    ffi.Pointer<ffi.Void> model,
+    ffi.Pointer<ffi.Void> archived_book,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> out_embeddings,
+    ffi.Pointer<ffi.Size> out_embeddings_len,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> out_verses,
+    ffi.Pointer<ffi.Size> out_verses_len,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> out_error,
+    ffi.Pointer<ffi.Size> out_error_len,
+  ) {
+    return _get_embeddings(
+      model,
+      archived_book,
+      out_embeddings,
+      out_embeddings_len,
+      out_verses,
+      out_verses_len,
+      out_error,
+      out_error_len,
+    );
+  }
+
+  late final _get_embeddingsPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(
+            ffi.Pointer<ffi.Void>,
+            ffi.Pointer<ffi.Void>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+            ffi.Pointer<ffi.Size>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+            ffi.Pointer<ffi.Size>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+            ffi.Pointer<ffi.Size>,
+          )
+        >
+      >('get_embeddings');
+  late final _get_embeddings = _get_embeddingsPtr
+      .asFunction<
+        void Function(
+          ffi.Pointer<ffi.Void>,
+          ffi.Pointer<ffi.Void>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          ffi.Pointer<ffi.Size>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          ffi.Pointer<ffi.Size>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          ffi.Pointer<ffi.Size>,
+        )
+      >();
+
+  void load_embeddings_data(
+    ffi.Pointer<ffi.Char> embeddings,
+    int embeddings_len,
+    ffi.Pointer<ffi.Char> verses,
+    int verses_len,
+    ffi.Pointer<ffi.Pointer<ffi.Void>> out_embeddings,
+    ffi.Pointer<ffi.Pointer<ffi.Void>> out_verses,
+  ) {
+    return _load_embeddings_data(
+      embeddings,
+      embeddings_len,
+      verses,
+      verses_len,
+      out_embeddings,
+      out_verses,
+    );
+  }
+
+  late final _load_embeddings_dataPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(
+            ffi.Pointer<ffi.Char>,
+            ffi.Size,
+            ffi.Pointer<ffi.Char>,
+            ffi.Size,
+            ffi.Pointer<ffi.Pointer<ffi.Void>>,
+            ffi.Pointer<ffi.Pointer<ffi.Void>>,
+          )
+        >
+      >('load_embeddings_data');
+  late final _load_embeddings_data = _load_embeddings_dataPtr
+      .asFunction<
+        void Function(
+          ffi.Pointer<ffi.Char>,
+          int,
+          ffi.Pointer<ffi.Char>,
+          int,
+          ffi.Pointer<ffi.Pointer<ffi.Void>>,
+          ffi.Pointer<ffi.Pointer<ffi.Void>>,
         )
       >();
 }

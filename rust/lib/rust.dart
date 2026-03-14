@@ -41,6 +41,13 @@ class Index {
   Index(this.page, this.book, this.header, [this.chapter, this.verse]);
 }
 
+class EmbeddingsData {
+  final Uint8List embeddingsBytes;
+  final Uint8List versesBytes;
+
+  EmbeddingsData({required this.embeddingsBytes, required this.versesBytes});
+}
+
 /// Allocates error output pointers for FFI calls.
 ({Pointer<Pointer<Char>> error, Pointer<Size> errorLen}) _allocError() {
   final error = malloc<Pointer<Char>>();
@@ -312,22 +319,11 @@ Uint8List serializeVerses(Pointer<Void> painter) {
   return out.value.asTypedList(outLen.value);
 }
 
-Pointer<Void> loadModel(
-  Uint8List embeddings,
-  Uint8List verses,
-  Uint8List model,
-  Uint8List tokenizer,
-) {
-  final bEmbeddings = Bytes(embeddings);
-  final bLines = Bytes(verses);
+Pointer<Void> loadModel(Uint8List model, Uint8List tokenizer) {
   final bModel = Bytes(model);
   final bTokenizer = Bytes(tokenizer);
   final e = _allocError();
   final result = _bindings.load_model(
-    bEmbeddings.bytes,
-    bEmbeddings.length,
-    bLines.bytes,
-    bLines.length,
     bModel.bytes,
     bModel.length,
     bTokenizer.bytes,
@@ -339,12 +335,19 @@ Pointer<Void> loadModel(
   return result;
 }
 
-Pointer<Void> getResult(Pointer<Void> model, String query) {
+Pointer<Void> getResult(
+  Pointer<Void> model,
+  Pointer<Void> embeddings,
+  Pointer<Void> verses,
+  String query,
+) {
   _log('[FFI] getResult: "$query"');
   final native = query.toNativeUtf8();
   final e = _allocError();
   final result = _bindings.get_result(
     model,
+    embeddings,
+    verses,
     native.cast<Char>(),
     native.length,
     e.error,
@@ -371,6 +374,66 @@ List<Pointer<Void>> searchIndex(Pointer<Void> archivedIndices, String query) {
   );
   _checkError(e.error, e.errorLen);
   return List.generate(outLen.value, (i) => out.value[i]);
+}
+
+Pointer<Void> getModel(Uint8List model, Uint8List tokenizer) {
+  _log('[FFI] getModel');
+  final bModel = Bytes(model);
+  final bTokenizer = Bytes(tokenizer);
+  final e = _allocError();
+  final result = _bindings.get_model(
+    bModel.bytes,
+    bModel.length,
+    bTokenizer.bytes,
+    bTokenizer.length,
+    e.error,
+    e.errorLen,
+  );
+  _checkError(e.error, e.errorLen);
+  return result;
+}
+
+EmbeddingsData getEmbeddings(Pointer<Void> model, Pointer<Void> archivedBook) {
+  _log('[FFI] getEmbeddings');
+  final outEmbeddings = malloc<Pointer<Uint8>>();
+  final outEmbeddingsLen = malloc<Size>();
+  final outVerses = malloc<Pointer<Uint8>>();
+  final outVersesLen = malloc<Size>();
+  final e = _allocError();
+  _bindings.get_embeddings(
+    model,
+    archivedBook,
+    outEmbeddings.cast<Pointer<Char>>(),
+    outEmbeddingsLen,
+    outVerses.cast<Pointer<Char>>(),
+    outVersesLen,
+    e.error,
+    e.errorLen,
+  );
+  _checkError(e.error, e.errorLen);
+  return EmbeddingsData(
+    embeddingsBytes: outEmbeddings.value.asTypedList(outEmbeddingsLen.value),
+    versesBytes: outVerses.value.asTypedList(outVersesLen.value),
+  );
+}
+
+(Pointer<Void>, Pointer<Void>) loadEmbeddings(
+  Uint8List embeddings,
+  Uint8List verses,
+) {
+  final bEmbeddings = Bytes(embeddings);
+  final bVerses = Bytes(embeddings);
+  final outEmbeddings = malloc<Pointer<Void>>();
+  final outVerses = malloc<Pointer<Void>>();
+  _bindings.load_embeddings_data(
+    bEmbeddings.bytes,
+    bEmbeddings.length,
+    bVerses.bytes,
+    bVerses.length,
+    outEmbeddings,
+    outVerses,
+  );
+  return (outEmbeddings.value, outVerses.value);
 }
 
 class Bytes {

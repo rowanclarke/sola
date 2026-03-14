@@ -16,7 +16,7 @@ use std::panic::AssertUnwindSafe;
 use std::slice::from_raw_parts;
 use std::str::from_utf8_unchecked;
 use std::{mem, slice};
-use usfm::{ArchivedBook, parse};
+use usfm::{ArchivedBook, ArchivedParagraphContents, BookIdentifier, parse};
 
 // ---------------------------------------------------------------------------
 // FFI error helpers
@@ -185,7 +185,7 @@ pub extern "C" fn archived_book(
 
 #[unsafe(no_mangle)]
 pub extern "C" fn book_identifier(
-    usfm: *const c_void,
+    book: *const c_void,
     out: *mut *const u8,
     out_len: *mut usize,
     out_error: *mut *mut c_char,
@@ -194,9 +194,9 @@ pub extern "C" fn book_identifier(
     let Some((ptr, len)) = run_ffi(
         || {
             use usfm::ArchivedBookContents as C;
-            let usfm = unsafe { &*(usfm as *const ArchivedBook) };
+            let book = unsafe { &*(book as *const ArchivedBook) };
             if let Some(C::Id { code, .. }) =
-                usfm.contents.iter().find(|c| matches!(c, C::Id { .. }))
+                book.contents.iter().find(|c| matches!(c, C::Id { .. }))
             {
                 let id = code.to_identifier();
                 Ok((id.as_ptr(), id.len()))
@@ -222,7 +222,7 @@ pub extern "C" fn book_identifier(
 #[unsafe(no_mangle)]
 pub extern "C" fn layout(
     renderer: *const c_void,
-    usfm: *const c_void,
+    book: *const c_void,
     dim: *mut Dimensions,
     out_error: *mut *mut c_char,
     out_error_len: *mut usize,
@@ -231,11 +231,11 @@ pub extern "C" fn layout(
     run_ffi(
         || {
             let renderer = unsafe { &*(renderer as *const Renderer) };
-            let usfm = unsafe { &*(usfm as *const ArchivedBook) };
+            let book = unsafe { &*(book as *const ArchivedBook) };
             let dim = unsafe { Box::from_raw(dim) };
 
             let mut painter = Painter::new(renderer, *dim.clone());
-            usfm.paint(&mut painter);
+            book.paint(&mut painter);
             log!("[FFI] layout complete");
             Ok(Box::into_raw(Box::new(painter)) as *mut c_void)
         },
@@ -465,8 +465,8 @@ pub extern "C" fn serialize_verses(
 // Search / ML model
 // ---------------------------------------------------------------------------
 
-use ndarray::{Array2, ArrayD, Axis, Ix2};
-use ndarray_npy::ReadNpyExt;
+use ndarray::{Array2, ArrayBase, ArrayD, Axis, Dim, Ix2, IxDynImpl, OwnedRepr};
+use ndarray_npy::{ReadNpyExt, WriteNpyExt};
 use std::io::Cursor;
 use tokenizers::Tokenizer;
 use tract_onnx::prelude::*;
@@ -482,6 +482,16 @@ fn load_embeddings(npy_bytes: &[u8]) -> Result<Array2<f32>, SolaError> {
         .into_dimensionality::<Ix2>()
         .map_err(|e| SolaError::ModelLoad(e.to_string()))?
         .to_owned())
+}
+
+fn save_embeddings(array: &Array2<f32>) -> Result<Vec<u8>, SolaError> {
+    let mut buffer = Vec::new();
+    let writer = Cursor::new(&mut buffer);
+    array
+        .write_npy(writer)
+        .map_err(|e| SolaError::ModelLoad(e.to_string()))?;
+
+    Ok(buffer)
 }
 
 fn mean_pooling(last_hidden: &Tensor, attention_mask: &Tensor) -> Result<Tensor, SolaError> {
@@ -508,9 +518,7 @@ fn mean_pooling(last_hidden: &Tensor, attention_mask: &Tensor) -> Result<Tensor,
     Ok(tract_ndarray::Array::into_tensor(pooled))
 }
 
-struct Model<'a> {
-    embeddings: Array2<f32>,
-    verses: &'a Verses,
+struct Model {
     model: RunnableModel<TypedFact, Box<dyn TypedOp>, TypedModel>,
     tokenizer: Tokenizer,
 }
@@ -519,10 +527,6 @@ type Verses = ArchivedVec<ArchivedIndex>;
 
 #[unsafe(no_mangle)]
 pub extern "C" fn load_model(
-    embeddings: *const u8,
-    embeddings_len: usize,
-    verses: *const u8,
-    verses_len: usize,
     model: *const u8,
     model_len: usize,
     tokenizer: *const u8,
@@ -531,21 +535,15 @@ pub extern "C" fn load_model(
     out_error_len: *mut usize,
 ) -> *mut c_void {
     log!(
-        "[FFI] load_model: embeddings={}B model={}B tokenizer={}B",
-        embeddings_len,
+        "[FFI] load_model: model={}B tokenizer={}B",
         model_len,
         tokenizer_len
     );
     run_ffi(
         || {
-            let embeddings = unsafe { from_raw_parts(embeddings, embeddings_len) };
-            let verses = unsafe { from_raw_parts(verses, verses_len) };
-            let verses = rkyv::access::<Verses, RkyvError>(verses)
-                .map_err(|e| SolaError::Deserialization(e.to_string()))?;
             let model = unsafe { from_raw_parts(model, model_len) };
             let tokenizer = unsafe { from_raw_parts(tokenizer, tokenizer_len) };
 
-            let embeddings = load_embeddings(embeddings)?;
             let model = tract_onnx::onnx()
                 .model_for_read(&mut Cursor::new(model))
                 .map_err(|e| SolaError::ModelLoad(e.to_string()))?
@@ -555,12 +553,7 @@ pub extern "C" fn load_model(
                 .map_err(|e| SolaError::ModelLoad(e.to_string()))?;
             let tokenizer = Tokenizer::from_bytes(tokenizer)
                 .map_err(|e| SolaError::ModelLoad(e.to_string()))?;
-            Ok(Box::into_raw(Box::new(Model {
-                embeddings,
-                verses,
-                model,
-                tokenizer,
-            })) as *mut c_void)
+            Ok(Box::into_raw(Box::new(Model { model, tokenizer })) as *mut c_void)
         },
         out_error,
         out_error_len,
@@ -571,6 +564,8 @@ pub extern "C" fn load_model(
 #[unsafe(no_mangle)]
 pub extern "C" fn get_result(
     model: *const c_void,
+    embeddings: *const c_void,
+    verses: *const c_void,
     query: *const u8,
     query_len: usize,
     out_error: *mut *mut c_char,
@@ -579,12 +574,9 @@ pub extern "C" fn get_result(
     log!("[FFI] get_result: query_len={}", query_len);
     run_ffi(
         || {
-            let Model {
-                embeddings,
-                verses,
-                model,
-                tokenizer,
-            } = unsafe { &*(model as *const Model) };
+            let Model { model, tokenizer } = unsafe { &*(model as *const Model) };
+            let embeddings = unsafe { &*(embeddings as *const Array2<f32>) };
+            let verses = unsafe { &*(verses as *const &Verses) };
 
             let input = unsafe { from_utf8_unchecked(from_raw_parts(query, query_len)).trim() };
             let encoding = tokenizer
@@ -676,6 +668,239 @@ pub extern "C" fn search_index(
         *out_len = results.len();
     }
     mem::forget(results);
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn get_model(
+    model: *const u8,
+    model_len: usize,
+    tokenizer: *const u8,
+    tokenizer_len: usize,
+    out_error: *mut *mut c_char,
+    out_error_len: *mut usize,
+) -> *const c_void {
+    log!(
+        "[FFI] load_model: model={}B tokenizer={}B",
+        model_len,
+        tokenizer_len
+    );
+    run_ffi(
+        || {
+            let model = unsafe { from_raw_parts(model, model_len) };
+            let tokenizer = unsafe { from_raw_parts(tokenizer, tokenizer_len) };
+
+            let model = tract_onnx::onnx()
+                .model_for_read(&mut Cursor::new(model))
+                .map_err(|e| SolaError::ModelLoad(e.to_string()))?
+                .into_optimized()
+                .map_err(|e| SolaError::ModelLoad(e.to_string()))?
+                .into_runnable()
+                .map_err(|e| SolaError::ModelLoad(e.to_string()))?;
+            let tokenizer = Tokenizer::from_bytes(tokenizer)
+                .map_err(|e| SolaError::ModelLoad(e.to_string()))?;
+            Ok(Box::into_raw(Box::new(Model { model, tokenizer })) as *mut c_void)
+        },
+        out_error,
+        out_error_len,
+    )
+    .unwrap_or(std::ptr::null_mut())
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn get_embeddings(
+    model: *const c_void,
+    book: *const c_void,
+    out_embeddings: *mut *const u8,
+    out_embeddings_len: *mut usize,
+    out_verses: *mut *const u8,
+    out_verses_len: *mut usize,
+    out_error: *mut *mut c_char,
+    out_error_len: *mut usize,
+) {
+    log!("[FFI] get_embeddings");
+    let Some((embeddings, verses)) = run_ffi(
+        || {
+            use usfm::{
+                ArchivedBookContents as B, ArchivedCharacter as K, ArchivedCharacterContents as L,
+                ArchivedElement as E, ArchivedElementContents as C, ArchivedElementType as T,
+                ArchivedParagraph as P, ArchivedParagraphContents as D, ArchivedPoetry as Q,
+            };
+            let model = unsafe { &*(model as *const Model) };
+            let book = unsafe { &*(book as *const ArchivedBook) };
+            let mut index = (None, None, None, None);
+            let mut verse = String::new();
+            let mut embeddings = vec![];
+            let mut verses = vec![];
+            for c in book.contents.iter() {
+                match c {
+                    B::Id { code, .. } => {
+                        index.0 = Some(code);
+                    }
+                    B::Element(e) => match e {
+                        E {
+                            ty: T::Header,
+                            contents: header,
+                        } => {
+                            index.1 = Some(
+                                header
+                                    .iter()
+                                    .filter_map(|c| match c {
+                                        C::Line(header) => Some(header.to_string()),
+                                        _ => None,
+                                    })
+                                    .collect::<String>(),
+                            );
+                        }
+                        _ => (),
+                    },
+                    B::Chapter(n) => {
+                        index.2 = Some(n.to_native());
+                    }
+                    B::Paragraph(P { contents, .. }) | B::Poetry(Q { contents, .. }) => {
+                        fn character(K { contents, .. }: &K, verse: &mut String) {
+                            for c in contents.iter() {
+                                match c {
+                                    L::Line(s) => {
+                                        *verse += &s;
+                                    }
+                                    L::Character(k) => {
+                                        character(k, verse);
+                                    }
+                                }
+                            }
+                        }
+                        for c in contents.iter() {
+                            match c {
+                                D::Verse(n) => {
+                                    if !verse.is_empty() {
+                                        log!("Embedding verse: {}", &verse);
+                                        embeddings.push(
+                                            get_embedding(model, &verse)?
+                                                .into_dimensionality::<Ix2>()
+                                                .unwrap()
+                                                .row(0)
+                                                .to_owned(),
+                                        );
+                                        verses.push(Index {
+                                            book: rkyv::deserialize::<BookIdentifier, RkyvError>(
+                                                index.0.unwrap(),
+                                            )
+                                            .unwrap(),
+                                            header: index.1.clone().unwrap(),
+                                            chapter: index.2,
+                                            verse: index.3,
+                                        });
+                                        verse.clear();
+                                    }
+                                    index.3 = Some(n.to_native());
+                                }
+                                D::Line(s) => {
+                                    verse += &s;
+                                }
+                                D::Character(K { contents, .. }) => {
+                                    for c in contents.iter() {
+                                        match c {
+                                            L::Line(s) => {
+                                                verse += &s;
+                                            }
+                                            L::Character(k) => {
+                                                character(k, &mut verse);
+                                            }
+                                        }
+                                    }
+                                }
+                                _ => (),
+                            }
+                        }
+                    }
+                    _ => (),
+                }
+            }
+            let embeddings: Array2<f32> = ndarray::stack(
+                Axis(0),
+                &embeddings.iter().map(|e| e.view()).collect::<Vec<_>>(),
+            )
+            .unwrap();
+            let embeddings = save_embeddings(&embeddings).unwrap();
+            let verses = rkyv::to_bytes::<RkyvError>(&verses)
+                .map_err(|e| SolaError::Serialization(e.to_string()))?;
+            Ok((embeddings, verses))
+        },
+        out_error,
+        out_error_len,
+    ) else {
+        return;
+    };
+    unsafe {
+        *out_embeddings = embeddings.as_ptr();
+        *out_embeddings_len = embeddings.len();
+        *out_verses = verses.as_ptr();
+        *out_verses_len = verses.len();
+    }
+    mem::forget(embeddings);
+    mem::forget(verses);
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn load_embeddings_data(
+    embeddings: *const u8,
+    embeddings_len: usize,
+    verses: *const u8,
+    verses_len: usize,
+    out_embeddings: *mut *const c_void,
+    out_verses: *mut *const c_void,
+) {
+    let embeddings = unsafe { from_raw_parts(embeddings, embeddings_len) };
+    let verses = unsafe { from_raw_parts(verses, verses_len) };
+    let embeddings = Box::new(load_embeddings(embeddings).unwrap());
+    let verses = Box::new(rkyv::access::<Verses, RkyvError>(verses).unwrap());
+    unsafe {
+        *out_embeddings = Box::into_raw(embeddings) as *const c_void;
+        *out_verses = Box::into_raw(verses) as *const c_void;
+    }
+}
+
+fn get_embedding(
+    model: &Model,
+    s: &str,
+) -> Result<ArrayBase<OwnedRepr<f32>, Dim<IxDynImpl>>, SolaError> {
+    let Model { model, tokenizer } = model;
+    let encoding = tokenizer
+        .encode(s, true)
+        .map_err(|e| SolaError::Search(e.to_string()))?;
+    let ids: Vec<i64> = encoding.get_ids().iter().map(|&id| id as i64).collect();
+    let mask: Vec<i64> = encoding
+        .get_attention_mask()
+        .iter()
+        .map(|&m| m as i64)
+        .collect();
+
+    let input_ids = Array2::from_shape_vec((1, ids.len()), ids)
+        .map_err(|e| SolaError::Search(e.to_string()))?;
+    let attention_mask = Array2::from_shape_vec((1, mask.len()), mask)
+        .map_err(|e| SolaError::Search(e.to_string()))?;
+
+    let input_ids_tensor = tract_ndarray::Array::into_tensor(input_ids);
+    let attention_mask_tensor = tract_ndarray::Array::into_tensor(attention_mask);
+
+    let outputs = model
+        .run(
+            tvec![input_ids_tensor.clone(), attention_mask_tensor.clone()]
+                .into_iter()
+                .map(TValue::from)
+                .collect(),
+        )
+        .map_err(|e| SolaError::Search(e.to_string()))?;
+    let last_hidden = outputs[0].clone();
+    let pooled = mean_pooling(&last_hidden, &attention_mask_tensor)?;
+    let pooled_array: ArrayD<f32> = pooled
+        .to_array_view::<f32>()
+        .map_err(|e| SolaError::Search(e.to_string()))?
+        .to_owned();
+    let norm = pooled_array.mapv(|x| x.powi(2)).sum().sqrt().max(1e-9);
+    let normed = &pooled_array / norm;
+
+    Ok(normed)
 }
 
 // ---------------------------------------------------------------------------

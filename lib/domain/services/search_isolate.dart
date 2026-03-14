@@ -120,19 +120,21 @@ class SearchIsolate {
 
     Pointer<Void>? model;
     Pointer<Void>? indices;
+    Pointer<Void>? embeddings;
+    Pointer<Void>? verses;
 
     commandPort.listen((message) {
       if (message is _LoadMsg) {
         try {
           print('[SearchIsolate] Loading model...');
           indices = rust.getArchivedIndices(message.indicesBytes);
-          model = rust.loadModel(
+          model = rust.loadModel(message.model, message.tokenizer);
+          print('[SearchIsolate] Model loaded');
+          (embeddings, verses) = rust.loadEmbeddings(
             message.embeddings,
             message.verses,
-            message.model,
-            message.tokenizer,
           );
-          print('[SearchIsolate] Model loaded');
+          print('[SearchIsolate] Embeddings loaded');
           message.replyPort.send(true);
         } catch (e) {
           print('[SearchIsolate] Load error: $e');
@@ -141,7 +143,12 @@ class SearchIsolate {
       } else if (message is _QueryMsg) {
         try {
           print('[SearchIsolate] Query: "${message.query}"');
-          final resultPtr = rust.getResult(model!, message.query);
+          final resultPtr = rust.getResult(
+            model!,
+            embeddings!,
+            verses!,
+            message.query,
+          );
           final index = rust.getIndex(indices!, resultPtr);
           print(
             '[SearchIsolate] Result: ${index.book} '
