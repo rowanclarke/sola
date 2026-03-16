@@ -850,6 +850,7 @@ pub extern "C" fn load_embeddings_data(
     out_embeddings: *mut *const c_void,
     out_verses: *mut *const c_void,
 ) {
+    log!("[FFI] load_embeddings_data");
     let embeddings = unsafe { from_raw_parts(embeddings, embeddings_len) };
     let verses = unsafe { from_raw_parts(verses, verses_len) };
     let embeddings = Box::new(load_embeddings(embeddings).unwrap());

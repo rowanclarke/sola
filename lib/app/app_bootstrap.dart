@@ -46,17 +46,14 @@ class AppBootstrap {
       bibleRepository: bibleRepository,
     );
     final modelService = ModelService(fileService: fileService);
-    final embeddingsService = EmbeddingsService();
+    final embeddingsService = EmbeddingsService(fileService: fileService);
     final embeddingsRepository = EmbeddingsRepository(
-      fileService: fileService,
       embeddingsService: embeddingsService,
       modelService: modelService,
-      bibleRepository: bibleRepository,
     );
     final searchRepository = SearchRepository(
       fileService: fileService,
       searchService: searchService,
-      modelService: modelService,
       embeddingsRepository: embeddingsRepository,
     );
 

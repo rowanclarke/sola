@@ -422,7 +422,7 @@ EmbeddingsData getEmbeddings(Pointer<Void> model, Pointer<Void> archivedBook) {
   Uint8List verses,
 ) {
   final bEmbeddings = Bytes(embeddings);
-  final bVerses = Bytes(embeddings);
+  final bVerses = Bytes(verses);
   final outEmbeddings = malloc<Pointer<Void>>();
   final outVerses = malloc<Pointer<Void>>();
   _bindings.load_embeddings_data(

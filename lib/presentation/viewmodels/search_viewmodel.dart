@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:sola/core/models/index.dart';
+import 'package:sola/core/models/embeddings_info.dart';
 import 'package:sola/core/models/model_info.dart';
 import 'package:sola/data/repositories/search_repository.dart';
 import 'package:sola/data/repositories/session_repository.dart';
@@ -85,6 +86,7 @@ class SearchViewModel extends ChangeNotifier {
     try {
       await _searchRepository.loadModel(
         model: ModelInfo.defaultModel,
+        embeddingsInfo: EmbeddingsInfo.defaultEmbeddings,
         translationId: currentTranslationId!,
         bookIds: bookIds,
         width: width,

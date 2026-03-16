@@ -1,66 +1,41 @@
-import 'dart:typed_data';
-
 import 'package:flutter/foundation.dart';
+import 'package:sola/core/models/embeddings_info.dart';
 import 'package:sola/core/models/index.dart';
 import 'package:sola/core/models/model_info.dart';
 import 'package:sola/data/repositories/embeddings_repository.dart';
 import 'package:sola/domain/services/file_service.dart';
-import 'package:sola/domain/services/model_service.dart';
 import 'package:sola/domain/services/search_isolate.dart';
 import 'package:sola/domain/services/search_service.dart';
 
 class SearchRepository {
   final FileService _fileService;
   final SearchService _searchService;
-  final ModelService _modelService;
   final EmbeddingsRepository _embeddingsRepository;
 
   final Map<String, SearchIsolate> _isolates = {};
 
-  Uint8List? _modelBytes;
-  Uint8List? _tokenizerBytes;
-  String? _loadedModelId;
-
   SearchRepository({
     required FileService fileService,
     required SearchService searchService,
-    required ModelService modelService,
     required EmbeddingsRepository embeddingsRepository,
   }) : _fileService = fileService,
        _searchService = searchService,
-       _modelService = modelService,
        _embeddingsRepository = embeddingsRepository;
 
   bool get isReady => _isolates.isNotEmpty;
 
-  Future<void> _ensureModelFiles(ModelInfo model) async {
-    if (_loadedModelId == model.id) return;
-
-    await _modelService.ensureAvailable(model);
-
-    final basePath = _modelService.getPath(model.id);
-    debugPrint('[SearchRepo] Loading model files from $basePath...');
-
-    _modelBytes = await _fileService.readBytes(
-      '$basePath/all-minilm-l6-v2.onnx',
-    );
-    _tokenizerBytes = await _fileService.readBytes(
-      '$basePath/tokenizer/tokenizer.json',
-    );
-    _loadedModelId = model.id;
-  }
-
   Future<void> loadModel({
     required ModelInfo model,
+    required EmbeddingsInfo embeddingsInfo,
     required String translationId,
     required List<String> bookIds,
     required double width,
     required double height,
   }) async {
-    await _ensureModelFiles(model);
-    await _embeddingsRepository.ensureIsolate(model);
+    await _embeddingsRepository.ensureModel(model);
+    await _embeddingsRepository.ensureAvailable(embeddingsInfo);
     await _embeddingsRepository.ensureEmbeddings(
-      translationId: translationId,
+      translationId: embeddingsInfo.translationId,
       bookIds: bookIds,
     );
 
@@ -71,7 +46,7 @@ class SearchRepository {
       try {
         final indicesBytes = await _fileService.readBytes('$dir/indices');
         final embeddingsData = await _embeddingsRepository.getEmbeddings(
-          translationId: translationId,
+          translationId: embeddingsInfo.translationId,
           bookId: bookId,
         );
 
@@ -79,9 +54,9 @@ class SearchRepository {
           bookId: bookId,
           indicesBytes: indicesBytes,
           embeddings: embeddingsData.embeddingsBytes,
-          verses: embeddingsData.versesBytes,
-          model: _modelBytes!,
-          tokenizer: _tokenizerBytes!,
+          verses: embeddingsData.indicesBytes,
+          model: _embeddingsRepository.modelBytes,
+          tokenizer: _embeddingsRepository.tokenizerBytes,
         );
       } catch (e) {
         debugPrint('[SearchRepo] Failed to load search for $bookId: $e');
@@ -131,8 +106,5 @@ class SearchRepository {
       isolate.dispose();
     }
     _isolates.clear();
-    _modelBytes = null;
-    _tokenizerBytes = null;
-    _loadedModelId = null;
   }
 }
