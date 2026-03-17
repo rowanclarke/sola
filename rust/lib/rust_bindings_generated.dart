@@ -578,12 +578,15 @@ class RustBindings {
         )
       >();
 
-  ffi.Pointer<ffi.Void> get_result(
+  void get_result(
     ffi.Pointer<ffi.Void> model,
     ffi.Pointer<ffi.Void> embeddings,
     ffi.Pointer<ffi.Void> verses,
     ffi.Pointer<ffi.Char> query,
     int query_len,
+    ffi.Pointer<ffi.Pointer<ffi.Pointer<ffi.Void>>> out,
+    ffi.Pointer<ffi.Pointer<ffi.Float>> out_distances,
+    ffi.Pointer<ffi.Size> out_len,
     ffi.Pointer<ffi.Pointer<ffi.Char>> out_error,
     ffi.Pointer<ffi.Size> out_error_len,
   ) {
@@ -593,6 +596,9 @@ class RustBindings {
       verses,
       query,
       query_len,
+      out,
+      out_distances,
+      out_len,
       out_error,
       out_error_len,
     );
@@ -601,12 +607,15 @@ class RustBindings {
   late final _get_resultPtr =
       _lookup<
         ffi.NativeFunction<
-          ffi.Pointer<ffi.Void> Function(
+          ffi.Void Function(
             ffi.Pointer<ffi.Void>,
             ffi.Pointer<ffi.Void>,
             ffi.Pointer<ffi.Void>,
             ffi.Pointer<ffi.Char>,
             ffi.Size,
+            ffi.Pointer<ffi.Pointer<ffi.Pointer<ffi.Void>>>,
+            ffi.Pointer<ffi.Pointer<ffi.Float>>,
+            ffi.Pointer<ffi.Size>,
             ffi.Pointer<ffi.Pointer<ffi.Char>>,
             ffi.Pointer<ffi.Size>,
           )
@@ -614,12 +623,15 @@ class RustBindings {
       >('get_result');
   late final _get_result = _get_resultPtr
       .asFunction<
-        ffi.Pointer<ffi.Void> Function(
+        void Function(
           ffi.Pointer<ffi.Void>,
           ffi.Pointer<ffi.Void>,
           ffi.Pointer<ffi.Void>,
           ffi.Pointer<ffi.Char>,
           int,
+          ffi.Pointer<ffi.Pointer<ffi.Pointer<ffi.Void>>>,
+          ffi.Pointer<ffi.Pointer<ffi.Float>>,
+          ffi.Pointer<ffi.Size>,
           ffi.Pointer<ffi.Pointer<ffi.Char>>,
           ffi.Pointer<ffi.Size>,
         )

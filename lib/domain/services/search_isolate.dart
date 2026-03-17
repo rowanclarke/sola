@@ -82,12 +82,12 @@ class SearchIsolate {
     return SearchIsolate._(bookId, isolate, commandPort);
   }
 
-  Future<Index> getResult(String query) async {
+  Future<List<SearchResult>> getResult(String query) async {
     final replyPort = ReceivePort();
     _commandPort.send(_QueryMsg(query, replyPort.sendPort));
     final result = await replyPort.first;
     if (result is _ErrorResult) throw Exception(result.message);
-    return _toIndex(result);
+    return (result as List).cast<SearchResult>();
   }
 
   Future<List<Index>> searchIndex(String query) async {
@@ -143,18 +143,21 @@ class SearchIsolate {
       } else if (message is _QueryMsg) {
         try {
           print('[SearchIsolate] Query: "${message.query}"');
-          final resultPtr = rust.getResult(
+          final (:pointers, :distances) = rust.getResult(
             model!,
             embeddings!,
             verses!,
             message.query,
           );
-          final index = rust.getIndex(indices!, resultPtr);
-          print(
-            '[SearchIsolate] Result: ${index.book} '
-            '${index.chapter}:${index.verse}',
-          );
-          message.replyPort.send(index);
+          final results = List.generate(pointers.length, (i) {
+            final index = rust.getIndex(indices!, pointers[i]);
+            return SearchResult(
+              index: _toIndex(index),
+              distance: distances[i],
+            );
+          });
+          print('[SearchIsolate] ${results.length} results');
+          message.replyPort.send(results);
         } catch (e) {
           print('[SearchIsolate] Query error: $e');
           message.replyPort.send(_ErrorResult(e.toString()));

@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:sola/core/models/index.dart';
 import 'package:sola/core/models/embeddings_info.dart';
+import 'package:sola/core/models/search_result.dart';
 import 'package:sola/core/models/model_info.dart';
 import 'package:sola/data/repositories/search_repository.dart';
 import 'package:sola/data/repositories/session_repository.dart';
@@ -12,7 +12,7 @@ class SearchViewModel extends ChangeNotifier {
   final SessionRepository _sessionRepository;
 
   double dragOffset = 0.0;
-  List<Index> _results = [];
+  List<SearchResult> _results = [];
   String? _error;
   bool _isModelLoading = false;
   bool _isModelReady = false;
@@ -34,7 +34,7 @@ class SearchViewModel extends ChangeNotifier {
   }) : _searchRepository = searchRepository,
        _sessionRepository = sessionRepository;
 
-  List<Index> get results => _results;
+  List<SearchResult> get results => _results;
   String? get error => _error;
   bool get isModelLoading => _isModelLoading;
   bool get isModelReady => _isModelReady;
@@ -144,9 +144,13 @@ class SearchViewModel extends ChangeNotifier {
 
     debugPrint('[SearchVM] Searching: "$query"');
     try {
-      final results = await _searchRepository.searchIndex(query);
-      if (results.isNotEmpty) {
-        _results.addAll(results);
+      final indexResults = await _searchRepository.searchIndex(query);
+      if (indexResults.isNotEmpty) {
+        _results.addAll(
+          indexResults.map(
+            (idx) => SearchResult(index: idx, distance: 0.0),
+          ),
+        );
       } else {
         final semanticResults = await _searchRepository.getResult(query);
         if (version != _queryVersion) {
@@ -156,9 +160,10 @@ class SearchViewModel extends ChangeNotifier {
         _results.addAll(semanticResults);
       }
       if (_results.isNotEmpty) {
+        final first = _results[0].index;
         debugPrint(
-          '[SearchVM] First result: book=${_results[0].book} '
-          'ch=${_results[0].chapter}:${_results[0].verse} page=${_results[0].page}',
+          '[SearchVM] ${_results.length} results, first: book=${first.book} '
+          'ch=${first.chapter}:${first.verse} page=${first.page}',
         );
       }
     } catch (e) {

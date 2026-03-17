@@ -51,9 +51,7 @@ class EmbeddingsRepository {
       '[EmbeddingsRepo] Ensuring embeddings for ${info.translationId}...',
     );
     await _embeddingsService.ensureAvailable(info);
-    debugPrint(
-      '[EmbeddingsRepo] Embeddings for ${info.translationId} ready',
-    );
+    debugPrint('[EmbeddingsRepo] Embeddings for ${info.translationId} ready');
   }
 
   Future<EmbeddingsData> getEmbeddings({
@@ -81,7 +79,13 @@ class EmbeddingsRepository {
     required List<String> bookIds,
   }) async {
     for (final bookId in bookIds) {
-      await getEmbeddings(translationId: translationId, bookId: bookId);
+      try {
+        await getEmbeddings(translationId: translationId, bookId: bookId);
+      } catch (e) {
+        debugPrint(
+          '[EmbeddingsRepo] Failed to load embeddings for $bookId: $e',
+        );
+      }
     }
   }
 

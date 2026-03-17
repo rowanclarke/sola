@@ -335,7 +335,7 @@ Pointer<Void> loadModel(Uint8List model, Uint8List tokenizer) {
   return result;
 }
 
-Pointer<Void> getResult(
+({List<Pointer<Void>> pointers, List<double> distances}) getResult(
   Pointer<Void> model,
   Pointer<Void> embeddings,
   Pointer<Void> verses,
@@ -343,18 +343,28 @@ Pointer<Void> getResult(
 ) {
   _log('[FFI] getResult: "$query"');
   final native = query.toNativeUtf8();
+  final out = malloc<Pointer<Pointer<Void>>>();
+  final outDistances = malloc<Pointer<Float>>();
+  final outLen = malloc<Size>();
   final e = _allocError();
-  final result = _bindings.get_result(
+  _bindings.get_result(
     model,
     embeddings,
     verses,
     native.cast<Char>(),
     native.length,
+    out,
+    outDistances,
+    outLen,
     e.error,
     e.errorLen,
   );
   _checkError(e.error, e.errorLen);
-  return result;
+  final count = outLen.value;
+  return (
+    pointers: List.generate(count, (i) => out.value[i]),
+    distances: List.generate(count, (i) => outDistances.value[i]),
+  );
 }
 
 List<Pointer<Void>> searchIndex(Pointer<Void> archivedIndices, String query) {

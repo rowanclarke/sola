@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:sola/core/models/embeddings_info.dart';
 import 'package:sola/core/models/index.dart';
 import 'package:sola/core/models/model_info.dart';
+import 'package:sola/core/models/search_result.dart';
 import 'package:sola/data/repositories/embeddings_repository.dart';
 import 'package:sola/domain/services/file_service.dart';
 import 'package:sola/domain/services/search_isolate.dart';
@@ -65,20 +66,22 @@ class SearchRepository {
     debugPrint('[SearchRepo] ${_isolates.length} book isolates ready');
   }
 
-  Future<List<Index>> getResult(String query) async {
+  Future<List<SearchResult>> getResult(String query) async {
     if (_isolates.isEmpty) throw StateError('No search isolates loaded');
 
     final futures = _isolates.values.map((iso) async {
       try {
-        return <Index>[await iso.getResult(query)];
+        return await iso.getResult(query);
       } catch (e) {
         debugPrint('[SearchRepo] getResult failed for ${iso.bookId}: $e');
-        return <Index>[];
+        return <SearchResult>[];
       }
     });
 
     final results = await Future.wait(futures);
-    return results.expand((list) => list).toList();
+    final merged = results.expand((list) => list).toList();
+    merged.sort((a, b) => a.distance.compareTo(b.distance));
+    return merged;
   }
 
   Future<List<Index>> searchIndex(String query) async {

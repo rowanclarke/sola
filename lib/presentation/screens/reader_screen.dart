@@ -392,23 +392,26 @@ class _SearchBarState extends State<_SearchBar> {
                     child: ListView.builder(
                       itemCount: vm.results.length,
                       shrinkWrap: true,
-                      itemBuilder: (context, i) => ListTile(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        title: Text(vm.results[i].reference),
-                        subtitle: Text('Page ${vm.results[i].page + 1}'),
-                        trailing: const Icon(Icons.arrow_forward, size: 18),
-                        onTap: () {
-                          context.read<ReaderViewModel>().navigateTo(
-                            vm.results[i].book,
-                            vm.results[i].page,
-                          );
-                          widget.controller.clear();
-                          vm.clearSearch();
-                          widget.focusNode.unfocus();
-                        },
-                      ),
+                      itemBuilder: (context, i) {
+                        final result = vm.results[i];
+                        return ListTile(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          title: Text(result.index.reference),
+                          subtitle: Text('Page ${result.index.page + 1}'),
+                          trailing: const Icon(Icons.arrow_forward, size: 18),
+                          onTap: () {
+                            context.read<ReaderViewModel>().navigateTo(
+                              result.index.book,
+                              result.index.page,
+                            );
+                            widget.controller.clear();
+                            vm.clearSearch();
+                            widget.focusNode.unfocus();
+                          },
+                        );
+                      },
                     ),
                   ),
               ],

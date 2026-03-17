@@ -525,6 +525,8 @@ struct Model {
 
 type Verses = ArchivedVec<ArchivedIndex>;
 
+const DISTANCE_THRESHOLD: f32 = 0.35;
+
 #[unsafe(no_mangle)]
 pub extern "C" fn load_model(
     model: *const u8,
@@ -568,11 +570,14 @@ pub extern "C" fn get_result(
     verses: *const c_void,
     query: *const u8,
     query_len: usize,
+    out: *mut *const *const c_void,
+    out_distances: *mut *const f32,
+    out_len: *mut usize,
     out_error: *mut *mut c_char,
     out_error_len: *mut usize,
-) -> *const c_void {
+) {
     log!("[FFI] get_result: query_len={}", query_len);
-    run_ffi(
+    let results: Vec<_> = run_ffi(
         || {
             let Model { model, tokenizer } = unsafe { &*(model as *const Model) };
             let embeddings = unsafe { &*(embeddings as *const Array2<f32>) };
@@ -622,17 +627,38 @@ pub extern "C" fn get_result(
                     .map_err(|e| SolaError::Search(e.to_string()))?,
             );
 
-            let (idx, _) = dot
+            let mut results: Vec<(*const c_void, f32)> = dot
                 .indexed_iter()
-                .max_by(|a, b| a.1.partial_cmp(b.1).unwrap_or(std::cmp::Ordering::Equal))
-                .ok_or(SolaError::Search("No results found".into()))?;
-            let idx: &ArchivedIndex = &verses[idx.0];
-            Ok(idx as *const ArchivedIndex as *const c_void)
+                .filter_map(|(idx, &similarity)| {
+                    let distance = 1.0 - similarity;
+                    if distance <= DISTANCE_THRESHOLD {
+                        let verse: &ArchivedIndex = &verses[idx.0];
+                        Some((verse as *const ArchivedIndex as *const c_void, distance))
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+            results.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
+            log!(
+                "[FFI] get_result: {} matches within threshold",
+                results.len()
+            );
+            Ok(results)
         },
         out_error,
         out_error_len,
     )
-    .unwrap_or(std::ptr::null())
+    .unwrap_or(vec![]);
+    let pointers: Vec<*const c_void> = results.iter().map(|(ptr, _)| *ptr).collect();
+    let distances: Vec<f32> = results.iter().map(|(_, d)| *d).collect();
+    unsafe {
+        *out = pointers.as_ptr();
+        *out_distances = distances.as_ptr();
+        *out_len = results.len();
+    }
+    mem::forget(pointers);
+    mem::forget(distances);
 }
 
 #[unsafe(no_mangle)]

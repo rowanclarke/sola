@@ -9,12 +9,15 @@ void* load_model(
   size_t* out_error_len
 );
 
-void* get_result(
+void get_result(
   const void* model,
   const void* embeddings,
   const void* verses,
   const char* query,
   size_t query_len,
+  void*** out,
+  float** out_distances,
+  size_t* out_len,
   char** out_error,
   size_t* out_error_len
 );
