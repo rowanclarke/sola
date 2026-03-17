@@ -8,16 +8,14 @@ class SearchService {
     required Uint8List indicesBytes,
     required Uint8List embeddings,
     required Uint8List verses,
-    required Uint8List model,
-    required Uint8List tokenizer,
+    required int modelAddress,
   }) {
     return SearchIsolate.spawn(
       bookId: bookId,
       indicesBytes: indicesBytes,
       embeddings: embeddings,
       verses: verses,
-      model: model,
-      tokenizer: tokenizer,
+      modelAddress: modelAddress,
     );
   }
 }

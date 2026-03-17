@@ -14,6 +14,7 @@ class SearchRepository {
   final EmbeddingsRepository _embeddingsRepository;
 
   final Map<String, SearchIsolate> _isolates = {};
+  int? _modelAddress;
 
   SearchRepository({
     required FileService fileService,
@@ -40,6 +41,13 @@ class SearchRepository {
       bookIds: bookIds,
     );
 
+    if (_modelAddress == null) {
+      _modelAddress = await SearchIsolate.loadModelOnce(
+        _embeddingsRepository.modelBytes,
+        _embeddingsRepository.tokenizerBytes,
+      );
+    }
+
     for (final bookId in bookIds) {
       if (_isolates.containsKey(bookId)) continue;
 
@@ -56,8 +64,7 @@ class SearchRepository {
           indicesBytes: indicesBytes,
           embeddings: embeddingsData.embeddingsBytes,
           verses: embeddingsData.indicesBytes,
-          model: _embeddingsRepository.modelBytes,
-          tokenizer: _embeddingsRepository.tokenizerBytes,
+          modelAddress: _modelAddress!,
         );
       } catch (e) {
         debugPrint('[SearchRepo] Failed to load search for $bookId: $e');
@@ -109,5 +116,6 @@ class SearchRepository {
       isolate.dispose();
     }
     _isolates.clear();
+    _modelAddress = null;
   }
 }

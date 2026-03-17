@@ -4,21 +4,20 @@ import 'dart:typed_data';
 
 import 'package:rust/rust.dart' as rust;
 import 'package:sola/core/models/index.dart';
+import 'package:sola/core/models/search_result.dart';
 
 class _LoadMsg {
   final Uint8List indicesBytes;
   final Uint8List embeddings;
   final Uint8List verses;
-  final Uint8List model;
-  final Uint8List tokenizer;
+  final int modelAddress;
   final SendPort replyPort;
 
   _LoadMsg(
     this.indicesBytes,
     this.embeddings,
     this.verses,
-    this.model,
-    this.tokenizer,
+    this.modelAddress,
     this.replyPort,
   );
 }
@@ -50,13 +49,27 @@ class SearchIsolate {
 
   SearchIsolate._(this.bookId, this._isolate, this._commandPort);
 
+  /// Loads the ONNX model once in a background isolate.
+  /// Returns the native pointer address (int) for sharing across isolates.
+  static Future<int> loadModelOnce(
+    Uint8List model,
+    Uint8List tokenizer,
+  ) async {
+    print('[SearchIsolate] Loading model once...');
+    final address = await Isolate.run(() {
+      final ptr = rust.loadModel(model, tokenizer);
+      return ptr.address;
+    });
+    print('[SearchIsolate] Model loaded, address: $address');
+    return address;
+  }
+
   static Future<SearchIsolate> spawn({
     required String bookId,
     required Uint8List indicesBytes,
     required Uint8List embeddings,
     required Uint8List verses,
-    required Uint8List model,
-    required Uint8List tokenizer,
+    required int modelAddress,
   }) async {
     print('[SearchIsolate] Spawning isolate for $bookId...');
     final initPort = ReceivePort();
@@ -69,15 +82,14 @@ class SearchIsolate {
         indicesBytes,
         embeddings,
         verses,
-        model,
-        tokenizer,
+        modelAddress,
         replyPort.sendPort,
       ),
     );
-    print('[SearchIsolate] Waiting for model load ($bookId)...');
+    print('[SearchIsolate] Waiting for data load ($bookId)...');
     final result = await replyPort.first;
     if (result is _ErrorResult) throw Exception(result.message);
-    print('[SearchIsolate] Model loaded for $bookId');
+    print('[SearchIsolate] Ready for $bookId');
 
     return SearchIsolate._(bookId, isolate, commandPort);
   }
@@ -126,10 +138,10 @@ class SearchIsolate {
     commandPort.listen((message) {
       if (message is _LoadMsg) {
         try {
-          print('[SearchIsolate] Loading model...');
+          print('[SearchIsolate] Loading data...');
           indices = rust.getArchivedIndices(message.indicesBytes);
-          model = rust.loadModel(message.model, message.tokenizer);
-          print('[SearchIsolate] Model loaded');
+          model = Pointer<Void>.fromAddress(message.modelAddress);
+          print('[SearchIsolate] Model pointer: ${message.modelAddress}');
           (embeddings, verses) = rust.loadEmbeddings(
             message.embeddings,
             message.verses,
