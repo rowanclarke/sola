@@ -1,4 +1,4 @@
-use usfm::{ArchivedPoetry, Poetry, PoetryStyle};
+use usfm::ArchivedPoetry;
 
 use crate::painter::{Style, format::Format, writer::LineFormat};
 
@@ -6,27 +6,28 @@ use super::Paint;
 
 impl Paint for ArchivedPoetry {
     fn paint(&self, painter: &mut crate::painter::Painter) {
-        use usfm::ArchivedParagraphContents as C;
-        use usfm::ArchivedPoetryStyle as S;
+        use usfm::ArchivedParagraphContents as Content;
+        use usfm::ArchivedPoetryStyle as PoetryKind;
         painter.push_style(Style::Normal);
-        for contents in self.contents.iter() {
-            match contents {
-                C::Verse(n) => painter
-                    .add_text(" ")
-                    .push_style(Style::Verse)
-                    .index_verse(n.to_native())
-                    .add_text(n.to_string())
-                    .pop_style()
-                    .done(),
-                C::Line(s) => painter.add_text(s).done(),
-                C::Character(character) => character.paint(painter),
+        for content in self.contents.iter() {
+            match content {
+                Content::Verse(verse_num) => {
+                    painter
+                        .add_text(" ")
+                        .push_style(Style::Verse)
+                        .index_verse(verse_num.to_native())
+                        .add_text(verse_num.to_string())
+                        .pop_style();
+                }
+                Content::Line(text) => { painter.add_text(text); }
+                Content::Character(character) => character.paint(painter),
                 _ => (),
             }
         }
         match self.style {
-            S::Normal(n) => painter.pop_style().paint_paragraph(
+            PoetryKind::Normal(indent_level) => painter.pop_style().paint_paragraph(
                 Format::Left,
-                LineFormat::new(20. * n as f32, 20. * 2.0, 0.0),
+                LineFormat::new(20. * indent_level as f32, 20. * 2.0, 0.0),
             ),
             _ => painter.clean(),
         }

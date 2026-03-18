@@ -6,40 +6,40 @@ import 'package:rust/rust.dart' as rust;
 import 'package:sola/core/models/index.dart';
 import 'package:sola/core/models/search_result.dart';
 
-class _LoadMsg {
-  final Uint8List indicesBytes;
+class _InitMessage {
+  final Uint8List pageMapBytes;
   final Uint8List embeddings;
-  final Uint8List verses;
+  final Uint8List verseRefs;
   final int modelAddress;
   final SendPort replyPort;
 
-  _LoadMsg(
-    this.indicesBytes,
+  _InitMessage(
+    this.pageMapBytes,
     this.embeddings,
-    this.verses,
+    this.verseRefs,
     this.modelAddress,
     this.replyPort,
   );
 }
 
-class _QueryMsg {
+class _SearchMessage {
   final String query;
   final SendPort replyPort;
 
-  _QueryMsg(this.query, this.replyPort);
+  _SearchMessage(this.query, this.replyPort);
 }
 
-class _IndexMsg {
+class _TextSearchMessage {
   final String query;
   final SendPort replyPort;
 
-  _IndexMsg(this.query, this.replyPort);
+  _TextSearchMessage(this.query, this.replyPort);
 }
 
-class _ErrorResult {
+class _IsolateError {
   final String message;
 
-  _ErrorResult(this.message);
+  _IsolateError(this.message);
 }
 
 class SearchIsolate {
@@ -66,9 +66,9 @@ class SearchIsolate {
 
   static Future<SearchIsolate> spawn({
     required String bookId,
-    required Uint8List indicesBytes,
+    required Uint8List pageMapBytes,
     required Uint8List embeddings,
-    required Uint8List verses,
+    required Uint8List verseRefs,
     required int modelAddress,
   }) async {
     print('[SearchIsolate] Spawning isolate for $bookId...');
@@ -78,17 +78,17 @@ class SearchIsolate {
 
     final replyPort = ReceivePort();
     commandPort.send(
-      _LoadMsg(
-        indicesBytes,
+      _InitMessage(
+        pageMapBytes,
         embeddings,
-        verses,
+        verseRefs,
         modelAddress,
         replyPort.sendPort,
       ),
     );
     print('[SearchIsolate] Waiting for data load ($bookId)...');
     final result = await replyPort.first;
-    if (result is _ErrorResult) throw Exception(result.message);
+    if (result is _IsolateError) throw Exception(result.message);
     print('[SearchIsolate] Ready for $bookId');
 
     return SearchIsolate._(bookId, isolate, commandPort);
@@ -96,17 +96,17 @@ class SearchIsolate {
 
   Future<List<SearchResult>> getResult(String query) async {
     final replyPort = ReceivePort();
-    _commandPort.send(_QueryMsg(query, replyPort.sendPort));
+    _commandPort.send(_SearchMessage(query, replyPort.sendPort));
     final result = await replyPort.first;
-    if (result is _ErrorResult) throw Exception(result.message);
+    if (result is _IsolateError) throw Exception(result.message);
     return (result as List).cast<SearchResult>();
   }
 
   Future<List<Index>> searchIndex(String query) async {
     final replyPort = ReceivePort();
-    _commandPort.send(_IndexMsg(query, replyPort.sendPort));
+    _commandPort.send(_TextSearchMessage(query, replyPort.sendPort));
     final results = await replyPort.first;
-    if (results is _ErrorResult) throw Exception(results.message);
+    if (results is _IsolateError) throw Exception(results.message);
     if (results is List<rust.Index>) return results.map(_toIndex).toList();
     return [];
   }
@@ -131,38 +131,38 @@ class SearchIsolate {
     mainPort.send(commandPort.sendPort);
 
     Pointer<Void>? model;
-    Pointer<Void>? indices;
+    Pointer<Void>? pageMap;
     Pointer<Void>? embeddings;
-    Pointer<Void>? verses;
+    Pointer<Void>? verseRefs;
 
     commandPort.listen((message) {
-      if (message is _LoadMsg) {
+      if (message is _InitMessage) {
         try {
           print('[SearchIsolate] Loading data...');
-          indices = rust.getArchivedIndices(message.indicesBytes);
+          pageMap = rust.getArchivedIndices(message.pageMapBytes);
           model = Pointer<Void>.fromAddress(message.modelAddress);
           print('[SearchIsolate] Model pointer: ${message.modelAddress}');
-          (embeddings, verses) = rust.loadEmbeddings(
+          (embeddings, verseRefs) = rust.loadEmbeddings(
             message.embeddings,
-            message.verses,
+            message.verseRefs,
           );
           print('[SearchIsolate] Embeddings loaded');
           message.replyPort.send(true);
         } catch (e) {
           print('[SearchIsolate] Load error: $e');
-          message.replyPort.send(_ErrorResult(e.toString()));
+          message.replyPort.send(_IsolateError(e.toString()));
         }
-      } else if (message is _QueryMsg) {
+      } else if (message is _SearchMessage) {
         try {
           print('[SearchIsolate] Query: "${message.query}"');
           final (:pointers, :distances) = rust.getResult(
             model!,
             embeddings!,
-            verses!,
+            verseRefs!,
             message.query,
           );
           final results = List.generate(pointers.length, (i) {
-            final index = rust.getIndex(indices!, pointers[i]);
+            final index = rust.getIndex(pageMap!, pointers[i]);
             return SearchResult(
               index: _toIndex(index),
               distance: distances[i],
@@ -172,20 +172,20 @@ class SearchIsolate {
           message.replyPort.send(results);
         } catch (e) {
           print('[SearchIsolate] Query error: $e');
-          message.replyPort.send(_ErrorResult(e.toString()));
+          message.replyPort.send(_IsolateError(e.toString()));
         }
-      } else if (message is _IndexMsg) {
+      } else if (message is _TextSearchMessage) {
         try {
           print('[SearchIsolate] Index search: "${message.query}"');
-          final results = rust.searchIndex(indices!, message.query);
+          final results = rust.searchIndex(pageMap!, message.query);
           print('[SearchIsolate] Raw result: $results');
           final indexes = results
-              .map((result) => rust.getIndex(indices!, result))
+              .map((result) => rust.getIndex(pageMap!, result))
               .toList();
           message.replyPort.send(indexes);
         } catch (e) {
           print('[SearchIsolate] Index search error: $e');
-          message.replyPort.send(_ErrorResult(e.toString()));
+          message.replyPort.send(_IsolateError(e.toString()));
         }
       }
     });

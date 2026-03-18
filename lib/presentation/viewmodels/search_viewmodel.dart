@@ -148,7 +148,7 @@ class SearchViewModel extends ChangeNotifier {
       if (indexResults.isNotEmpty) {
         _results.addAll(
           indexResults.map(
-            (idx) => SearchResult(index: idx, distance: 0.0),
+            (index) => SearchResult(index: index, distance: 0.0),
           ),
         );
       } else {

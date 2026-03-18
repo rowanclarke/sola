@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
-import 'package:flutter/painting.dart' show TextStyle;
 import 'package:rust/rust.dart' as rust;
+import 'package:sola/domain/services/renderer_service.dart' show registerDefaultStyles;
 
 class RenderInput {
   final Uint8List bookBytes;
@@ -33,22 +33,7 @@ RenderOutput renderInBackground(RenderInput input) {
   print('[Isolate] Rendering ${input.width.toInt()}x${input.height.toInt()}');
   final renderer = rust.getRenderer();
   rust.registerFontFamily(renderer, 'AveriaSerifLibre', input.fontBytes);
-  rust.registerStyle(renderer, rust.Style.NORMAL, const TextStyle(
-    fontFamily: 'AveriaSerifLibre', fontSize: 16, height: 1.5,
-    letterSpacing: 0, wordSpacing: 0,
-  ));
-  rust.registerStyle(renderer, rust.Style.HEADER, const TextStyle(
-    fontFamily: 'AveriaSerifLibre', fontSize: 24, height: 1.0,
-    letterSpacing: 0, wordSpacing: 0,
-  ));
-  rust.registerStyle(renderer, rust.Style.VERSE, const TextStyle(
-    fontFamily: 'AveriaSerifLibre', fontSize: 10, height: 1.0,
-    letterSpacing: 0, wordSpacing: 0,
-  ));
-  rust.registerStyle(renderer, rust.Style.CHAPTER, const TextStyle(
-    fontFamily: 'AveriaSerifLibre', fontSize: 48, height: 1.0,
-    letterSpacing: 0, wordSpacing: 0,
-  ));
+  registerDefaultStyles(renderer);
 
   final book = rust.getArchivedBook(input.bookBytes);
   print('[Isolate] Layout starting...');

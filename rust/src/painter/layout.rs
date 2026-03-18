@@ -1,9 +1,7 @@
 use std::collections::{HashMap, VecDeque};
 
 use rkyv::{Archive, Deserialize, Serialize, vec::ArchivedVec};
-use usfm::{ArchivedBookIdentifier, BookIdentifier};
-
-use crate::log;
+use usfm::BookIdentifier;
 
 use super::{Rectangle, Style};
 
@@ -53,16 +51,21 @@ impl Index {
 
 pub type ArchivedPages = ArchivedVec<ArchivedPage>;
 pub type ArchivedPage = <Page as Archive>::Archived;
-pub type Page = Vec<PartialText>;
+pub type Page = Vec<TextFragment>;
 pub type ArchivedIndices = <Indices as Archive>::Archived;
 pub type Indices = HashMap<Index, usize>;
 
 #[derive(Archive, Serialize, Debug)]
-pub struct PartialText(pub String, pub Rectangle, pub Style, pub f32);
+pub struct TextFragment {
+    pub text: String,
+    pub rect: Rectangle,
+    pub style: Style,
+    pub word_spacing: f32,
+}
 
-impl PartialText {
+impl TextFragment {
     pub fn new(text: String, rect: Rectangle, style: Style, word_spacing: f32) -> Self {
-        Self(text, rect, style, word_spacing)
+        Self { text, rect, style, word_spacing }
     }
 }
 
@@ -201,7 +204,7 @@ impl Layout {
         style: Style,
         word_spacing: f32,
     ) {
-        let text = PartialText::new(text, rect, style, word_spacing);
+        let text = TextFragment::new(text, rect, style, word_spacing);
         self.pages[page].push(text);
     }
 

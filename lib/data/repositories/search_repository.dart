@@ -6,11 +6,9 @@ import 'package:sola/core/models/search_result.dart';
 import 'package:sola/data/repositories/embeddings_repository.dart';
 import 'package:sola/domain/services/file_service.dart';
 import 'package:sola/domain/services/search_isolate.dart';
-import 'package:sola/domain/services/search_service.dart';
 
 class SearchRepository {
   final FileService _fileService;
-  final SearchService _searchService;
   final EmbeddingsRepository _embeddingsRepository;
 
   final Map<String, SearchIsolate> _isolates = {};
@@ -18,10 +16,8 @@ class SearchRepository {
 
   SearchRepository({
     required FileService fileService,
-    required SearchService searchService,
     required EmbeddingsRepository embeddingsRepository,
   }) : _fileService = fileService,
-       _searchService = searchService,
        _embeddingsRepository = embeddingsRepository;
 
   bool get isReady => _isolates.isNotEmpty;
@@ -53,17 +49,17 @@ class SearchRepository {
 
       final dir = 'rendered/$translationId/$bookId-$width-$height';
       try {
-        final indicesBytes = await _fileService.readBytes('$dir/indices');
+        final pageMapBytes = await _fileService.readBytes('$dir/indices');
         final embeddingsData = await _embeddingsRepository.getEmbeddings(
           translationId: embeddingsInfo.translationId,
           bookId: bookId,
         );
 
-        _isolates[bookId] = await _searchService.createSearchIsolate(
+        _isolates[bookId] = await SearchIsolate.spawn(
           bookId: bookId,
-          indicesBytes: indicesBytes,
+          pageMapBytes: pageMapBytes,
           embeddings: embeddingsData.embeddingsBytes,
-          verses: embeddingsData.indicesBytes,
+          verseRefs: embeddingsData.verseRefsBytes,
           modelAddress: _modelAddress!,
         );
       } catch (e) {
@@ -76,16 +72,16 @@ class SearchRepository {
   Future<List<SearchResult>> getResult(String query) async {
     if (_isolates.isEmpty) throw StateError('No search isolates loaded');
 
-    final futures = _isolates.values.map((iso) async {
+    final searchFutures = _isolates.values.map((isolate) async {
       try {
-        return await iso.getResult(query);
+        return await isolate.getResult(query);
       } catch (e) {
-        debugPrint('[SearchRepo] getResult failed for ${iso.bookId}: $e');
+        debugPrint('[SearchRepo] getResult failed for ${isolate.bookId}: $e');
         return <SearchResult>[];
       }
     });
 
-    final results = await Future.wait(futures);
+    final results = await Future.wait(searchFutures);
     final merged = results.expand((list) => list).toList();
     merged.sort((a, b) => a.distance.compareTo(b.distance));
     return merged;
@@ -94,16 +90,16 @@ class SearchRepository {
   Future<List<Index>> searchIndex(String query) async {
     if (_isolates.isEmpty) throw StateError('No search isolates loaded');
 
-    final futures = _isolates.values.map((iso) async {
+    final searchFutures = _isolates.values.map((isolate) async {
       try {
-        return await iso.searchIndex(query);
+        return await isolate.searchIndex(query);
       } catch (e) {
-        debugPrint('[SearchRepo] searchIndex failed for ${iso.bookId}: $e');
+        debugPrint('[SearchRepo] searchIndex failed for ${isolate.bookId}: $e');
         return <Index>[];
       }
     });
 
-    final results = await Future.wait(futures);
+    final results = await Future.wait(searchFutures);
     return results.expand((list) => list).toList();
   }
 

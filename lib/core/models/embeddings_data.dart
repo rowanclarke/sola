@@ -2,7 +2,7 @@ import 'dart:typed_data';
 
 class EmbeddingsData {
   final Uint8List embeddingsBytes;
-  final Uint8List indicesBytes;
+  final Uint8List verseRefsBytes;
 
-  EmbeddingsData({required this.embeddingsBytes, required this.indicesBytes});
+  EmbeddingsData({required this.embeddingsBytes, required this.verseRefsBytes});
 }

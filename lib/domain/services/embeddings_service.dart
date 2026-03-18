@@ -21,10 +21,10 @@ class EmbeddingsService {
   }) async {
     final dir = 'embeddings/$translationId';
     final embeddingsBytes = await _fileService.readBytes('$dir/$bookId.npy');
-    final indicesBytes = await _fileService.readBytes('$dir/$bookId.idx');
+    final verseRefsBytes = await _fileService.readBytes('$dir/$bookId.idx');
     return EmbeddingsData(
       embeddingsBytes: embeddingsBytes,
-      indicesBytes: indicesBytes,
+      verseRefsBytes: verseRefsBytes,
     );
   }
 

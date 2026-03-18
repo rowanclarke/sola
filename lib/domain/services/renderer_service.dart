@@ -6,6 +6,19 @@ import 'package:flutter/painting.dart' show TextStyle;
 import 'package:flutter/services.dart';
 import 'package:rust/rust.dart' as rust;
 
+const _defaultStyles = [
+  (rust.Style.NORMAL, TextStyle(fontFamily: 'AveriaSerifLibre', fontSize: 16, height: 1.5, letterSpacing: 0, wordSpacing: 0)),
+  (rust.Style.HEADER, TextStyle(fontFamily: 'AveriaSerifLibre', fontSize: 24, height: 1.0, letterSpacing: 0, wordSpacing: 0)),
+  (rust.Style.VERSE, TextStyle(fontFamily: 'AveriaSerifLibre', fontSize: 10, height: 1.0, letterSpacing: 0, wordSpacing: 0)),
+  (rust.Style.CHAPTER, TextStyle(fontFamily: 'AveriaSerifLibre', fontSize: 48, height: 1.0, letterSpacing: 0, wordSpacing: 0)),
+];
+
+void registerDefaultStyles(Pointer<Void> renderer) {
+  for (final (style, textStyle) in _defaultStyles) {
+    rust.registerStyle(renderer, style, textStyle);
+  }
+}
+
 class RendererResponse {
   final Pointer<Void> _painter;
 
@@ -37,50 +50,7 @@ class RendererService {
 
   void registerStyles() {
     debugPrint('[RendererSvc] Registering text styles...');
-    rust.registerStyle(
-      renderer,
-      rust.Style.NORMAL,
-      const TextStyle(
-        fontFamily: 'AveriaSerifLibre',
-        fontSize: 16,
-        height: 1.5,
-        letterSpacing: 0,
-        wordSpacing: 0,
-      ),
-    );
-    rust.registerStyle(
-      renderer,
-      rust.Style.HEADER,
-      const TextStyle(
-        fontFamily: 'AveriaSerifLibre',
-        fontSize: 24,
-        height: 1.0,
-        letterSpacing: 0,
-        wordSpacing: 0,
-      ),
-    );
-    rust.registerStyle(
-      renderer,
-      rust.Style.VERSE,
-      const TextStyle(
-        fontFamily: 'AveriaSerifLibre',
-        fontSize: 10,
-        height: 1.0,
-        letterSpacing: 0,
-        wordSpacing: 0,
-      ),
-    );
-    rust.registerStyle(
-      renderer,
-      rust.Style.CHAPTER,
-      const TextStyle(
-        fontFamily: 'AveriaSerifLibre',
-        fontSize: 48,
-        height: 1.0,
-        letterSpacing: 0,
-        wordSpacing: 0,
-      ),
-    );
+    registerDefaultStyles(renderer);
     debugPrint('[RendererSvc] Styles registered');
   }
 

@@ -1,7 +1,7 @@
 use crate::log;
 
 use super::{
-    Index, Properties, Style,
+    Index, Properties,
     layout::Layout,
     renderer::Inline,
     writer::{LineMetrics, Words},
@@ -42,33 +42,33 @@ pub fn get_unformatted<'a, 'b>(
     for words in lines.iter() {
         let metrics = words.get_metrics();
         let words = &inline[words.range.clone()];
-        let mut last = &words[0];
-        let mut index = last.range.start;
+        let mut prev_inline = &words[0];
+        let mut text_offset = prev_inline.range.start;
         for (i, inline) in words.iter().enumerate() {
             if inline.is_whitespace {
                 whitespace += inline.width;
             }
             let is_last = i == words.len() - 1;
-            if inline.properties != last.properties {
+            if inline.properties != prev_inline.properties {
                 unformatted.push(Unformatted {
                     line,
-                    text: &text[index..inline.range.start],
-                    properties: last.properties.clone(),
+                    text: &text[text_offset..inline.range.start],
+                    properties: prev_inline.properties.clone(),
                     width: total,
                     whitespace,
                     metrics: metrics.clone(),
-                    top_offset: last.top_offset,
+                    top_offset: prev_inline.top_offset,
                 });
                 whitespace = 0.0;
                 total = 0.0;
-                last = &inline;
-                index = inline.range.start;
+                prev_inline = &inline;
+                text_offset = inline.range.start;
             }
             total += inline.width;
             if is_last {
                 unformatted.push(Unformatted {
                     line,
-                    text: &text[index..inline.range.end],
+                    text: &text[text_offset..inline.range.end],
                     properties: inline.properties.clone(),
                     width: total,
                     whitespace,
@@ -77,8 +77,8 @@ pub fn get_unformatted<'a, 'b>(
                 });
                 whitespace = 0.0;
                 total = 0.0;
-                last = &inline;
-                index = inline.range.end;
+                prev_inline = &inline;
+                text_offset = inline.range.end;
             }
         }
         line += 1;

@@ -9,11 +9,9 @@ use skia_safe::{
     },
 };
 
-use crate::log;
-
 use super::{
     Properties, Range, Style, Text,
-    layout::{ArchivedPage, ArchivedPartialText},
+    layout::ArchivedPage,
 };
 
 #[derive(Debug, Clone, Copy)]
@@ -109,13 +107,13 @@ impl Renderer {
 
     pub fn page(&self, page: &ArchivedPage) -> Vec<Text> {
         page.iter()
-            .map(|ArchivedPartialText(text, rect, style, word_spacing)| {
-                let mut style = self.style_collection[&deserialize::<_, Error>(style).unwrap()];
-                style.word_spacing += word_spacing.to_native();
-                let text = text.as_bytes();
+            .map(|fragment| {
+                let mut style = self.style_collection[&deserialize::<_, Error>(&fragment.style).unwrap()];
+                style.word_spacing += fragment.word_spacing.to_native();
+                let text = fragment.text.as_bytes();
                 let len = text.len();
                 let ptr = text.as_ptr() as *const c_char;
-                Text(ptr, len, deserialize::<_, Error>(rect).unwrap(), style)
+                Text(ptr, len, deserialize::<_, Error>(&fragment.rect).unwrap(), style)
             })
             .collect()
     }

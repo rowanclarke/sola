@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
-import '../core/session/session_state.dart';
 import '../data/repositories/bible_repository.dart';
 import '../data/repositories/embeddings_repository.dart';
 import '../data/repositories/library_repository.dart';
@@ -14,12 +13,10 @@ import '../domain/services/embeddings_service.dart';
 import '../domain/services/file_service.dart';
 import '../domain/services/model_service.dart';
 import '../domain/services/renderer_service.dart';
-import '../domain/services/search_service.dart';
 import '../presentation/viewmodels/library_viewmodel.dart';
 import '../presentation/viewmodels/reader_viewmodel.dart';
 import '../presentation/viewmodels/rendering_viewmodel.dart';
 import '../presentation/viewmodels/search_viewmodel.dart';
-import '../presentation/viewmodels/session_viewmodel.dart';
 import 'app_routes.dart';
 
 class AppBootstrap {
@@ -29,7 +26,6 @@ class AppBootstrap {
     debugPrint('[Bootstrap] App directory: ${dir.path}');
     final fileService = FileService(dir);
     final rendererService = RendererService();
-    final searchService = SearchService();
 
     rendererService.registerStyles();
 
@@ -53,17 +49,9 @@ class AppBootstrap {
     );
     final searchRepository = SearchRepository(
       fileService: fileService,
-      searchService: searchService,
       embeddingsRepository: embeddingsRepository,
     );
 
-    final sessionState = SessionState(
-      initialSession: sessionRepository.currentSession,
-    );
-
-    final sessionViewModel = SessionViewModel(
-      sessionRepository: sessionRepository,
-    );
     final libraryViewModel = LibraryViewModel(
       libraryRepository: libraryRepository,
       sessionRepository: sessionRepository,
@@ -82,8 +70,6 @@ class AppBootstrap {
     debugPrint('[Bootstrap] All services and viewmodels created');
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider.value(value: sessionState),
-        ChangeNotifierProvider.value(value: sessionViewModel),
         ChangeNotifierProvider.value(value: libraryViewModel),
         ChangeNotifierProvider.value(value: renderingViewModel),
         ChangeNotifierProvider.value(value: readerViewModel),

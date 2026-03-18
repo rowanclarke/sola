@@ -1,4 +1,4 @@
-use usfm::{ArchivedParagraph, Paragraph};
+use usfm::ArchivedParagraph;
 
 use crate::painter::{Painter, Style, format::Format, writer::LineFormat};
 
@@ -6,19 +6,20 @@ use super::Paint;
 
 impl Paint for ArchivedParagraph {
     fn paint(&self, painter: &mut Painter) {
-        use usfm::ArchivedParagraphContents as C;
+        use usfm::ArchivedParagraphContents as Content;
         painter.push_style(Style::Normal);
-        for contents in self.contents.iter() {
-            match contents {
-                C::Verse(n) => painter
-                    .add_text(" ")
-                    .push_style(Style::Verse)
-                    .index_verse(n.to_native())
-                    .add_text(n.to_string())
-                    .pop_style()
-                    .done(),
-                C::Line(s) => painter.add_text(s).done(),
-                C::Character(character) => character.paint(painter),
+        for content in self.contents.iter() {
+            match content {
+                Content::Verse(verse_num) => {
+                    painter
+                        .add_text(" ")
+                        .push_style(Style::Verse)
+                        .index_verse(verse_num.to_native())
+                        .add_text(verse_num.to_string())
+                        .pop_style();
+                }
+                Content::Line(text) => { painter.add_text(text); }
+                Content::Character(character) => character.paint(painter),
                 _ => (),
             }
         }

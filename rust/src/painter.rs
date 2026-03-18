@@ -29,11 +29,11 @@ pub struct Painter {
     properties: Vec<(usize, Properties)>,
     queue: Vec<Properties>,
     layout: Layout,
-    index: PartialIndex,
+    location: LocationState,
 }
 
 #[derive(Default)]
-struct PartialIndex {
+struct LocationState {
     book: Option<BookIdentifier>,
     header: Option<String>,
     chapter: Option<u16>,
@@ -54,7 +54,7 @@ impl Painter {
             queue: Vec::new(),
             layout: Layout::new(dim.width, dim.height, renderer.line_height(&Style::Normal)),
             dim,
-            index: PartialIndex::default(),
+            location: LocationState::default(),
         }
     }
 
@@ -176,7 +176,7 @@ impl Painter {
         };
         self.queue.push(properties.clone());
         self.builder.push_style(&self.renderer.get_style(&style));
-        self.properties.push((self.index(), properties));
+        self.properties.push((self.text_cursor(), properties));
         self
     }
 
@@ -198,20 +198,20 @@ impl Painter {
         self
     }
 
-    fn index(&self) -> usize {
+    fn text_cursor(&self) -> usize {
         self.properties.last().map_or(0, |(i, _)| *i)
     }
 
     pub fn index_book(&mut self, book: &ArchivedBookIdentifier) -> &mut Self {
-        self.index.book = Some(deserialize::<_, Error>(book).unwrap());
+        self.location.book = Some(deserialize::<_, Error>(book).unwrap());
         self
     }
 
     pub fn index_header(&mut self, header: &ArchivedString) -> &mut Self {
-        self.index.header = Some(deserialize::<_, Error>(header).unwrap());
+        self.location.header = Some(deserialize::<_, Error>(header).unwrap());
         let index = Index::new(
-            self.index.book.clone().unwrap(),
-            self.index.header.clone().unwrap(),
+            self.location.book.clone().unwrap(),
+            self.location.header.clone().unwrap(),
             None,
             None,
         );
@@ -220,11 +220,11 @@ impl Painter {
     }
 
     pub fn index_chapter(&mut self, chapter: u16) -> &mut Self {
-        self.index.chapter = Some(chapter);
+        self.location.chapter = Some(chapter);
         let index = Index::new(
-            self.index.book.clone().unwrap(),
-            self.index.header.clone().unwrap(),
-            self.index.chapter,
+            self.location.book.clone().unwrap(),
+            self.location.header.clone().unwrap(),
+            self.location.chapter,
             None,
         );
         self.add_action(Action::Index(index));
@@ -233,9 +233,9 @@ impl Painter {
 
     pub fn index_verse(&mut self, verse: u16) -> &mut Self {
         let index = Index::new(
-            self.index.book.clone().unwrap(),
-            self.index.header.clone().unwrap(),
-            self.index.chapter,
+            self.location.book.clone().unwrap(),
+            self.location.header.clone().unwrap(),
+            self.location.chapter,
             Some(verse),
         );
         self.add_action(Action::Index(index));
@@ -251,8 +251,6 @@ impl Painter {
             .push(action.clone());
         self.queue.last_mut().unwrap().actions.push(action);
     }
-
-    fn done(&mut self) {}
 
     pub fn get_pages(&self) -> Result<AlignedVec, String> {
         rkyv::to_bytes::<Error>(self.layout.get_pages()).map_err(|e| e.to_string())
