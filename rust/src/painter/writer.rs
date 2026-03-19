@@ -75,11 +75,15 @@ impl<'a> Writer<'a> {
     pub fn trim(&mut self) -> &mut Self {
         for Words { range, .. } in self.lines.iter_mut() {
             for (start, offset, incr) in [(&mut range.start, 0, 1), (&mut range.end, -1, -1)] {
-                while self.inline[start.wrapping_add_signed(offset)].is_whitespace {
+                while *start < self.inline.len()
+                    && self.inline[start.wrapping_add_signed(offset)].is_whitespace
+                {
                     *start = start.wrapping_add_signed(incr);
                 }
             }
         }
+        self.lines
+            .retain_mut(|Words { range, .. }| range.start != range.end);
         self
     }
 
