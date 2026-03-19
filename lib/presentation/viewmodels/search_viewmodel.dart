@@ -1,9 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:sola/core/models/embeddings_info.dart';
-import 'package:sola/core/models/search_result.dart';
 import 'package:sola/core/models/model_info.dart';
+import 'package:sola/core/models/search_info.dart';
+import 'package:sola/core/models/search_result.dart';
 import 'package:sola/data/repositories/search_repository.dart';
 import 'package:sola/data/repositories/session_repository.dart';
 
@@ -52,7 +52,7 @@ class SearchViewModel extends ChangeNotifier {
     return triggered;
   }
 
-  Future<void> loadModel({
+  Future<void> initSearch({
     required List<String> bookIds,
     required double width,
     required double height,
@@ -64,7 +64,7 @@ class SearchViewModel extends ChangeNotifier {
 
     // Skip if already loaded for this exact translation
     if (_isModelReady && _loadedTranslationId == currentTranslationId) {
-      debugPrint('[SearchVM] Model already loaded for $currentTranslationId');
+      debugPrint('[SearchVM] Search already loaded for $currentTranslationId');
       return;
     }
 
@@ -72,7 +72,7 @@ class SearchViewModel extends ChangeNotifier {
     if (_isModelReady) {
       debugPrint(
         '[SearchVM] Translation changed '
-        '($_loadedTranslationId → $currentTranslationId), reloading model',
+        '($_loadedTranslationId → $currentTranslationId), reloading',
       );
       _searchRepository.dispose();
     }
@@ -80,13 +80,13 @@ class SearchViewModel extends ChangeNotifier {
     _isModelLoading = true;
     _results = [];
     _error = null;
-    debugPrint('[SearchVM] Loading search model for $currentTranslationId...');
+    debugPrint('[SearchVM] Initializing search for $currentTranslationId...');
     notifyListeners();
 
     try {
-      await _searchRepository.loadModel(
+      await _searchRepository.init(
         model: ModelInfo.defaultModel,
-        embeddingsInfo: EmbeddingsInfo.defaultEmbeddings,
+        searchInfo: SearchInfo.defaultSearch,
         translationId: currentTranslationId!,
         bookIds: bookIds,
         width: width,
@@ -94,10 +94,10 @@ class SearchViewModel extends ChangeNotifier {
       );
       _isModelReady = true;
       _loadedTranslationId = currentTranslationId;
-      debugPrint('[SearchVM] Model loaded for $currentTranslationId');
+      debugPrint('[SearchVM] Search ready for $currentTranslationId');
     } catch (e) {
-      debugPrint('[SearchVM] Model load error: $e');
-      _error = 'Failed to load search model: $e';
+      debugPrint('[SearchVM] Search init error: $e');
+      _error = 'Failed to initialize search: $e';
       _loadedTranslationId = null;
     } finally {
       _isModelLoading = false;
@@ -144,21 +144,12 @@ class SearchViewModel extends ChangeNotifier {
 
     debugPrint('[SearchVM] Searching: "$query"');
     try {
-      final indexResults = await _searchRepository.searchIndex(query);
-      if (indexResults.isNotEmpty) {
-        _results.addAll(
-          indexResults.map(
-            (index) => SearchResult(index: index, distance: 0.0),
-          ),
-        );
-      } else {
-        final semanticResults = await _searchRepository.getResult(query);
-        if (version != _queryVersion) {
-          debugPrint('[SearchVM] Stale result for "$query", ignoring');
-          return;
-        }
-        _results.addAll(semanticResults);
+      final searchResults = await _searchRepository.search(query);
+      if (version != _queryVersion) {
+        debugPrint('[SearchVM] Stale result for "$query", ignoring');
+        return;
       }
+      _results.addAll(searchResults);
       if (_results.isNotEmpty) {
         final first = _results[0].index;
         debugPrint(

@@ -312,15 +312,31 @@ Uint8List serializeVerses(Pointer<Void> painter) {
   return out.value.asTypedList(outLen.value);
 }
 
-Pointer<Void> loadModel(Uint8List model, Uint8List tokenizer) {
+Pointer<Void> loadSearchEngine(
+  Uint8List model,
+  Uint8List tokenizer,
+  String hnswDir,
+  String hnswBasename,
+  Uint8List idx,
+) {
+  _log('[FFI] loadSearchEngine: model=${model.length}B tokenizer=${tokenizer.length}B idx=${idx.length}B');
   final modelPtr = _toNative(model);
   final tokenizerPtr = _toNative(tokenizer);
+  final hnswDirPtr = hnswDir.toNativeUtf8();
+  final hnswBasenamePtr = hnswBasename.toNativeUtf8();
+  final idxPtr = _toNative(idx);
   final e = _allocError();
-  final result = _bindings.load_model(
+  final result = _bindings.load_search_engine(
     modelPtr.cast<Char>(),
     model.length,
     tokenizerPtr.cast<Char>(),
     tokenizer.length,
+    hnswDirPtr.cast<Char>(),
+    hnswDirPtr.length,
+    hnswBasenamePtr.cast<Char>(),
+    hnswBasenamePtr.length,
+    idxPtr.cast<Char>(),
+    idx.length,
     e.error,
     e.errorLen,
   );
@@ -328,25 +344,25 @@ Pointer<Void> loadModel(Uint8List model, Uint8List tokenizer) {
   return result;
 }
 
-({List<Pointer<Void>> pointers, List<double> distances}) getResult(
-  Pointer<Void> model,
-  Pointer<Void> embeddings,
-  Pointer<Void> verseRefs,
+({List<int> ids, List<double> distances}) search(
+  Pointer<Void> engine,
   String query,
+  int topK,
+  int ef,
 ) {
-  _log('[FFI] getResult: "$query"');
+  _log('[FFI] search: "$query" topK=$topK ef=$ef');
   final queryPtr = query.toNativeUtf8();
-  final out = malloc<Pointer<Pointer<Void>>>();
+  final outIds = malloc<Pointer<Size>>();
   final outDistances = malloc<Pointer<Float>>();
   final outLen = malloc<Size>();
   final e = _allocError();
-  _bindings.get_result(
-    model,
-    embeddings,
-    verseRefs,
+  _bindings.search(
+    engine,
     queryPtr.cast<Char>(),
     queryPtr.length,
-    out,
+    topK,
+    ef,
+    outIds,
     outDistances,
     outLen,
     e.error,
@@ -355,8 +371,47 @@ Pointer<Void> loadModel(Uint8List model, Uint8List tokenizer) {
   _checkError(e.error, e.errorLen);
   final count = outLen.value;
   return (
-    pointers: List.generate(count, (i) => out.value[i]),
+    ids: List.generate(count, (i) => outIds.value[i]),
     distances: List.generate(count, (i) => outDistances.value[i]),
+  );
+}
+
+Index getSearchResult(
+  Pointer<Void> engine,
+  Pointer<Void> pageMap,
+  int id,
+) {
+  final page = malloc<Size>();
+  final book = malloc<Pointer<Utf8>>();
+  final bookLen = malloc<Size>();
+  final header = malloc<Pointer<Utf8>>();
+  final headerLen = malloc<Size>();
+  final chapter = malloc<UnsignedShort>();
+  final verse = malloc<UnsignedShort>();
+  final e = _allocError();
+  chapter.value = 0;
+  verse.value = 0;
+  _bindings.get_search_result(
+    engine,
+    pageMap,
+    id,
+    page,
+    book.cast<Pointer<Char>>(),
+    bookLen,
+    header.cast<Pointer<Char>>(),
+    headerLen,
+    chapter,
+    verse,
+    e.error,
+    e.errorLen,
+  );
+  _checkError(e.error, e.errorLen);
+  return Index(
+    page.value,
+    book.value.toDartString(length: bookLen.value),
+    header.value.toDartString(length: headerLen.value),
+    chapter.value == 0 ? null : chapter.value,
+    verse.value == 0 ? null : verse.value,
   );
 }
 
@@ -379,23 +434,36 @@ List<Pointer<Void>> searchIndex(Pointer<Void> pageMap, String query) {
   return List.generate(outLen.value, (i) => out.value[i]);
 }
 
-(Pointer<Void>, Pointer<Void>) loadEmbeddings(
-  Uint8List embeddings,
-  Uint8List verseRefs,
-) {
-  final embeddingsPtr = _toNative(embeddings);
-  final verseRefsPtr = _toNative(verseRefs);
-  final outEmbeddings = malloc<Pointer<Void>>();
-  final outVerseRefs = malloc<Pointer<Void>>();
-  _bindings.load_embeddings(
-    embeddingsPtr.cast<Char>(),
-    embeddings.length,
-    verseRefsPtr.cast<Char>(),
-    verseRefs.length,
-    outEmbeddings,
-    outVerseRefs,
+Pointer<Void> pageMapBuilderNew() {
+  return _bindings.page_map_builder_new();
+}
+
+void pageMapBuilderAdd(Pointer<Void> builder, Uint8List bytes) {
+  final ptr = _toNative(bytes);
+  final e = _allocError();
+  _bindings.page_map_builder_add(
+    builder,
+    ptr.cast<Char>(),
+    bytes.length,
+    e.error,
+    e.errorLen,
   );
-  return (outEmbeddings.value, outVerseRefs.value);
+  _checkError(e.error, e.errorLen);
+}
+
+Uint8List pageMapBuilderFinish(Pointer<Void> builder) {
+  final out = malloc<Pointer<Uint8>>();
+  final outLen = malloc<Size>();
+  final e = _allocError();
+  _bindings.page_map_builder_finish(
+    builder,
+    out.cast<Pointer<Char>>(),
+    outLen,
+    e.error,
+    e.errorLen,
+  );
+  _checkError(e.error, e.errorLen);
+  return out.value.asTypedList(outLen.value);
 }
 
 Pointer<Uint8> _toNative(Uint8List list) {

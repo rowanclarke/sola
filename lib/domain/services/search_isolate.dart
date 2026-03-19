@@ -7,19 +7,23 @@ import 'package:sola/core/models/index.dart';
 import 'package:sola/core/models/search_result.dart';
 
 class _InitMessage {
-  final Uint8List pageMapBytes;
-  final Uint8List embeddings;
-  final Uint8List verseRefs;
-  final int modelAddress;
+  final Uint8List modelBytes;
+  final Uint8List tokenizerBytes;
+  final String hnswDir;
+  final String hnswBasename;
+  final Uint8List idxBytes;
+  final List<Uint8List> pageMapBytesList;
   final SendPort replyPort;
 
-  _InitMessage(
-    this.pageMapBytes,
-    this.embeddings,
-    this.verseRefs,
-    this.modelAddress,
-    this.replyPort,
-  );
+  _InitMessage({
+    required this.modelBytes,
+    required this.tokenizerBytes,
+    required this.hnswDir,
+    required this.hnswBasename,
+    required this.idxBytes,
+    required this.pageMapBytesList,
+    required this.replyPort,
+  });
 }
 
 class _SearchMessage {
@@ -43,35 +47,20 @@ class _IsolateError {
 }
 
 class SearchIsolate {
-  final String bookId;
   final Isolate _isolate;
   final SendPort _commandPort;
 
-  SearchIsolate._(this.bookId, this._isolate, this._commandPort);
-
-  /// Loads the ONNX model once in a background isolate.
-  /// Returns the native pointer address (int) for sharing across isolates.
-  static Future<int> loadModelOnce(
-    Uint8List model,
-    Uint8List tokenizer,
-  ) async {
-    print('[SearchIsolate] Loading model once...');
-    final address = await Isolate.run(() {
-      final ptr = rust.loadModel(model, tokenizer);
-      return ptr.address;
-    });
-    print('[SearchIsolate] Model loaded, address: $address');
-    return address;
-  }
+  SearchIsolate._(this._isolate, this._commandPort);
 
   static Future<SearchIsolate> spawn({
-    required String bookId,
-    required Uint8List pageMapBytes,
-    required Uint8List embeddings,
-    required Uint8List verseRefs,
-    required int modelAddress,
+    required Uint8List modelBytes,
+    required Uint8List tokenizerBytes,
+    required String hnswDir,
+    required String hnswBasename,
+    required Uint8List idxBytes,
+    required List<Uint8List> pageMapBytesList,
   }) async {
-    print('[SearchIsolate] Spawning isolate for $bookId...');
+    print('[SearchIsolate] Spawning isolate...');
     final initPort = ReceivePort();
     final isolate = await Isolate.spawn(_entryPoint, initPort.sendPort);
     final commandPort = await initPort.first as SendPort;
@@ -79,22 +68,24 @@ class SearchIsolate {
     final replyPort = ReceivePort();
     commandPort.send(
       _InitMessage(
-        pageMapBytes,
-        embeddings,
-        verseRefs,
-        modelAddress,
-        replyPort.sendPort,
+        modelBytes: modelBytes,
+        tokenizerBytes: tokenizerBytes,
+        hnswDir: hnswDir,
+        hnswBasename: hnswBasename,
+        idxBytes: idxBytes,
+        pageMapBytesList: pageMapBytesList,
+        replyPort: replyPort.sendPort,
       ),
     );
-    print('[SearchIsolate] Waiting for data load ($bookId)...');
+    print('[SearchIsolate] Waiting for engine load...');
     final result = await replyPort.first;
     if (result is _IsolateError) throw Exception(result.message);
-    print('[SearchIsolate] Ready for $bookId');
+    print('[SearchIsolate] Ready');
 
-    return SearchIsolate._(bookId, isolate, commandPort);
+    return SearchIsolate._(isolate, commandPort);
   }
 
-  Future<List<SearchResult>> getResult(String query) async {
+  Future<List<SearchResult>> search(String query) async {
     final replyPort = ReceivePort();
     _commandPort.send(_SearchMessage(query, replyPort.sendPort));
     final result = await replyPort.first;
@@ -105,14 +96,14 @@ class SearchIsolate {
   Future<List<Index>> searchIndex(String query) async {
     final replyPort = ReceivePort();
     _commandPort.send(_TextSearchMessage(query, replyPort.sendPort));
-    final results = await replyPort.first;
-    if (results is _IsolateError) throw Exception(results.message);
-    if (results is List<rust.Index>) return results.map(_toIndex).toList();
+    final result = await replyPort.first;
+    if (result is _IsolateError) throw Exception(result.message);
+    if (result is List<rust.Index>) return result.map(_toIndex).toList();
     return [];
   }
 
   void dispose() {
-    print('[SearchIsolate] Killing isolate for $bookId');
+    print('[SearchIsolate] Killing isolate');
     _isolate.kill(priority: Isolate.immediate);
   }
 
@@ -130,45 +121,59 @@ class SearchIsolate {
     final commandPort = ReceivePort();
     mainPort.send(commandPort.sendPort);
 
-    Pointer<Void>? model;
+    Pointer<Void>? engine;
     Pointer<Void>? pageMap;
-    Pointer<Void>? embeddings;
-    Pointer<Void>? verseRefs;
 
     commandPort.listen((message) {
       if (message is _InitMessage) {
         try {
-          print('[SearchIsolate] Loading data...');
-          pageMap = rust.getArchivedIndices(message.pageMapBytes);
-          model = Pointer<Void>.fromAddress(message.modelAddress);
-          print('[SearchIsolate] Model pointer: ${message.modelAddress}');
-          (embeddings, verseRefs) = rust.loadEmbeddings(
-            message.embeddings,
-            message.verseRefs,
+          print('[SearchIsolate] Loading search engine...');
+          engine = rust.loadSearchEngine(
+            message.modelBytes,
+            message.tokenizerBytes,
+            message.hnswDir,
+            message.hnswBasename,
+            message.idxBytes,
           );
-          print('[SearchIsolate] Embeddings loaded');
+          print('[SearchIsolate] Engine loaded');
+
+          print('[SearchIsolate] Building merged page map from ${message.pageMapBytesList.length} books...');
+          final builder = rust.pageMapBuilderNew();
+          for (final bytes in message.pageMapBytesList) {
+            rust.pageMapBuilderAdd(builder, bytes);
+          }
+          final mergedBytes = rust.pageMapBuilderFinish(builder);
+          pageMap = rust.getArchivedIndices(mergedBytes);
+          print('[SearchIsolate] Page map built');
+
           message.replyPort.send(true);
         } catch (e) {
-          print('[SearchIsolate] Load error: $e');
+          print('[SearchIsolate] Init error: $e');
           message.replyPort.send(_IsolateError(e.toString()));
         }
       } else if (message is _SearchMessage) {
         try {
           print('[SearchIsolate] Query: "${message.query}"');
-          final (:pointers, :distances) = rust.getResult(
-            model!,
-            embeddings!,
-            verseRefs!,
-            message.query,
-          );
-          final results = List.generate(pointers.length, (i) {
-            final index = rust.getIndex(pageMap!, pointers[i]);
-            return SearchResult(
-              index: _toIndex(index),
-              distance: distances[i],
-            );
+
+          // Try text search first
+          final textResults = rust.searchIndex(pageMap!, message.query);
+          if (textResults.isNotEmpty) {
+            print('[SearchIsolate] ${textResults.length} text results');
+            final results = textResults.map((ptr) {
+              final index = rust.getIndex(pageMap!, ptr);
+              return SearchResult(index: _toIndex(index), distance: 0.0);
+            }).toList();
+            message.replyPort.send(results);
+            return;
+          }
+
+          // Fall back to HNSW semantic search
+          final (:ids, :distances) = rust.search(engine!, message.query, 10, 50);
+          print('[SearchIsolate] ${ids.length} HNSW results');
+          final results = List.generate(ids.length, (i) {
+            final index = rust.getSearchResult(engine!, pageMap!, ids[i]);
+            return SearchResult(index: _toIndex(index), distance: distances[i]);
           });
-          print('[SearchIsolate] ${results.length} results');
           message.replyPort.send(results);
         } catch (e) {
           print('[SearchIsolate] Query error: $e');
@@ -178,7 +183,6 @@ class SearchIsolate {
         try {
           print('[SearchIsolate] Index search: "${message.query}"');
           final results = rust.searchIndex(pageMap!, message.query);
-          print('[SearchIsolate] Raw result: $results');
           final indexes = results
               .map((result) => rust.getIndex(pageMap!, result))
               .toList();

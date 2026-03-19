@@ -52,7 +52,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
       final bookIds =
           await context.read<ReaderViewModel>().loadAll(width, height);
       if (!mounted) return;
-      context.read<SearchViewModel>().loadModel(
+      context.read<SearchViewModel>().initSearch(
         bookIds: bookIds,
         width: width,
         height: height,

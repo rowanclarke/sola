@@ -136,8 +136,10 @@ pub extern "C" fn book_identifier(
         || {
             use usfm::ArchivedBookContents as Content;
             let book = unsafe { read_ref::<ArchivedBook>(book) };
-            if let Some(Content::Id { code, .. }) =
-                book.contents.iter().find(|c| matches!(c, Content::Id { .. }))
+            if let Some(Content::Id { code, .. }) = book
+                .contents
+                .iter()
+                .find(|c| matches!(c, Content::Id { .. }))
             {
                 let id = code.to_identifier();
                 Ok((id.as_ptr(), id.len()))
@@ -334,7 +336,7 @@ pub extern "C" fn get_index(
         || {
             let page_map = unsafe { read_ref::<ArchivedIndices>(page_map) };
             let index = unsafe { read_ref::<ArchivedIndex>(index) };
-            log!("get_index {:?}", index);
+            log!("[FFI] get_index {:?}", index);
             let page_val: usize = page_map
                 .get(index)
                 .ok_or(SolaError::MissingIndex)?

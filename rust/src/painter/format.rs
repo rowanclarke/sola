@@ -107,7 +107,6 @@ impl<'a> Unformatted<'a> {
         for action in self.properties.actions.iter() {
             match action {
                 Action::Index(index) => {
-                    log!("{:?}", index);
                     layout.add_verse_index(index.clone(), self.line);
                 }
             }

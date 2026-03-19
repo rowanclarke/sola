@@ -83,7 +83,6 @@ impl Painter {
             // HACK better management of actions
             match action {
                 Action::Index(index) => {
-                    log!("{:?}", index);
                     self.layout.add_index(index.clone(), page);
                 }
             }

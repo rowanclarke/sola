@@ -535,28 +535,46 @@ class RustBindings {
         )
       >();
 
-  ffi.Pointer<ffi.Void> load_model(
+  ffi.Pointer<ffi.Void> load_search_engine(
     ffi.Pointer<ffi.Char> model,
     int model_len,
     ffi.Pointer<ffi.Char> tokenizer,
     int tokenizer_len,
+    ffi.Pointer<ffi.Char> hnsw_dir,
+    int hnsw_dir_len,
+    ffi.Pointer<ffi.Char> hnsw_basename,
+    int hnsw_basename_len,
+    ffi.Pointer<ffi.Char> idx,
+    int idx_len,
     ffi.Pointer<ffi.Pointer<ffi.Char>> out_error,
     ffi.Pointer<ffi.Size> out_error_len,
   ) {
-    return _load_model(
+    return _load_search_engine(
       model,
       model_len,
       tokenizer,
       tokenizer_len,
+      hnsw_dir,
+      hnsw_dir_len,
+      hnsw_basename,
+      hnsw_basename_len,
+      idx,
+      idx_len,
       out_error,
       out_error_len,
     );
   }
 
-  late final _load_modelPtr =
+  late final _load_search_enginePtr =
       _lookup<
         ffi.NativeFunction<
           ffi.Pointer<ffi.Void> Function(
+            ffi.Pointer<ffi.Char>,
+            ffi.Size,
+            ffi.Pointer<ffi.Char>,
+            ffi.Size,
+            ffi.Pointer<ffi.Char>,
+            ffi.Size,
             ffi.Pointer<ffi.Char>,
             ffi.Size,
             ffi.Pointer<ffi.Char>,
@@ -565,10 +583,16 @@ class RustBindings {
             ffi.Pointer<ffi.Size>,
           )
         >
-      >('load_model');
-  late final _load_model = _load_modelPtr
+      >('load_search_engine');
+  late final _load_search_engine = _load_search_enginePtr
       .asFunction<
         ffi.Pointer<ffi.Void> Function(
+          ffi.Pointer<ffi.Char>,
+          int,
+          ffi.Pointer<ffi.Char>,
+          int,
+          ffi.Pointer<ffi.Char>,
+          int,
           ffi.Pointer<ffi.Char>,
           int,
           ffi.Pointer<ffi.Char>,
@@ -578,25 +602,25 @@ class RustBindings {
         )
       >();
 
-  void get_result(
-    ffi.Pointer<ffi.Void> model,
-    ffi.Pointer<ffi.Void> embeddings,
-    ffi.Pointer<ffi.Void> verse_refs,
+  void search(
+    ffi.Pointer<ffi.Void> engine,
     ffi.Pointer<ffi.Char> query,
     int query_len,
-    ffi.Pointer<ffi.Pointer<ffi.Pointer<ffi.Void>>> out,
+    int top_k,
+    int ef,
+    ffi.Pointer<ffi.Pointer<ffi.Size>> out_ids,
     ffi.Pointer<ffi.Pointer<ffi.Float>> out_distances,
     ffi.Pointer<ffi.Size> out_len,
     ffi.Pointer<ffi.Pointer<ffi.Char>> out_error,
     ffi.Pointer<ffi.Size> out_error_len,
   ) {
-    return _get_result(
-      model,
-      embeddings,
-      verse_refs,
+    return _search(
+      engine,
       query,
       query_len,
-      out,
+      top_k,
+      ef,
+      out_ids,
       out_distances,
       out_len,
       out_error,
@@ -604,34 +628,101 @@ class RustBindings {
     );
   }
 
-  late final _get_resultPtr =
+  late final _searchPtr =
       _lookup<
         ffi.NativeFunction<
           ffi.Void Function(
             ffi.Pointer<ffi.Void>,
-            ffi.Pointer<ffi.Void>,
-            ffi.Pointer<ffi.Void>,
             ffi.Pointer<ffi.Char>,
             ffi.Size,
-            ffi.Pointer<ffi.Pointer<ffi.Pointer<ffi.Void>>>,
+            ffi.Size,
+            ffi.Size,
+            ffi.Pointer<ffi.Pointer<ffi.Size>>,
             ffi.Pointer<ffi.Pointer<ffi.Float>>,
             ffi.Pointer<ffi.Size>,
             ffi.Pointer<ffi.Pointer<ffi.Char>>,
             ffi.Pointer<ffi.Size>,
           )
         >
-      >('get_result');
-  late final _get_result = _get_resultPtr
+      >('search');
+  late final _search = _searchPtr
+      .asFunction<
+        void Function(
+          ffi.Pointer<ffi.Void>,
+          ffi.Pointer<ffi.Char>,
+          int,
+          int,
+          int,
+          ffi.Pointer<ffi.Pointer<ffi.Size>>,
+          ffi.Pointer<ffi.Pointer<ffi.Float>>,
+          ffi.Pointer<ffi.Size>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          ffi.Pointer<ffi.Size>,
+        )
+      >();
+
+  void get_search_result(
+    ffi.Pointer<ffi.Void> engine,
+    ffi.Pointer<ffi.Void> page_map,
+    int id,
+    ffi.Pointer<ffi.Size> out_page,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> out_book,
+    ffi.Pointer<ffi.Size> out_book_len,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> out_header,
+    ffi.Pointer<ffi.Size> out_header_len,
+    ffi.Pointer<ffi.UnsignedShort> out_chapter,
+    ffi.Pointer<ffi.UnsignedShort> out_verse,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> out_error,
+    ffi.Pointer<ffi.Size> out_error_len,
+  ) {
+    return _get_search_result(
+      engine,
+      page_map,
+      id,
+      out_page,
+      out_book,
+      out_book_len,
+      out_header,
+      out_header_len,
+      out_chapter,
+      out_verse,
+      out_error,
+      out_error_len,
+    );
+  }
+
+  late final _get_search_resultPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(
+            ffi.Pointer<ffi.Void>,
+            ffi.Pointer<ffi.Void>,
+            ffi.Size,
+            ffi.Pointer<ffi.Size>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+            ffi.Pointer<ffi.Size>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+            ffi.Pointer<ffi.Size>,
+            ffi.Pointer<ffi.UnsignedShort>,
+            ffi.Pointer<ffi.UnsignedShort>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+            ffi.Pointer<ffi.Size>,
+          )
+        >
+      >('get_search_result');
+  late final _get_search_result = _get_search_resultPtr
       .asFunction<
         void Function(
           ffi.Pointer<ffi.Void>,
           ffi.Pointer<ffi.Void>,
-          ffi.Pointer<ffi.Void>,
-          ffi.Pointer<ffi.Char>,
           int,
-          ffi.Pointer<ffi.Pointer<ffi.Pointer<ffi.Void>>>,
-          ffi.Pointer<ffi.Pointer<ffi.Float>>,
           ffi.Pointer<ffi.Size>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          ffi.Pointer<ffi.Size>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          ffi.Pointer<ffi.Size>,
+          ffi.Pointer<ffi.UnsignedShort>,
+          ffi.Pointer<ffi.UnsignedShort>,
           ffi.Pointer<ffi.Pointer<ffi.Char>>,
           ffi.Pointer<ffi.Size>,
         )
@@ -684,46 +775,92 @@ class RustBindings {
         )
       >();
 
-  void load_embeddings(
-    ffi.Pointer<ffi.Char> embeddings,
-    int embeddings_len,
-    ffi.Pointer<ffi.Char> verse_refs,
-    int verse_refs_len,
-    ffi.Pointer<ffi.Pointer<ffi.Void>> out_embeddings,
-    ffi.Pointer<ffi.Pointer<ffi.Void>> out_verse_refs,
+  ffi.Pointer<ffi.Void> page_map_builder_new() {
+    return _page_map_builder_new();
+  }
+
+  late final _page_map_builder_newPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Void> Function()>>(
+        'page_map_builder_new',
+      );
+  late final _page_map_builder_new = _page_map_builder_newPtr
+      .asFunction<ffi.Pointer<ffi.Void> Function()>();
+
+  void page_map_builder_add(
+    ffi.Pointer<ffi.Void> builder,
+    ffi.Pointer<ffi.Char> data,
+    int data_len,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> out_error,
+    ffi.Pointer<ffi.Size> out_error_len,
   ) {
-    return _load_embeddings(
-      embeddings,
-      embeddings_len,
-      verse_refs,
-      verse_refs_len,
-      out_embeddings,
-      out_verse_refs,
+    return _page_map_builder_add(
+      builder,
+      data,
+      data_len,
+      out_error,
+      out_error_len,
     );
   }
 
-  late final _load_embeddingsPtr =
+  late final _page_map_builder_addPtr =
       _lookup<
         ffi.NativeFunction<
           ffi.Void Function(
+            ffi.Pointer<ffi.Void>,
             ffi.Pointer<ffi.Char>,
             ffi.Size,
-            ffi.Pointer<ffi.Char>,
-            ffi.Size,
-            ffi.Pointer<ffi.Pointer<ffi.Void>>,
-            ffi.Pointer<ffi.Pointer<ffi.Void>>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+            ffi.Pointer<ffi.Size>,
           )
         >
-      >('load_embeddings');
-  late final _load_embeddings = _load_embeddingsPtr
+      >('page_map_builder_add');
+  late final _page_map_builder_add = _page_map_builder_addPtr
       .asFunction<
         void Function(
+          ffi.Pointer<ffi.Void>,
           ffi.Pointer<ffi.Char>,
           int,
-          ffi.Pointer<ffi.Char>,
-          int,
-          ffi.Pointer<ffi.Pointer<ffi.Void>>,
-          ffi.Pointer<ffi.Pointer<ffi.Void>>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          ffi.Pointer<ffi.Size>,
+        )
+      >();
+
+  void page_map_builder_finish(
+    ffi.Pointer<ffi.Void> builder,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> out,
+    ffi.Pointer<ffi.Size> out_len,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> out_error,
+    ffi.Pointer<ffi.Size> out_error_len,
+  ) {
+    return _page_map_builder_finish(
+      builder,
+      out,
+      out_len,
+      out_error,
+      out_error_len,
+    );
+  }
+
+  late final _page_map_builder_finishPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(
+            ffi.Pointer<ffi.Void>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+            ffi.Pointer<ffi.Size>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+            ffi.Pointer<ffi.Size>,
+          )
+        >
+      >('page_map_builder_finish');
+  late final _page_map_builder_finish = _page_map_builder_finishPtr
+      .asFunction<
+        void Function(
+          ffi.Pointer<ffi.Void>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          ffi.Pointer<ffi.Size>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          ffi.Pointer<ffi.Size>,
         )
       >();
 }

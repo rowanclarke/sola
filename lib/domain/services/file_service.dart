@@ -15,6 +15,8 @@ class FileService {
 
   String _resolve(String path) => p.join(_baseDir.path, path);
 
+  String resolve(String path) => _resolve(path);
+
   Future<String> readFile(String filePath) {
     return File(_resolve(filePath)).readAsString();
   }

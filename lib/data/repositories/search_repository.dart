@@ -1,117 +1,78 @@
+import 'dart:typed_data';
+
 import 'package:flutter/foundation.dart';
-import 'package:sola/core/models/embeddings_info.dart';
 import 'package:sola/core/models/index.dart';
 import 'package:sola/core/models/model_info.dart';
+import 'package:sola/core/models/search_info.dart';
 import 'package:sola/core/models/search_result.dart';
-import 'package:sola/data/repositories/embeddings_repository.dart';
 import 'package:sola/domain/services/file_service.dart';
+import 'package:sola/domain/services/model_service.dart';
 import 'package:sola/domain/services/search_isolate.dart';
 
 class SearchRepository {
   final FileService _fileService;
-  final EmbeddingsRepository _embeddingsRepository;
+  final ModelService _modelService;
 
-  final Map<String, SearchIsolate> _isolates = {};
-  int? _modelAddress;
+  SearchIsolate? _isolate;
 
   SearchRepository({
     required FileService fileService,
-    required EmbeddingsRepository embeddingsRepository,
+    required ModelService modelService,
   }) : _fileService = fileService,
-       _embeddingsRepository = embeddingsRepository;
+       _modelService = modelService;
 
-  bool get isReady => _isolates.isNotEmpty;
+  bool get isReady => _isolate != null;
 
-  Future<void> loadModel({
+  Future<void> init({
     required ModelInfo model,
-    required EmbeddingsInfo embeddingsInfo,
+    required SearchInfo searchInfo,
     required String translationId,
     required List<String> bookIds,
     required double width,
     required double height,
   }) async {
-    await _embeddingsRepository.ensureModel(model);
-    await _embeddingsRepository.ensureAvailable(embeddingsInfo);
-    await _embeddingsRepository.ensureEmbeddings(
-      translationId: embeddingsInfo.translationId,
-      bookIds: bookIds,
-    );
+    debugPrint('[SearchRepo] Initializing search...');
 
-    if (_modelAddress == null) {
-      _modelAddress = await SearchIsolate.loadModelOnce(
-        _embeddingsRepository.modelBytes,
-        _embeddingsRepository.tokenizerBytes,
-      );
-    }
+    await _modelService.ensureAvailable(model);
 
+    final searchDir = 'search/${searchInfo.translationId}';
+    await _fileService.extractRemote(searchInfo.downloadUrl, searchDir);
+
+    final modelPath = _modelService.getPath(model.id);
+    final modelBytes = await _fileService.readBytes('$modelPath/all-minilm-l6-v2.onnx');
+    final tokenizerBytes = await _fileService.readBytes('$modelPath/tokenizer/tokenizer.json');
+
+    final idxBytes = await _fileService.readBytes('$searchDir/${searchInfo.translationId}.idx');
+
+    final pageMapBytesList = <Uint8List>[];
     for (final bookId in bookIds) {
-      if (_isolates.containsKey(bookId)) continue;
-
-      final dir = 'rendered/$translationId/$bookId-$width-$height';
+      final dir = 'rendered/$translationId/$bookId-${width.toInt()}-${height.toInt()}';
       try {
-        final pageMapBytes = await _fileService.readBytes('$dir/indices');
-        final embeddingsData = await _embeddingsRepository.getEmbeddings(
-          translationId: embeddingsInfo.translationId,
-          bookId: bookId,
-        );
-
-        _isolates[bookId] = await SearchIsolate.spawn(
-          bookId: bookId,
-          pageMapBytes: pageMapBytes,
-          embeddings: embeddingsData.embeddingsBytes,
-          verseRefs: embeddingsData.verseRefsBytes,
-          modelAddress: _modelAddress!,
-        );
+        pageMapBytesList.add(await _fileService.readBytes('$dir/indices'));
       } catch (e) {
-        debugPrint('[SearchRepo] Failed to load search for $bookId: $e');
+        debugPrint('[SearchRepo] Skipping page map for $bookId: $e');
       }
     }
-    debugPrint('[SearchRepo] ${_isolates.length} book isolates ready');
+
+    final hnswDir = _fileService.resolve(searchDir);
+
+    _isolate = await SearchIsolate.spawn(
+      modelBytes: modelBytes,
+      tokenizerBytes: tokenizerBytes,
+      hnswDir: hnswDir,
+      hnswBasename: searchInfo.translationId,
+      idxBytes: idxBytes,
+      pageMapBytesList: pageMapBytesList,
+    );
+    debugPrint('[SearchRepo] Search ready');
   }
 
-  Future<List<SearchResult>> getResult(String query) async {
-    if (_isolates.isEmpty) throw StateError('No search isolates loaded');
+  Future<List<SearchResult>> search(String query) => _isolate!.search(query);
 
-    final searchFutures = _isolates.values.map((isolate) async {
-      try {
-        return await isolate.getResult(query);
-      } catch (e) {
-        debugPrint('[SearchRepo] getResult failed for ${isolate.bookId}: $e');
-        return <SearchResult>[];
-      }
-    });
-
-    final results = await Future.wait(searchFutures);
-    final merged = results.expand((list) => list).toList();
-    merged.sort((a, b) => a.distance.compareTo(b.distance));
-    return merged;
-  }
-
-  Future<List<Index>> searchIndex(String query) async {
-    if (_isolates.isEmpty) throw StateError('No search isolates loaded');
-
-    final searchFutures = _isolates.values.map((isolate) async {
-      try {
-        return await isolate.searchIndex(query);
-      } catch (e) {
-        debugPrint('[SearchRepo] searchIndex failed for ${isolate.bookId}: $e');
-        return <Index>[];
-      }
-    });
-
-    final results = await Future.wait(searchFutures);
-    return results.expand((list) => list).toList();
-  }
-
-  void disposeBook(String bookId) {
-    _isolates.remove(bookId)?.dispose();
-  }
+  Future<List<Index>> searchIndex(String query) => _isolate!.searchIndex(query);
 
   void dispose() {
-    for (final isolate in _isolates.values) {
-      isolate.dispose();
-    }
-    _isolates.clear();
-    _modelAddress = null;
+    _isolate?.dispose();
+    _isolate = null;
   }
 }

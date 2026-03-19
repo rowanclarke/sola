@@ -4,12 +4,10 @@ import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
 import '../data/repositories/bible_repository.dart';
-import '../data/repositories/embeddings_repository.dart';
 import '../data/repositories/library_repository.dart';
 import '../data/repositories/renderer_repository.dart';
 import '../data/repositories/search_repository.dart';
 import '../data/repositories/session_repository.dart';
-import '../domain/services/embeddings_service.dart';
 import '../domain/services/file_service.dart';
 import '../domain/services/model_service.dart';
 import '../domain/services/renderer_service.dart';
@@ -42,14 +40,9 @@ class AppBootstrap {
       bibleRepository: bibleRepository,
     );
     final modelService = ModelService(fileService: fileService);
-    final embeddingsService = EmbeddingsService(fileService: fileService);
-    final embeddingsRepository = EmbeddingsRepository(
-      embeddingsService: embeddingsService,
-      modelService: modelService,
-    );
     final searchRepository = SearchRepository(
       fileService: fileService,
-      embeddingsRepository: embeddingsRepository,
+      modelService: modelService,
     );
 
     final libraryViewModel = LibraryViewModel(
