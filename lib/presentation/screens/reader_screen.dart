@@ -49,14 +49,16 @@ class _ReaderScreenState extends State<ReaderScreen> {
       if (!mounted) return;
       await context.read<ReaderViewModel>().loadPages(width, height);
       if (!mounted) return;
-      final bookIds =
-          await context.read<ReaderViewModel>().loadAll(width, height);
+      final bookIds = await context.read<ReaderViewModel>().loadAll(
+        width,
+        height,
+      );
       if (!mounted) return;
       context.read<SearchViewModel>().initSearch(
         bookIds: bookIds,
         width: width,
         height: height,
-      ); // fire-and-forget
+      );
     });
   }
 
@@ -100,8 +102,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
   ) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final contentWidth = constraints.maxWidth - 2 * _horizontalPadding;
-        final contentHeight = constraints.maxHeight - 2 * _verticalPadding;
+        final contentWidth = (constraints.maxWidth - 2 * _horizontalPadding)
+            .floorToDouble();
+        final contentHeight = (constraints.maxHeight - 2 * _verticalPadding)
+            .floorToDouble();
 
         _triggerLoad(contentWidth, contentHeight);
 
@@ -192,10 +196,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
                       horizontal: _horizontalPadding,
                       vertical: _verticalPadding,
                     ),
-                    child: PageViewWidget(
-                      page: readerVm.pages[i],
-                      width: contentWidth,
-                      height: contentHeight,
+                    child: Center(
+                      child: PageViewWidget(
+                        page: readerVm.pages[i],
+                        width: contentWidth,
+                        height: contentHeight,
+                      ),
                     ),
                   ),
                 ),

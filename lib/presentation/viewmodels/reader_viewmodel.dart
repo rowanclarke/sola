@@ -38,7 +38,8 @@ class ReaderViewModel extends ChangeNotifier {
       return;
     }
 
-    final cacheKey = '$translationId/$bookId-$width-$height';
+    final cacheKey =
+        '$translationId/$bookId-${width.toInt()}-${height.toInt()}';
     if (cacheKey == _currentCacheKey) {
       debugPrint('[ReaderVM] Cache hit for $cacheKey, skipping load');
       return;

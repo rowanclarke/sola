@@ -27,7 +27,8 @@ class RendererRepository {
     double height, [
     Uint8List? bytes,
   ]) async {
-    final dir = 'rendered/$translationId/$bookId-$width-$height';
+    final dir =
+        'rendered/$translationId/$bookId-${width.toInt()}-${height.toInt()}';
     final dirExists = await _fileService.openDirectory(dir);
 
     if (!dirExists) {
@@ -75,7 +76,8 @@ class RendererRepository {
     required double width,
     required double height,
   }) async {
-    final cacheKey = '$translationId/$bookId-$width-$height';
+    final cacheKey =
+        '$translationId/$bookId-${width.toInt()}-${height.toInt()}';
 
     if (_pageCache.containsKey(cacheKey)) {
       debugPrint('[RendererRepo] Memory cache hit: $cacheKey');
