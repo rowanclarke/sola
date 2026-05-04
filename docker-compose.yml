@@ -1,0 +1,47 @@
+services:
+  flutter:
+    build: .
+    container_name: flutter-cargokit
+    working_dir: ${PWD}
+    stdin_open: true
+    tty: true
+
+    environment:
+      - CARGO_HOME=/usr/local/cargo
+      - RUSTUP_HOME=/usr/local/rustup
+      - ANDROID_HOME=/opt/android-sdk
+
+    volumes:
+      # Project source
+      - ${PWD}:${PWD}
+
+      # Flutter / pub cache
+      - flutter-cache:/root/.pub-cache
+
+      # Gradle cache (Android builds)
+      - gradle-cache:/root/.gradle
+
+      # Cargo + Rust caches
+      - cargo-cache:/usr/local/cargo
+      - rustup-cache:/usr/local/rustup
+
+      # Android SDK cache (optional)
+      - android-cache:/opt/android-sdk
+
+      # Helix config
+      - ${HOME}/dotfiles/helix/.config/helix:/root/.config/helix
+
+    devices:
+      # Physical Android devices
+      - /dev/bus/usb:/dev/bus/usb
+    ports:
+      - "3001:3000"
+      - "2222:22"
+    privileged: true
+
+volumes:
+  flutter-cache:
+  gradle-cache:
+  cargo-cache:
+  rustup-cache:
+  android-cache:

@@ -1,19 +1,20 @@
-use usfm::Element;
+use usfm::ArchivedElement;
 
 use crate::painter::{Painter, Style, format::Format};
 
 use super::Paint;
 
-impl Paint for Element {
+impl Paint for ArchivedElement {
     fn paint(&self, painter: &mut Painter) {
-        use usfm::ElementContents as C;
-        use usfm::ElementType::*;
+        use usfm::ArchivedElementContents as Content;
+        use usfm::ArchivedElementType::*;
         let header_height = painter.get_dimensions().header_height;
-        for contents in &self.contents {
-            match (&self.ty, contents) {
-                (Header, C::Line(s)) => painter
+        for content in self.contents.iter() {
+            match (&self.ty, content) {
+                (Header, Content::Line(header)) => painter
                     .push_style(Style::Header)
-                    .add_text(s)
+                    .index_header(header)
+                    .add_text(header)
                     .pop_style()
                     .paint_region(Format::Center, header_height),
                 _ => (),

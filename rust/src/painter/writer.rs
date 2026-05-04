@@ -1,5 +1,3 @@
-use crate::log;
-
 use super::{Range, layout::Layout, renderer::Inline};
 
 pub struct Writer<'a> {
@@ -18,18 +16,18 @@ impl<'a> Writer<'a> {
         line_format: LineFormat,
         layout: &'a mut Layout,
     ) -> Self {
-        let (mut a, mut b) = (0, 0);
+        let (mut word_start, mut word_end) = (0, 0);
         let mut words = Vec::new();
-        let mut is_whitespace = inline[a].is_whitespace;
+        let mut is_whitespace = inline[word_start].is_whitespace;
         for inline in inline {
             if inline.is_whitespace != is_whitespace {
-                words.push(a..b);
+                words.push(word_start..word_end);
                 is_whitespace = !is_whitespace;
-                a = b;
+                word_start = word_end;
             }
-            b += 1;
+            word_end += 1;
         }
-        words.push(a..b);
+        words.push(word_start..word_end);
         Self {
             text,
             inline,
@@ -44,7 +42,7 @@ impl<'a> Writer<'a> {
     // TODO: do not worry about spaces before/after - write fn trim() instead
     // TODO: write get_metrics() for getting whitespace
     pub fn write(&mut self) -> &mut Self {
-        let (mut a, mut b) = (0, 0); // index self.words
+        let (mut range_start, mut range_end) = (0, 0); // index self.words
         let mut total = 0.0;
         let mut get_available = |left: f32, i: usize| {
             self.layout
@@ -53,7 +51,7 @@ impl<'a> Writer<'a> {
                 .get_width()
         };
         let mut available = get_available(self.line_format.head, 0);
-        for (n, width) in self.words.iter().map(|r| {
+        for (word_span, width) in self.words.iter().map(|r| {
             (
                 r.end - r.start,
                 r.clone().map(|i| self.inline[i].width).sum::<f32>(),
@@ -61,27 +59,31 @@ impl<'a> Writer<'a> {
         }) {
             if total + width > available {
                 self.lines
-                    .push(Words::new(self.text, self.inline, a..b, available));
+                    .push(Words::new(self.text, self.inline, range_start..range_end, available));
                 available = get_available(self.line_format.tail, self.lines.len());
-                a = b;
+                range_start = range_end;
                 total = 0.0;
             }
-            b += n;
+            range_end += word_span;
             total += width;
         }
         self.lines
-            .push(Words::new(self.text, self.inline, a..b, available));
+            .push(Words::new(self.text, self.inline, range_start..range_end, available));
         self
     }
 
     pub fn trim(&mut self) -> &mut Self {
         for Words { range, .. } in self.lines.iter_mut() {
             for (start, offset, incr) in [(&mut range.start, 0, 1), (&mut range.end, -1, -1)] {
-                while self.inline[start.wrapping_add_signed(offset)].is_whitespace {
+                while *start < self.inline.len()
+                    && self.inline[start.wrapping_add_signed(offset)].is_whitespace
+                {
                     *start = start.wrapping_add_signed(incr);
                 }
             }
         }
+        self.lines
+            .retain_mut(|Words { range, .. }| range.start != range.end);
         self
     }
 

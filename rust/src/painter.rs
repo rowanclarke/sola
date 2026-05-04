@@ -6,23 +6,43 @@ mod writer;
 
 use std::{ffi::c_char, ops, slice::from_ref};
 
-use format::{Format, get_unformatted, justify, left};
+use format::{Action, Format, get_unformatted, justify, left};
 use layout::Layout;
-pub use layout::{ArchivedPage, ArchivedPages};
+pub use layout::{ArchivedIndex, ArchivedIndices, ArchivedPages, Index};
 pub use paint::Paint;
 use renderer::{Inline, inline};
 pub use renderer::{Renderer, TextStyle};
-use rkyv::{Archive, Deserialize, Serialize, rancor::Error, util::AlignedVec};
+use rkyv::{
+    Archive, Deserialize, Serialize, deserialize, rancor::Error, string::ArchivedString,
+    util::AlignedVec,
+};
 use skia_safe::textlayout::ParagraphBuilder;
+use usfm::{ArchivedBookIdentifier, BookIdentifier};
 use writer::{LineFormat, Writer};
+
+use crate::log;
 
 pub struct Painter {
     renderer: Renderer,
     builder: ParagraphBuilder,
     dim: Dimensions,
-    styled: Vec<(usize, Style)>,
-    styles: Vec<Style>,
+    properties: Vec<(usize, Properties)>,
+    queue: Vec<Properties>,
     layout: Layout,
+    location: LocationState,
+}
+
+#[derive(Default)]
+struct LocationState {
+    book: Option<BookIdentifier>,
+    header: Option<String>,
+    chapter: Option<u16>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Properties {
+    style: Style,
+    actions: Vec<Action>,
 }
 
 impl Painter {
@@ -30,10 +50,11 @@ impl Painter {
         Self {
             renderer: renderer.clone(),
             builder: renderer.new_builder(),
-            styled: Vec::new(),
-            styles: Vec::new(),
+            properties: Vec::new(),
+            queue: Vec::new(),
             layout: Layout::new(dim.width, dim.height, renderer.line_height(&Style::Normal)),
             dim,
+            location: LocationState::default(),
         }
     }
 
@@ -42,9 +63,9 @@ impl Painter {
     }
 
     fn paint_region(&mut self, format: Format, height: f32) {
-        let (_, text, inline) = inline(&self.renderer, &mut self.builder, &self.styled);
+        let (_, text, inline) = inline(&self.renderer, &mut self.builder, &self.properties);
         // HACK assume line height is the first inline
-        let line_height = self.renderer.line_height(&inline[0].style);
+        let line_height = self.renderer.line_height(&inline[0].properties.style);
         let mut layout = self.layout.sub_layout(self.dim.width, height, line_height);
         let mut writer = Writer::new(
             &text[..],
@@ -58,7 +79,14 @@ impl Painter {
             .layout
             .request_height(height + 2.0 * self.layout.get_line_height());
         self.layout.mutate_body(height);
-
+        for action in self.properties.last_mut().unwrap().1.actions.iter() {
+            // HACK better management of actions
+            match action {
+                Action::Index(index) => {
+                    self.layout.add_index(index.clone(), page);
+                }
+            }
+        }
         match format {
             Format::Center => {
                 let total_height = unformatted.len() as f32 * line_height;
@@ -75,7 +103,7 @@ impl Painter {
                         page,
                         line.text.iter().collect::<String>(),
                         rect,
-                        line.style,
+                        line.properties.style,
                         0.0,
                     );
                 }
@@ -87,21 +115,33 @@ impl Painter {
     }
 
     fn paint_drop_cap(&mut self) {
-        let (raw, _, inline) = inline(&self.renderer, &mut self.builder, &self.styled);
-        let Inline { style, width, .. } = inline[0];
+        let (raw, _, inline) = inline(&self.renderer, &mut self.builder, &self.properties);
+        let Inline {
+            properties, width, ..
+        } = &inline[0];
         let width = width + self.dim.drop_cap_padding;
         let height = 2.0 * self.layout.get_line_height();
         let page = self.layout.request_height(height);
         let rect = self.layout.from_body(width, height);
         self.layout.get_line(0).mutate(width, -width).lock();
         self.layout.get_line(1).mutate(width, -width).lock();
-        self.layout.write(page, raw.to_string(), rect, style, 0.0);
-        self.styled.drain(..);
+        self.layout
+            .write(page, raw.to_string(), rect, properties.style, 0.0);
+        for action in self.properties.last_mut().unwrap().1.actions.iter() {
+            // HACK better management of actions
+            match action {
+                Action::Index(index) => {
+                    log!("{:?}", index);
+                    self.layout.add_index(index.clone(), page);
+                }
+            }
+        }
+        self.properties.drain(..);
         self.builder.reset();
     }
 
     fn paint_paragraph(&mut self, format: Format, line_format: LineFormat) {
-        let (_, text, inline) = inline(&self.renderer, &mut self.builder, &self.styled);
+        let (_, text, inline) = inline(&self.renderer, &mut self.builder, &self.properties);
 
         let mut writer = Writer::new(&text[..], inline.as_slice(), line_format, &mut self.layout);
         writer.write().trim();
@@ -123,44 +163,104 @@ impl Painter {
     }
 
     fn clean(&mut self) {
-        self.styled.drain(..);
+        self.properties.drain(..);
         self.layout.drain_lines();
         self.builder.reset();
     }
 
     fn push_style(&mut self, style: Style) -> &mut Self {
-        self.styles.push(style);
+        let properties = Properties {
+            style,
+            actions: vec![],
+        };
+        self.queue.push(properties.clone());
         self.builder.push_style(&self.renderer.get_style(&style));
-        self.styled.push((self.index(), style));
+        self.properties.push((self.text_cursor(), properties));
         self
     }
 
     fn pop_style(&mut self) -> &mut Self {
-        self.styles.pop();
+        self.queue.pop();
         self.builder.pop();
         self
     }
 
     fn add_text(&mut self, text: impl AsRef<str>) -> &mut Self {
-        let current = self.styled.last().unwrap().clone();
-        let style = self.styles.last().unwrap();
+        let current = self.properties.last().unwrap().clone();
+        let style = self.queue.last().unwrap();
         if &current.1 != style {
-            self.styled.push((current.0, *style));
+            self.properties.push((current.0, style.clone()));
         }
-        let current = self.styled.last_mut().unwrap();
+        let current = self.properties.last_mut().unwrap();
         current.0 += text.as_ref().chars().count();
         self.builder.add_text(text);
         self
     }
 
-    fn index(&self) -> usize {
-        self.styled.last().map_or(0, |(i, _)| *i)
+    fn text_cursor(&self) -> usize {
+        self.properties.last().map_or(0, |(i, _)| *i)
     }
 
-    fn done(&mut self) {}
+    pub fn index_book(&mut self, book: &ArchivedBookIdentifier) -> &mut Self {
+        self.location.book = Some(deserialize::<_, Error>(book).unwrap());
+        self
+    }
 
-    pub fn get_pages(&self) -> AlignedVec {
-        rkyv::to_bytes::<Error>(self.layout.get_pages()).unwrap()
+    pub fn index_header(&mut self, header: &ArchivedString) -> &mut Self {
+        self.location.header = Some(deserialize::<_, Error>(header).unwrap());
+        let index = Index::new(
+            self.location.book.clone().unwrap(),
+            self.location.header.clone().unwrap(),
+            None,
+            None,
+        );
+        self.add_action(Action::Index(index));
+        self
+    }
+
+    pub fn index_chapter(&mut self, chapter: u16) -> &mut Self {
+        self.location.chapter = Some(chapter);
+        let index = Index::new(
+            self.location.book.clone().unwrap(),
+            self.location.header.clone().unwrap(),
+            self.location.chapter,
+            None,
+        );
+        self.add_action(Action::Index(index));
+        self
+    }
+
+    pub fn index_verse(&mut self, verse: u16) -> &mut Self {
+        let index = Index::new(
+            self.location.book.clone().unwrap(),
+            self.location.header.clone().unwrap(),
+            self.location.chapter,
+            Some(verse),
+        );
+        self.add_action(Action::Index(index));
+        self
+    }
+
+    fn add_action(&mut self, action: Action) {
+        self.properties
+            .last_mut()
+            .unwrap()
+            .1
+            .actions
+            .push(action.clone());
+        self.queue.last_mut().unwrap().actions.push(action);
+    }
+
+    pub fn get_pages(&self) -> Result<AlignedVec, String> {
+        rkyv::to_bytes::<Error>(self.layout.get_pages()).map_err(|e| e.to_string())
+    }
+
+    pub fn get_indices(&self) -> Result<AlignedVec, String> {
+        rkyv::to_bytes::<Error>(self.layout.get_indices()).map_err(|e| e.to_string())
+    }
+
+    pub fn get_verses(&self) -> Result<AlignedVec, String> {
+        rkyv::to_bytes::<Error>(self.layout.get_verses()).map_err(|e| e.to_string())
     }
 }
 

@@ -8,8 +8,10 @@ output: 'lib/rust_bindings_generated.dart'
 headers:
   entry-points:
     - 'src/rust.h'
+    - 'src/search.h'
   include-directives:
     - 'src/rust.h'
+    - 'src/search.h'
 compiler-opts:
   - -I/usr/lib/gcc/x86_64-pc-linux-gnu/15.1.1/include # gcc -print-file-name=include
 preamble: |

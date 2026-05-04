@@ -1,10 +1,9 @@
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 
-use rkyv::{Archive, Serialize, vec::ArchivedVec};
+use rkyv::{Archive, Deserialize, Serialize, vec::ArchivedVec};
+use usfm::BookIdentifier;
 
-use crate::log;
-
-use super::{Dimensions, Rectangle, Style};
+use super::{Rectangle, Style};
 
 pub struct Line {
     pub top: f32,
@@ -21,18 +20,52 @@ pub struct Layout {
     body: Region,
     lines: VecDeque<Line>,
     pages: Vec<Page>,
+    indices: Indices,
+    verses: Vec<Index>,
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Hash, Serialize, Archive, Deserialize)]
+#[rkyv(derive(Debug, PartialEq, Eq, Hash))]
+pub struct Index {
+    pub book: BookIdentifier,
+    pub header: String,
+    pub chapter: Option<u16>,
+    pub verse: Option<u16>,
+}
+
+impl Index {
+    pub fn new(
+        book: BookIdentifier,
+        header: String,
+        chapter: Option<u16>,
+        verse: Option<u16>,
+    ) -> Self {
+        Self {
+            book,
+            header,
+            chapter,
+            verse,
+        }
+    }
 }
 
 pub type ArchivedPages = ArchivedVec<ArchivedPage>;
 pub type ArchivedPage = <Page as Archive>::Archived;
-pub type Page = Vec<PartialText>;
+pub type Page = Vec<TextFragment>;
+pub type ArchivedIndices = <Indices as Archive>::Archived;
+pub type Indices = HashMap<Index, usize>;
 
 #[derive(Archive, Serialize, Debug)]
-pub struct PartialText(pub String, pub Rectangle, pub Style, pub f32);
+pub struct TextFragment {
+    pub text: String,
+    pub rect: Rectangle,
+    pub style: Style,
+    pub word_spacing: f32,
+}
 
-impl PartialText {
+impl TextFragment {
     pub fn new(text: String, rect: Rectangle, style: Style, word_spacing: f32) -> Self {
-        Self(text, rect, style, word_spacing)
+        Self { text, rect, style, word_spacing }
     }
 }
 
@@ -56,6 +89,8 @@ impl Layout {
             },
             lines: VecDeque::new(),
             pages: vec![Vec::new()],
+            indices: HashMap::new(),
+            verses: Vec::new(),
         }
     }
 
@@ -67,6 +102,8 @@ impl Layout {
             body: self.body.clone(),
             lines: VecDeque::new(),
             pages: vec![Vec::new()],
+            indices: HashMap::new(),
+            verses: Vec::new(),
         }
     }
 
@@ -78,8 +115,25 @@ impl Layout {
         self.body.top += height;
     }
 
-    pub fn get_pages(&self) -> &'_ Vec<Page> {
+    pub fn add_verse_index(&mut self, index: Index, line: usize) {
+        self.verses.push(index.clone());
+        self.add_index(index, self.lines[line].page);
+    }
+
+    pub fn add_index(&mut self, index: Index, page: usize) {
+        self.indices.insert(index, page);
+    }
+
+    pub fn get_pages(&self) -> &Vec<Page> {
         &self.pages
+    }
+
+    pub fn get_indices(&self) -> &Indices {
+        &self.indices
+    }
+
+    pub fn get_verses(&self) -> &Vec<Index> {
+        &self.verses
     }
 
     fn next_page(&mut self) {
@@ -136,7 +190,7 @@ impl Layout {
             top: line.top + top_offset,
             left: line.left,
             width,
-            height: self.line_height,
+            height: self.line_height, // TODO calculate line_height
         };
         line.left += width;
         self.write(page, text, rect, style, word_spacing);
@@ -150,7 +204,7 @@ impl Layout {
         style: Style,
         word_spacing: f32,
     ) {
-        let text = PartialText::new(text, rect, style, word_spacing);
+        let text = TextFragment::new(text, rect, style, word_spacing);
         self.pages[page].push(text);
     }
 

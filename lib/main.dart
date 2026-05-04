@@ -1,51 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:provider/provider.dart';
-import 'package:sola/data/services/renderer_service.dart';
-import 'ui/pagination/view_model/pagination_view_model.dart';
-import 'data/services/bible_service.dart';
-import 'data/repositories/page_repository.dart';
-import 'ui/pagination/widgets/pagination_screen.dart';
 
-Future<void> main() async {
+import 'app/app_bootstrap.dart';
+
+/// Application entry point.
+///
+/// Calls AppBootstrap to initialize all dependencies, then runs the app.
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final service = BibleService();
-  final renderer = RendererService();
-  final repository = PageRepository(
-    service,
-    renderer,
-    await getApplicationDocumentsDirectory(),
-    'https://ebible.org/Scriptures/engwebpb_usfm.zip',
-    '02-GENengwebpb.usfm',
-  );
-  runApp(MyApp(repository: repository));
-}
 
-class MyApp extends StatelessWidget {
-  final PageRepository repository;
-  const MyApp({required this.repository, super.key});
+  final rootWidget = await AppBootstrap.initialize();
 
-  @override
-  Widget build(BuildContext context) {
-    final padding = MediaQuery.of(context).padding.top;
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(
-          create: (_) => PaginationViewModel(repository: repository),
-        ),
-      ],
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        builder: (context, child) {
-          return MediaQuery(
-            data: MediaQuery.of(
-              context,
-            ).copyWith(textScaler: TextScaler.noScaling),
-            child: child!,
-          );
-        },
-        home: Scaffold(body: PaginationScreen(padding)),
-      ),
-    );
-  }
+  runApp(rootWidget);
 }

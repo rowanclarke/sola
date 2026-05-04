@@ -1,12 +1,11 @@
+*.zip filter=lfs diff=lfs merge=lfs -text
 android/** linguist-vendored
 ios/** linguist-vendored
 linux/** linguist-vendored
 macos/** linguist-vendored
 web/** linguist-vendored
 windows/** linguist-vendored
-
 rust/cargokit/** linguist-vendored
-
 rust/android/** linguist-vendored
 rust/ios/** linguist-vendored
 rust/linux/** linguist-vendored
