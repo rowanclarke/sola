@@ -20,7 +20,7 @@ use skia_safe::textlayout::ParagraphBuilder;
 use usfm::{ArchivedBookIdentifier, BookIdentifier};
 use writer::{LineFormat, Writer};
 
-use crate::log;
+use crate::{log, painter::layout::Section};
 
 pub struct Painter {
     renderer: Renderer,
@@ -42,6 +42,7 @@ struct LocationState {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Properties {
     style: Style,
+    section: Section,
     actions: Vec<Action>,
 }
 
@@ -62,98 +63,118 @@ impl Painter {
         &self.dim
     }
 
-    fn paint_region(&mut self, format: Format, height: f32) {
-        let (_, text, inline) = inline(&self.renderer, &mut self.builder, &self.properties);
-        // HACK assume line height is the first inline
-        let line_height = self.renderer.line_height(&inline[0].properties.style);
-        let mut layout = self.layout.sub_layout(self.dim.width, height, line_height);
-        let mut writer = Writer::new(
-            &text[..],
-            inline.as_slice(),
-            LineFormat::default(),
-            &mut layout,
-        );
-        writer.write().trim();
-        let unformatted = get_unformatted(&text, &inline, writer.get_lines());
-        let page = self
-            .layout
-            .request_height(height + 2.0 * self.layout.get_line_height());
-        self.layout.mutate_body(height);
-        for action in self.properties.last_mut().unwrap().1.actions.iter() {
-            // HACK better management of actions
-            match action {
-                Action::Index(index) => {
-                    self.layout.add_index(index.clone(), page);
-                }
-            }
-        }
-        match format {
-            Format::Center => {
-                let total_height = unformatted.len() as f32 * line_height;
-                let top_offset = (height - total_height) / 2.0;
-                for line in unformatted {
-                    let region = &layout.get_line_unchecked(line.line);
-                    let rect = Rectangle {
-                        top: region.top + top_offset,
-                        left: region.left + line.metrics.remaining / 2.0,
-                        width: line.width,
-                        height: line_height,
-                    };
-                    self.layout.write(
-                        page,
-                        line.text.iter().collect::<String>(),
-                        rect,
-                        line.properties.style,
-                        0.0,
-                    );
-                }
-            }
-            Format::Left => todo!(),
-            _ => (),
-        }
-        self.clean();
-    }
+    // fn paint_region(&mut self, format: Format, height: f32) {
+    //     let (_, text, inline) = inline(&self.renderer, &mut self.builder, &self.properties);
+    //     // HACK assume line height is the first inline, instead get max height of each line
+    //     let line_height = self.renderer.line_height(&inline[0].properties.style);
+    //     let mut layout = self.layout.sub_layout(self.dim.width, height, line_height);
+    //     let mut writer = Writer::new(
+    //         &text[..],
+    //         inline.as_slice(),
+    //         LineFormat::default(),
+    //         &mut layout,
+    //     );
+    //     writer.write().trim();
+    //     let unformatted = get_unformatted(&text, &inline, writer.get_lines());
+    //     let page = self
+    //         .layout
+    //         .request_height(height + 2.0 * self.layout.get_line_height());
+    //     self.layout.mutate_body(height);
+    //     for action in self.properties.last_mut().unwrap().1.actions.iter() {
+    //         // HACK better management of actions
+    //         match action {
+    //             Action::Index(index) => {
+    //                 self.layout.add_index(index.clone(), page);
+    //             }
+    //         }
+    //     }
+    //     match format {
+    //         Format::Center => {
+    //             let total_height = unformatted.len() as f32 * line_height;
+    //             let top_offset = (height - total_height) / 2.0;
+    //             for line in unformatted {
+    //                 let region = &layout.get_line_unchecked(line.line);
+    //                 let rect = Rectangle {
+    //                     top: region.top + top_offset,
+    //                     left: region.left + line.metrics.remaining / 2.0,
+    //                     width: line.width,
+    //                     height: line_height,
+    //                 };
+    //                 self.layout.write(
+    //                     page,
+    //                     line.text.iter().collect::<String>(),
+    //                     rect,
+    //                     line.properties.style,
+    //                     0.0,
+    //                 );
+    //             }
+    //         }
+    //         Format::Left => todo!(),
+    //         _ => (),
+    //     }
+    //     self.clean();
+    // }
 
-    fn paint_drop_cap(&mut self) {
-        let (raw, _, inline) = inline(&self.renderer, &mut self.builder, &self.properties);
-        let Inline {
-            properties, width, ..
-        } = &inline[0];
-        let width = width + self.dim.drop_cap_padding;
-        let height = 2.0 * self.layout.get_line_height();
-        let page = self.layout.request_height(height);
-        let rect = self.layout.from_body(width, height);
-        self.layout.get_line(0).mutate(width, -width).lock();
-        self.layout.get_line(1).mutate(width, -width).lock();
-        self.layout
-            .write(page, raw.to_string(), rect, properties.style, 0.0);
-        for action in self.properties.last_mut().unwrap().1.actions.iter() {
-            // HACK better management of actions
-            match action {
-                Action::Index(index) => {
-                    self.layout.add_index(index.clone(), page);
-                }
-            }
-        }
-        self.properties.drain(..);
-        self.builder.reset();
-    }
+    // fn paint_drop_cap(&mut self) {
+    //     let (raw, _, inline) = inline(&self.renderer, &mut self.builder, &self.properties);
+    //     let Inline {
+    //         properties, width, ..
+    //     } = &inline[0];
+    //     let width = width + self.dim.drop_cap_padding;
+    //     let height = 2.0 * self.layout.get_line_height();
+    //     let page = self.layout.request_height(height);
+    //     let rect = self.layout.from_body(width, height);
+    //     self.layout.get_line(0).mutate(width, -width).lock();
+    //     self.layout.get_line(1).mutate(width, -width).lock();
+    //     self.layout
+    //         .write(page, raw.to_string(), rect, properties.style, 0.0);
+    //     for action in self.properties.last_mut().unwrap().1.actions.iter() {
+    //         // HACK better management of actions
+    //         match action {
+    //             Action::Index(index) => {
+    //                 self.layout.add_index(index.clone(), page);
+    //             }
+    //         }
+    //     }
+    //     self.properties.drain(..);
+    //     self.builder.reset();
+    // }
 
     fn paint_paragraph(&mut self, format: Format, line_format: LineFormat) {
         let (_, text, inline) = inline(&self.renderer, &mut self.builder, &self.properties);
 
-        let mut writer = Writer::new(&text[..], inline.as_slice(), line_format, &mut self.layout);
+        // log!(
+        //     "{:?}",
+        //     inline[&Section::Body]
+        //         .iter()
+        //         .map(|Inline { range, .. }| format!(
+        //             "{}",
+        //             text[range.clone()].iter().collect::<String>()
+        //         ))
+        //         .collect::<Vec<String>>()
+        // );
+        // TODO know where to write to
+
+        let mut writer = Writer::new(
+            &text[..],
+            inline[&Section::Body].as_slice(),
+            line_format,
+            &mut self.layout,
+            Section::Body,
+        );
         writer.write().trim();
-        let unformatted = get_unformatted(&text, &inline, writer.get_lines());
+
+        let lines = writer.get_lines();
+        let unformatted = get_unformatted(&text, &inline[&Section::Body], lines);
 
         match format {
             Format::Justified => {
                 let (tail, head) = unformatted.split_last().unwrap();
-                justify(&mut self.layout, head);
-                left(&mut self.layout, from_ref(tail));
+                justify(&mut self.layout, layout::Section::Body, head);
+                left(&mut self.layout, layout::Section::Body, from_ref(tail));
             }
             Format::Left => {
-                left(&mut self.layout, &unformatted);
+                left(&mut self.layout, layout::Section::Body, &unformatted);
             }
             _ => (),
         }
@@ -167,9 +188,10 @@ impl Painter {
         self.builder.reset();
     }
 
-    fn push_style(&mut self, style: Style) -> &mut Self {
+    fn push_properties(&mut self, style: Style, section: Section) -> &mut Self {
         let properties = Properties {
             style,
+            section,
             actions: vec![],
         };
         self.queue.push(properties.clone());
@@ -178,7 +200,7 @@ impl Painter {
         self
     }
 
-    fn pop_style(&mut self) -> &mut Self {
+    fn pop_properties(&mut self) -> &mut Self {
         self.queue.pop();
         self.builder.pop();
         self
@@ -288,10 +310,10 @@ pub struct Rectangle {
 #[derive(Debug, Clone)]
 #[repr(C)]
 pub struct Dimensions {
-    width: f32,
-    height: f32,
-    header_height: f32,
-    drop_cap_padding: f32,
+    pub width: f32,
+    pub height: f32,
+    pub header_height: f32,
+    pub drop_cap_padding: f32,
 }
 
 pub type Range = ops::Range<usize>;

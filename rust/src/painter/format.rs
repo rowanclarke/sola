@@ -1,4 +1,10 @@
-use crate::log;
+use crate::{
+    log,
+    painter::{
+        Range,
+        layout::{Area, Section},
+    },
+};
 
 use super::{
     Index, Properties,
@@ -19,9 +25,9 @@ pub enum Action {
 }
 
 #[derive(Debug, Clone)]
-pub struct Unformatted<'a> {
+pub struct Unformatted {
     pub line: usize,
-    pub text: &'a [char],
+    pub text: String,
     pub properties: Properties,
     pub width: f32,
     pub top_offset: f32,
@@ -29,11 +35,19 @@ pub struct Unformatted<'a> {
     pub metrics: LineMetrics,
 }
 
+pub fn get_text<'a>(text: &'a [char], ranges: &Vec<Range>) -> String {
+    ranges
+        .iter()
+        .map(|r| text[r.clone()].iter())
+        .flatten()
+        .collect()
+}
+
 pub fn get_unformatted<'a, 'b>(
     text: &'a [char],
     inline: &'a [Inline],
     lines: Vec<Words<'b>>,
-) -> Vec<Unformatted<'a>> {
+) -> Vec<Unformatted> {
     let mut unformatted = vec![];
     let mut line = 0;
     let mut total = 0.0;
@@ -43,7 +57,7 @@ pub fn get_unformatted<'a, 'b>(
         let metrics = words.get_metrics();
         let words = &inline[words.range.clone()];
         let mut prev_inline = &words[0];
-        let mut text_offset = prev_inline.range.start;
+        let mut ranges = vec![];
         for (i, inline) in words.iter().enumerate() {
             if inline.is_whitespace {
                 whitespace += inline.width;
@@ -52,7 +66,7 @@ pub fn get_unformatted<'a, 'b>(
             if inline.properties != prev_inline.properties {
                 unformatted.push(Unformatted {
                     line,
-                    text: &text[text_offset..inline.range.start],
+                    text: get_text(text, &ranges),
                     properties: prev_inline.properties.clone(),
                     width: total,
                     whitespace,
@@ -62,13 +76,13 @@ pub fn get_unformatted<'a, 'b>(
                 whitespace = 0.0;
                 total = 0.0;
                 prev_inline = &inline;
-                text_offset = inline.range.start;
             }
             total += inline.width;
+            ranges.push(inline.range.clone());
             if is_last {
                 unformatted.push(Unformatted {
                     line,
-                    text: &text[text_offset..inline.range.end],
+                    text: get_text(text, &ranges),
                     properties: inline.properties.clone(),
                     width: total,
                     whitespace,
@@ -78,7 +92,6 @@ pub fn get_unformatted<'a, 'b>(
                 whitespace = 0.0;
                 total = 0.0;
                 prev_inline = &inline;
-                text_offset = inline.range.end;
             }
         }
         line += 1;
@@ -86,34 +99,35 @@ pub fn get_unformatted<'a, 'b>(
     unformatted
 }
 
-pub fn justify(layout: &mut Layout, unformatted: &[Unformatted]) {
+pub fn justify(layout: &mut Layout, section: Section, unformatted: &[Unformatted]) {
     for words in unformatted {
         let ratio = words.metrics.remaining / words.metrics.whitespace;
-        let spaces = words.text.iter().filter(|c| c.is_whitespace()).count() as f32;
+        let spaces = words.text.chars().filter(|c| c.is_whitespace()).count() as f32;
         let spacing = ratio * words.whitespace;
         let word_spacing = if spaces == 0.0 { 0.0 } else { spacing / spaces };
-        words.write_line(layout, spacing, word_spacing);
+        words.write_line(layout, section, spacing, word_spacing);
     }
 }
 
-pub fn left(layout: &mut Layout, unformatted: &[Unformatted]) {
+pub fn left(layout: &mut Layout, section: Section, unformatted: &[Unformatted]) {
     for words in unformatted {
-        words.write_line(layout, 0.0, 0.0);
+        words.write_line(layout, section, 0.0, 0.0);
     }
 }
 
-impl<'a> Unformatted<'a> {
-    fn write_line(&self, layout: &mut Layout, spacing: f32, word_spacing: f32) {
-        for action in self.properties.actions.iter() {
-            match action {
-                Action::Index(index) => {
-                    layout.add_verse_index(index.clone(), self.line);
-                }
-            }
-        }
+impl Unformatted {
+    fn write_line(&self, layout: &mut Layout, section: Section, spacing: f32, word_spacing: f32) {
+        // for action in self.properties.actions.iter() {
+        //     match action {
+        //         Action::Index(index) => {
+        //             layout.add_verse_index(index.clone(), self.line);
+        //         }
+        //     }
+        // }
         layout.write_line(
+            section,
             self.line,
-            self.text.iter().collect(),
+            self.text.clone(),
             self.properties.style,
             self.width + spacing,
             word_spacing,

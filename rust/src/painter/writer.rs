@@ -1,11 +1,18 @@
-use super::{Range, layout::Layout, renderer::Inline};
+use crate::painter::layout::Section;
+
+use super::{
+    Range,
+    layout::{Area, Layout},
+    renderer::Inline,
+};
 
 pub struct Writer<'a> {
     text: &'a [char],
     inline: &'a [Inline],
     line_format: LineFormat,
-    layout: &'a mut Layout, // TODO: next_line: impl FnMut()
-    words: Vec<Range>,      // index into inline
+    layout: &'a mut Layout,
+    section: Section,
+    words: Vec<Range>, // index into inline
     lines: Vec<Words<'a>>,
 }
 
@@ -15,10 +22,11 @@ impl<'a> Writer<'a> {
         inline: &'a [Inline],
         line_format: LineFormat,
         layout: &'a mut Layout,
+        section: Section,
     ) -> Self {
         let (mut word_start, mut word_end) = (0, 0);
         let mut words = Vec::new();
-        let mut is_whitespace = inline[word_start].is_whitespace;
+        let mut is_whitespace = inline[0].is_whitespace;
         for inline in inline {
             if inline.is_whitespace != is_whitespace {
                 words.push(word_start..word_end);
@@ -33,20 +41,20 @@ impl<'a> Writer<'a> {
             inline,
             line_format,
             layout,
+            section,
             words,
             lines: vec![],
         }
     }
 
     // TODO: include LineFormat in available
-    // TODO: do not worry about spaces before/after - write fn trim() instead
     // TODO: write get_metrics() for getting whitespace
     pub fn write(&mut self) -> &mut Self {
         let (mut range_start, mut range_end) = (0, 0); // index self.words
         let mut total = 0.0;
         let mut get_available = |left: f32, i: usize| {
             self.layout
-                .get_line(i)
+                .get_line(self.section, i)
                 .mutate(left, -left - self.line_format.shrink)
                 .get_width()
         };
@@ -58,8 +66,12 @@ impl<'a> Writer<'a> {
             )
         }) {
             if total + width > available {
-                self.lines
-                    .push(Words::new(self.text, self.inline, range_start..range_end, available));
+                self.lines.push(Words::new(
+                    self.text,
+                    self.inline,
+                    range_start..range_end,
+                    available,
+                ));
                 available = get_available(self.line_format.tail, self.lines.len());
                 range_start = range_end;
                 total = 0.0;
@@ -67,8 +79,12 @@ impl<'a> Writer<'a> {
             range_end += word_span;
             total += width;
         }
-        self.lines
-            .push(Words::new(self.text, self.inline, range_start..range_end, available));
+        self.lines.push(Words::new(
+            self.text,
+            self.inline,
+            range_start..range_end,
+            available,
+        ));
         self
     }
 

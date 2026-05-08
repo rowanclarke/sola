@@ -1,4 +1,10 @@
-use std::{collections::HashMap, ffi::c_char, slice::from_raw_parts, str::from_utf8_unchecked};
+use std::{
+    collections::{BTreeMap, HashMap},
+    ffi::c_char,
+    iter::Map,
+    slice::from_raw_parts,
+    str::from_utf8_unchecked,
+};
 
 use rkyv::{api::low::deserialize, rancor::Error};
 use skia_safe::{
@@ -9,16 +15,15 @@ use skia_safe::{
     },
 };
 
-use super::{
-    Properties, Range, Style, Text,
-    layout::ArchivedPage,
-};
+use crate::painter::layout::Section;
+
+use super::{Properties, Range, Style, Text, layout::ArchivedPage};
 
 #[derive(Debug, Clone, Copy)]
 #[repr(C)]
 pub struct TextStyle {
-    font_family: *const c_char,
-    font_family_len: usize,
+    pub font_family: *const c_char,
+    pub font_family_len: usize,
     pub font_size: f32,
     pub height: f32,
     pub letter_spacing: f32,
@@ -108,12 +113,18 @@ impl Renderer {
     pub fn page(&self, page: &ArchivedPage) -> Vec<Text> {
         page.iter()
             .map(|fragment| {
-                let mut style = self.style_collection[&deserialize::<_, Error>(&fragment.style).unwrap()];
+                let mut style =
+                    self.style_collection[&deserialize::<_, Error>(&fragment.style).unwrap()];
                 style.word_spacing += fragment.word_spacing.to_native();
                 let text = fragment.text.as_bytes();
                 let len = text.len();
                 let ptr = text.as_ptr() as *const c_char;
-                Text(ptr, len, deserialize::<_, Error>(&fragment.rect).unwrap(), style)
+                Text(
+                    ptr,
+                    len,
+                    deserialize::<_, Error>(&fragment.rect).unwrap(),
+                    style,
+                )
             })
             .collect()
     }
@@ -133,12 +144,15 @@ pub fn inline<'a>(
     renderer: &'a Renderer,
     builder: &'a mut ParagraphBuilder,
     properties: &'a [(usize, Properties)],
-) -> (&'a str, Vec<char>, Vec<Inline>) {
+) -> (&'a str, Vec<char>, BTreeMap<Section, Vec<Inline>>) {
     let mut paragraph = builder.build();
     paragraph.layout(f32::INFINITY);
     let raw = builder.get_text();
     let text: Vec<_> = raw.chars().collect();
-    let mut inline: Vec<Inline> = vec![];
+    let mut inline: BTreeMap<Section, Vec<Inline>> =
+        [(Section::Body, vec![]), (Section::Footer, vec![])]
+            .into_iter()
+            .collect();
     let mut start = 0;
     let mut push = |range: Range, style: usize| {
         let rect = paragraph.get_rects_for_range(
@@ -152,8 +166,13 @@ pub fn inline<'a>(
             .find(|chr| chr.is_whitespace())
             .is_some();
         let properties = properties[style].1.clone();
+        print!(
+            "{} ({style} {:?}) ",
+            text[range.clone()].iter().collect::<String>(),
+            properties.section
+        );
         let top_offset = renderer.top_offset(&properties.style);
-        inline.push(Inline {
+        inline.get_mut(&properties.section).unwrap().push(Inline {
             range,
             is_whitespace,
             properties,

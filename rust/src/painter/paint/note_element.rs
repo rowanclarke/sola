@@ -1,10 +1,15 @@
-use usfm::ArchivedCharacter;
+use core::{fmt::Debug, hash::Hash};
+use rkyv::Archive;
+use usfm::ArchivedNoteElement;
 
-use crate::painter::Painter;
+use crate::painter::{Painter, Style, layout::Section};
 
 use super::Paint;
 
-impl Paint for ArchivedCharacter {
+impl<NoteStyle: Archive> Paint for ArchivedNoteElement<NoteStyle>
+where
+    <NoteStyle as Archive>::Archived: Debug + Eq + Hash,
+{
     fn paint(&self, painter: &mut Painter) {
         use usfm::ArchivedCharacterContents as Content;
         for content in self.contents.iter() {
