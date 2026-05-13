@@ -1,6 +1,6 @@
 use usfm::ArchivedParagraph;
 
-use crate::painter::{Painter, Style, format::Format, layout::Section, writer::LineFormat};
+use crate::painter::{Painter, Style, layout::Section};
 
 use super::Paint;
 
@@ -27,8 +27,6 @@ impl Paint for ArchivedParagraph {
                 _ => (),
             }
         }
-        painter
-            .pop_properties()
-            .paint_paragraph(Format::Justified, LineFormat::new(20.0, 0.0, 0.0));
+        painter.pop_properties().paint_paragraph(); //Format::Justified, LineFormat::new(20.0, 0.0, 0.0)
     }
 }

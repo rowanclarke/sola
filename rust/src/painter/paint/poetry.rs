@@ -1,6 +1,6 @@
 use usfm::ArchivedPoetry;
 
-use crate::painter::{Style, format::Format, layout::Section, writer::LineFormat};
+use crate::painter::{Style, layout::Section};
 
 use super::Paint;
 
@@ -28,8 +28,8 @@ impl Paint for ArchivedPoetry {
         }
         match self.style {
             PoetryKind::Normal(indent_level) => painter.pop_properties().paint_paragraph(
-                Format::Left,
-                LineFormat::new(20. * indent_level as f32, 20. * 2.0, 0.0),
+//Format::Left,
+//LineFormat::new(20. * indent_level as f32, 20. * 2.0, 0.0),
             ),
             _ => painter.clean(),
         }

@@ -1,6 +1,6 @@
 use usfm::ArchivedElement;
 
-use crate::painter::{Painter, Style, format::Format};
+use crate::painter::{Painter, Style};
 
 use super::Paint;
 

@@ -130,9 +130,9 @@ impl Renderer {
     }
 }
 
+// TODO: index &str instead of &[char]
 #[derive(Debug)]
 pub struct Inline {
-    // TODO: index &str instead of &[char]
     pub range: Range,
     pub is_whitespace: bool,
     pub properties: Properties,
@@ -144,15 +144,12 @@ pub fn inline<'a>(
     renderer: &'a Renderer,
     builder: &'a mut ParagraphBuilder,
     properties: &'a [(usize, Properties)],
-) -> (&'a str, Vec<char>, BTreeMap<Section, Vec<Inline>>) {
+) -> (&'a str, Vec<char>, Vec<Inline>) {
     let mut paragraph = builder.build();
     paragraph.layout(f32::INFINITY);
     let raw = builder.get_text();
     let text: Vec<_> = raw.chars().collect();
-    let mut inline: BTreeMap<Section, Vec<Inline>> =
-        [(Section::Body, vec![]), (Section::Footer, vec![])]
-            .into_iter()
-            .collect();
+    let mut inline: Vec<Inline> = vec![];
     let mut start = 0;
     let mut push = |range: Range, style: usize| {
         let rect = paragraph.get_rects_for_range(
@@ -166,13 +163,8 @@ pub fn inline<'a>(
             .find(|chr| chr.is_whitespace())
             .is_some();
         let properties = properties[style].1.clone();
-        print!(
-            "{} ({style} {:?}) ",
-            text[range.clone()].iter().collect::<String>(),
-            properties.section
-        );
         let top_offset = renderer.top_offset(&properties.style);
-        inline.get_mut(&properties.section).unwrap().push(Inline {
+        inline.push(Inline {
             range,
             is_whitespace,
             properties,

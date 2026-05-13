@@ -1,13 +1,13 @@
-mod format;
+// mod format;
 mod layout;
 mod paint;
 mod renderer;
-mod writer;
+// mod writer;
 
 use std::{ffi::c_char, ops, slice::from_ref};
 
-use format::{Action, Format, get_unformatted, justify, left};
-use layout::Layout;
+// use format::{Action, Format, get_unformatted, justify, left};
+// use layout::Layout;
 pub use layout::{ArchivedIndex, ArchivedIndices, ArchivedPages, Index};
 pub use paint::Paint;
 use renderer::{Inline, inline};
@@ -16,11 +16,16 @@ use rkyv::{
     Archive, Deserialize, Serialize, deserialize, rancor::Error, string::ArchivedString,
     util::AlignedVec,
 };
-use skia_safe::textlayout::ParagraphBuilder;
+use skia_safe::textlayout::{ParagraphBuilder, RectHeightStyle, RectWidthStyle};
 use usfm::{ArchivedBookIdentifier, BookIdentifier};
-use writer::{LineFormat, Writer};
+// use writer::{LineFormat, Writer};
 
 use crate::{log, painter::layout::Section};
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Action {
+    Index(Index),
+}
 
 pub struct Painter {
     renderer: Renderer,
@@ -28,6 +33,7 @@ pub struct Painter {
     dim: Dimensions,
     properties: Vec<(usize, Properties)>,
     queue: Vec<Properties>,
+    callers: Vec<Caller>,
     layout: Layout,
     location: LocationState,
 }
@@ -46,6 +52,78 @@ pub struct Properties {
     actions: Vec<Action>,
 }
 
+pub struct Caller {
+    text: String,
+    width: f32,
+}
+
+type Line = (Vec<Range>, f32);
+
+#[derive(Debug)]
+struct Page {
+    body: Vec<Line>,
+    footer: Vec<Line>,
+}
+
+impl Page {
+    fn new() -> Self {
+        Self {
+            body: vec![(vec![0..0], 0.0)],
+            footer: vec![(vec![0..0], 0.0)],
+        }
+    }
+
+    fn append_page(&mut self, page: Page) -> Result<(), ()> {
+        todo!();
+    }
+
+    fn get_body_width(&self) -> f32 {
+        self.body.last().unwrap().1
+    }
+
+    fn get_footer_width(&self) -> f32 {
+        self.footer.last().unwrap().1
+    }
+
+    fn add_body(&mut self, i: usize, width: f32) {
+        let line = self.body.last_mut().unwrap();
+        let inline = line.0.last_mut().unwrap();
+        if inline.end < i {
+            line.0.push(i..(i + 1));
+        } else {
+            inline.end += 1;
+        }
+        line.1 += width;
+    }
+
+    fn add_footer(&mut self, i: usize, width: f32) {
+        let line = self.footer.last_mut().unwrap();
+        let inline = line.0.last_mut().unwrap();
+        if inline.end < i {
+            line.0.push(i..(i + 1));
+        } else {
+            inline.end += 1;
+        }
+        line.1 += width;
+    }
+
+    fn new_line_body(&mut self) {
+        self.body.push((vec![0..0], 0.0));
+    }
+
+    fn new_line_footer(&mut self) {
+        self.footer.push((vec![0..0], 0.0));
+    }
+}
+
+struct Layout {
+    width: f32,
+    height: f32,
+    page: Page,
+    footnote: usize,
+    cross_ref: usize,
+}
+
 impl Painter {
     pub fn new(renderer: &Renderer, dim: Dimensions) -> Self {
         Self {
@@ -53,9 +131,16 @@ impl Painter {
             builder: renderer.new_builder(),
             properties: Vec::new(),
             queue: Vec::new(),
-            layout: Layout::new(dim.width, dim.height, renderer.line_height(&Style::Normal)),
+            layout: Layout {
+                width: dim.width,
+                height: dim.height,
+                page: Page::new(),
+                footnote: 0,
+                cross_ref: 0,
+            },
             dim,
             location: LocationState::default(),
+            callers: vec![],
         }
     }
 
@@ -76,9 +161,7 @@ impl Painter {
     //     );
     //     writer.write().trim();
     //     let unformatted = get_unformatted(&text, &inline, writer.get_lines());
-    //     let page = self
-    //         .layout
-    //         .request_height(height + 2.0 * self.layout.get_line_height());
+    //     let page = self.layout.request_height(height);
     //     self.layout.mutate_body(height);
     //     for action in self.properties.last_mut().unwrap().1.actions.iter() {
     //         // HACK better management of actions
@@ -140,51 +223,106 @@ impl Painter {
     //     self.builder.reset();
     // }
 
-    fn paint_paragraph(&mut self, format: Format, line_format: LineFormat) {
-        let (_, text, inline) = inline(&self.renderer, &mut self.builder, &self.properties);
+    fn paint_paragraph(&mut self) {
+        let (_, text, mut inline) = inline(&self.renderer, &mut self.builder, &self.properties);
 
-        // log!(
-        //     "{:?}",
-        //     inline[&Section::Body]
-        //         .iter()
-        //         .map(|Inline { range, .. }| format!(
-        //             "{}",
-        //             text[range.clone()].iter().collect::<String>()
-        //         ))
-        //         .collect::<Vec<String>>()
-        // );
+        log!("{:?}", text);
+        log!("{:#?}", inline);
+        log!("{}", self.layout.width);
+
+        log!("{:#?}", self.next_block(inline.as_mut_slice()));
+
+        // get ranges (over inline) of inlines in the next line of the current page
+        //
+
         // TODO know where to write to
 
-        let mut writer = Writer::new(
-            &text[..],
-            inline[&Section::Body].as_slice(),
-            line_format,
-            &mut self.layout,
-            Section::Body,
-        );
-        writer.write().trim();
+        // let mut writer = Writer::new(
+        //     &text[..],
+        //     inline.as_slice(),
+        //     line_format,
+        //     &mut self.layout,
+        //     Section::Body,
+        // );
+        // writer.write().trim();
 
-        let lines = writer.get_lines();
-        let unformatted = get_unformatted(&text, &inline[&Section::Body], lines);
+        // let lines = writer.get_lines();
+        // let unformatted = get_unformatted(&text, &inline[&Section::Body], lines);
 
-        match format {
-            Format::Justified => {
-                let (tail, head) = unformatted.split_last().unwrap();
-                justify(&mut self.layout, layout::Section::Body, head);
-                left(&mut self.layout, layout::Section::Body, from_ref(tail));
+        // match format {
+        //     Format::Justified => {
+        //         let (tail, head) = unformatted.split_last().unwrap();
+        //         justify(&mut self.layout, layout::Section::Body, head);
+        //         left(&mut self.layout, layout::Section::Body, from_ref(tail));
+        //     }
+        //     Format::Left => {
+        //         left(&mut self.layout, layout::Section::Body, &unformatted);
+        //     }
+        //     _ => (),
+        // }
+
+        // self.clean();
+    }
+
+    fn next_block(&mut self, inline: &mut [Inline]) -> Page {
+        let mut page = Page::new();
+        for (i, inline) in inline
+            .iter_mut()
+            .enumerate()
+            .skip_while(|(_, c)| c.is_whitespace)
+        {
+            log!("{i}");
+            if inline.properties.style == Style::Caller {
+                let caller = self.get_caller(self.layout.footnote);
+                inline.width = caller.width;
+                println!("using caller {} ({})", caller.text, caller.width);
             }
-            Format::Left => {
-                left(&mut self.layout, layout::Section::Body, &unformatted);
+            match inline.properties.section {
+                Section::Body => {
+                    if page.get_body_width() + inline.width < self.layout.width {
+                        page.add_body(i, inline.width);
+                    } else {
+                        log!("Hi");
+                        return page;
+                    }
+                }
+                Section::Footer => {
+                    if page.get_footer_width() + inline.width < self.layout.width {
+                        page.add_footer(i, inline.width);
+                    } else {
+                        log!("{}", inline.width);
+                        page.new_line_footer();
+                    }
+                }
             }
-            _ => (),
         }
+        log!("Hey");
+        page
+    }
 
-        self.clean();
+    fn get_caller(&mut self, i: usize) -> &Caller {
+        get_or_insert_with(&mut self.callers, i, |i| {
+            let mut builder = self.renderer.new_builder();
+            let text = usize_to_letters(i);
+            builder
+                .push_style(&self.renderer.get_style(&Style::Caller))
+                .add_text(&text);
+            let mut paragraph = builder.build();
+            paragraph.layout(f32::INFINITY);
+            let width = paragraph.get_rects_for_range(
+                0..text.len(),
+                RectHeightStyle::Tight,
+                RectWidthStyle::Tight,
+            )[0]
+            .rect
+            .width();
+            Caller { text, width }
+        })
     }
 
     fn clean(&mut self) {
         self.properties.drain(..);
-        self.layout.drain_lines();
+        // self.layout.drain_lines();
         self.builder.reset();
     }
 
@@ -273,15 +411,18 @@ impl Painter {
     }
 
     pub fn get_pages(&self) -> Result<AlignedVec, String> {
-        rkyv::to_bytes::<Error>(self.layout.get_pages()).map_err(|e| e.to_string())
+        unimplemented!()
+        // rkyv::to_bytes::<Error>(self.layout.get_pages()).map_err(|e| e.to_string())
     }
 
     pub fn get_indices(&self) -> Result<AlignedVec, String> {
-        rkyv::to_bytes::<Error>(self.layout.get_indices()).map_err(|e| e.to_string())
+        unimplemented!()
+        // rkyv::to_bytes::<Error>(self.layout.get_indices()).map_err(|e| e.to_string())
     }
 
     pub fn get_verses(&self) -> Result<AlignedVec, String> {
-        rkyv::to_bytes::<Error>(self.layout.get_verses()).map_err(|e| e.to_string())
+        unimplemented!()
+        // rkyv::to_bytes::<Error>(self.layout.get_verses()).map_err(|e| e.to_string())
     }
 }
 
@@ -292,6 +433,10 @@ pub enum Style {
     Normal = 1,
     Header = 2,
     Chapter = 3,
+
+    Caller = 9,
+    Footnote = 10,
+    CrossRef = 11,
 }
 
 #[derive(Debug)]
@@ -317,3 +462,31 @@ pub struct Dimensions {
 }
 
 pub type Range = ops::Range<usize>;
+
+fn usize_to_letters(mut i: usize) -> String {
+    let mut s = String::new();
+
+    loop {
+        let rem = i % 26;
+        s.push((b'a' + rem as u8) as char);
+
+        if i < 26 {
+            break;
+        }
+
+        i = i / 26 - 1;
+    }
+
+    s.chars().rev().collect()
+}
+
+fn get_or_insert_with<T, F>(vec: &mut Vec<T>, i: usize, mut f: F) -> &mut T
+where
+    F: FnMut(usize) -> T,
+{
+    if i >= vec.len() {
+        vec.extend((vec.len()..=i).map(&mut f));
+    }
+
+    &mut vec[i]
+}
