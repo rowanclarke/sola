@@ -2,31 +2,22 @@ mod error;
 mod painter;
 
 use error::SolaError;
-use painter::{
-    ArchivedIndex, ArchivedIndices, ArchivedPages, Dimensions, Index, Paint, Painter, Renderer,
-    Style, Text, TextStyle,
-};
-use rkyv::deserialize;
+use painter::Style;
 use rkyv::rancor::Error;
-use rkyv::vec::ArchivedVec;
 use skia_safe::FontMgr;
-use std::backtrace::Backtrace;
 use std::env;
-use std::ffi::{c_char, c_void};
+use std::ffi::c_char;
 use std::fs;
-use std::num::TryFromIntError;
-use std::panic::AssertUnwindSafe;
-use std::slice::from_raw_parts;
-use std::str::from_utf8_unchecked;
-use std::{mem, slice};
 use usfm::{ArchivedBook, parse};
+
+use crate::painter::{Dimensions, Paint, Painter, Renderer, TextStyle};
 
 fn main() {
     // Get the file path from command line arguments
     let args: Vec<String> = env::args().collect();
 
     if args.len() < 2 {
-        eprintln!("Usage: {} <file_path>", args[0]);
+        eprintln!("Usage: {} <usfm_path> <font_path>", args[0]);
         return;
     }
 
@@ -95,7 +86,39 @@ fn main() {
             word_spacing: 0.0,
         },
     );
-
+    renderer.insert_style(
+        Style::Caller,
+        TextStyle {
+            font_family,
+            font_family_len,
+            font_size: 10.0,
+            height: 1.0,
+            letter_spacing: 0.0,
+            word_spacing: 0.0,
+        },
+    );
+    renderer.insert_style(
+        Style::Footnote,
+        TextStyle {
+            font_family,
+            font_family_len,
+            font_size: 12.0,
+            height: 1.2,
+            letter_spacing: 0.0,
+            word_spacing: 0.0,
+        },
+    );
+    renderer.insert_style(
+        Style::CrossRef,
+        TextStyle {
+            font_family,
+            font_family_len,
+            font_size: 12.0,
+            height: 1.2,
+            letter_spacing: 0.0,
+            word_spacing: 0.0,
+        },
+    );
     let dim = Dimensions {
         width: 344.0,
         height: 686.0,

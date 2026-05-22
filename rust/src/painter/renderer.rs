@@ -131,7 +131,7 @@ impl Renderer {
 }
 
 // TODO: index &str instead of &[char]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Inline {
     pub range: Range,
     pub is_whitespace: bool,

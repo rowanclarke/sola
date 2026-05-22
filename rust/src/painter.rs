@@ -4,7 +4,7 @@ mod paint;
 mod renderer;
 // mod writer;
 
-use std::{ffi::c_char, ops, slice::from_ref};
+use std::{collections::VecDeque, ffi::c_char, mem, ops, slice::from_ref};
 
 // use format::{Action, Format, get_unformatted, justify, left};
 // use layout::Layout;
@@ -36,6 +36,7 @@ pub struct Painter {
     callers: Vec<Caller>,
     layout: Layout,
     location: LocationState,
+    pages: Vec<Page>,
 }
 
 #[derive(Default)]
@@ -57,90 +58,333 @@ pub struct Caller {
     width: f32,
 }
 
-type Line = (Vec<Range>, f32);
+#[derive(Debug, Clone)]
+struct OwnedInline {
+    text: String,
+    style: Style,
+    width: f32,
+    whitespace: f32, // width of whitespace
+}
 
-#[derive(Debug)]
-struct Page {
+#[derive(Debug, Clone)]
+struct Line {
+    alignment: Alignment,
+    inlines: Vec<OwnedInline>,
+    used: f32,
+    total: f32,
+}
+
+#[derive(Debug, Clone)]
+struct PageBuilder {
+    current_body: usize,
+    current_footer: usize,
     body: Vec<Line>,
     footer: Vec<Line>,
 }
 
-impl Page {
-    fn new() -> Self {
+// #[derive(Debug, Clone)]
+// struct Page {
+
+//     // body: Vec<Line>,
+//     // footer: Vec<Line>,
+// }
+
+type Page = Vec<TextFragment>;
+
+#[derive(Archive, Serialize, Debug, Clone)]
+pub struct TextFragment {
+    pub text: String,
+    pub rect: Rectangle,
+    pub style: Style,
+    pub word_spacing: f32,
+}
+
+pub enum Direction {
+    RightToLeft,
+    LeftToRight,
+}
+
+// per paragraph
+struct Format {
+    direction: Direction,
+}
+
+// per line
+#[derive(Debug, Clone)]
+enum Alignment {
+    Left(f32),
+    Right(f32),
+    Center,
+}
+
+impl OwnedInline {
+    fn new(inline: &Inline, text: &[char]) -> Self {
         Self {
-            body: vec![(vec![0..0], 0.0)],
-            footer: vec![(vec![0..0], 0.0)],
+            text: text[inline.range.clone()].iter().collect(),
+            style: inline.properties.style,
+            width: inline.width,
+            whitespace: 0.0,
         }
     }
 
-    fn append_page(&mut self, page: Page) -> Result<(), ()> {
-        todo!();
-    }
-
-    fn get_body_width(&self) -> f32 {
-        self.body.last().unwrap().1
-    }
-
-    fn get_footer_width(&self) -> f32 {
-        self.footer.last().unwrap().1
-    }
-
-    fn add_body(&mut self, i: usize, width: f32) {
-        let line = self.body.last_mut().unwrap();
-        let inline = line.0.last_mut().unwrap();
-        if inline.end < i {
-            line.0.push(i..(i + 1));
-        } else {
-            inline.end += 1;
+    fn push(&mut self, inline: &Inline, text: &[char]) {
+        self.text.extend(&text[inline.range.clone()]);
+        self.width += inline.width;
+        if inline.is_whitespace {
+            self.whitespace += inline.width;
         }
-        line.1 += width;
+    }
+}
+
+// impl Page {
+//     fn empty() -> Self {
+//         Self {
+//             body: vec![],
+//             footer: vec![],
+//         }
+//     }
+
+// }
+
+impl PageBuilder {
+    fn append_page(&mut self, page: &mut Page) {
+        // self.body.append(&mut self.body);
+        // if self.footer.last().unwrap().inlines.is_empty() {
+        //     self.footer.pop();
+        // }
+        // self.footer.append(&mut self.footer);
     }
 
-    fn add_footer(&mut self, i: usize, width: f32) {
-        let line = self.footer.last_mut().unwrap();
-        let inline = line.0.last_mut().unwrap();
-        if inline.end < i {
-            line.0.push(i..(i + 1));
-        } else {
-            inline.end += 1;
+    // render the full page, cannot be partial page since footer needs to be complete to know where it is positioned
+    fn render_page(
+        self,
+        format: &Format,
+        template: Template,
+        body_line_height: f32,
+        footer_line_height: f32,
+        mut top: f32,
+    ) -> Vec<TextFragment> {
+        let mut vec: Vec<TextFragment> = template.fixed;
+        vec.iter_mut().for_each(|f| f.rect.top += top);
+        top += template.top;
+        for (LineTemplate { width, mut left }, line) in
+            template.lines.into_iter().zip(self.body.into_iter())
+        {
+            let whitespace: f32 = line.inlines.iter().map(|i| i.whitespace).sum();
+            let remaining = line.total - line.used;
+            let ratio = remaining / whitespace;
+            for inline in line.inlines {
+                let spacing = ratio * inline.whitespace;
+                let spaces = inline.text.chars().filter(|c| c.is_whitespace()).count() as f32;
+                let word_spacing = if spaces == 0.0 { 0.0 } else { spacing / spaces };
+                let height = body_line_height;
+                let width = inline.width + spacing;
+                vec.push(TextFragment {
+                    text: inline.text,
+                    rect: Rectangle {
+                        top,
+                        left,
+                        width,
+                        height,
+                    },
+                    style: inline.style,
+                    word_spacing,
+                });
+                left += width;
+            }
         }
-        line.1 += width;
+        let top = height - footer_line_height * self.footer.len() as f32;
+        vec
     }
 
-    fn new_line_body(&mut self) {
-        self.body.push((vec![0..0], 0.0));
+    fn get_body_width(&self) -> (f32, f32) {
+        let current = &self.body[self.current_body];
+        (current.used, current.total)
     }
 
-    fn new_line_footer(&mut self) {
-        self.footer.push((vec![0..0], 0.0));
+    fn get_footer_width(&self) -> (f32, f32) {
+        let current = &self.footer[self.current_footer];
+        (current.used, current.total)
+    }
+
+    fn get_current_body_mut(&mut self) -> &mut Line {
+        &mut self.body[self.current_body]
+    }
+
+    fn get_current_footer_mut(&mut self) -> &mut Line {
+        &mut self.footer[self.current_footer]
+    }
+
+    fn get_height(&self, body_line_height: f32, footer_line_height: f32) -> f32 {
+        self.body.len() as f32 * body_line_height + self.footer.len() as f32 * footer_line_height
+    }
+
+    fn add_body(&mut self, inline: &Inline, text: &[char]) {
+        let line = self.get_current_body_mut();
+        match line.inlines.last_mut() {
+            Some(current) if current.style == inline.properties.style => current.push(inline, text),
+            Some(_) | None => line.inlines.push(OwnedInline::new(inline, text)),
+        }
+        line.used += inline.width;
+    }
+
+    fn add_footer(&mut self, inline: &Inline, text: &[char]) {
+        let line = self.get_current_footer_mut();
+        match line.inlines.last_mut() {
+            Some(current) if current.style == inline.properties.style => current.push(inline, text),
+            Some(_) | None => line.inlines.push(OwnedInline::new(inline, text)),
+        }
+        line.used += inline.width;
+    }
+
+    fn new_line_footer(&mut self, footer_width: f32) {
+        self.footer.push(Line {
+            alignment: Alignment::Left(0.0),
+            inlines: vec![],
+            used: 0.0,
+            total: footer_width,
+        });
+        self.current_footer += 1;
+    }
+
+    fn try_add(&mut self, inline: &Inline, text: &[char]) -> bool {
+        match inline.properties.section {
+            Section::Body => {
+                let (used, total) = self.get_body_width();
+                if used + inline.width < total {
+                    self.add_body(&inline, text);
+                } else if self.current_body < self.body.len() - 1 {
+                    self.current_body += 1;
+                } else {
+                    return true;
+                }
+            }
+            Section::Footer => {
+                let (used, total) = self.get_footer_width();
+                if used + inline.width < total {
+                    self.add_footer(&inline, text);
+                } else {
+                    self.new_line_footer(total);
+                }
+            }
+        }
+        false
+    }
+}
+
+#[derive(Clone, Copy)]
+struct LineTemplate {
+    width: f32,
+    left: f32,
+}
+
+#[derive(Clone)]
+struct Template {
+    lines: Vec<LineTemplate>,
+    top: f32,                 // top of first line
+    fixed: Vec<TextFragment>, // fixed graphics
+    width: f32,
+}
+
+impl Template {
+    fn new(width: f32) -> Self {
+        Self {
+            lines: vec![LineTemplate { width, left: 0.0 }],
+            top: 0.0,
+            fixed: vec![],
+            width,
+        }
+    }
+
+    fn push_fixed(&mut self, frag: TextFragment) {
+        self.fixed.push(frag);
+    }
+
+    // push line before current line
+    fn push_line(&mut self, width: f32, left: f32, shrink: f32) {
+        self.lines.push(LineTemplate {
+            width: width - left - shrink,
+            left,
+        });
+    }
+
+    fn get_page(&self) -> PageBuilder {
+        PageBuilder {
+            current_body: 0,
+            current_footer: 0,
+            body: self
+                .lines
+                .iter()
+                .map(|t| Line {
+                    alignment: Alignment::Left(0.0),
+                    inlines: vec![],
+                    used: 0.0,
+                    total: t.width,
+                })
+                .collect(),
+            footer: vec![Line {
+                alignment: Alignment::Left(0.0),
+                inlines: vec![],
+                used: 0.0,
+                total: self.width,
+            }],
+        }
     }
 }
 
 struct Layout {
+    body_template: Template,
+    body_line_height: f32,
+    footer_line_height: f32,
+    top: f32,
     width: f32,
     height: f32,
-    page: Page,
+    available: f32,
     footnote: usize,
     cross_ref: usize,
 }
 
+impl Layout {
+    fn get_template(&mut self) -> Template {
+        mem::replace(&mut self.body_template, Template::new(self.width))
+    }
+
+    fn get_footer_width(&self) -> f32 {
+        self.width
+    }
+
+    fn reset(&mut self) {
+        self.top = 0.0;
+        self.footnote = 0;
+        self.cross_ref = 0;
+        self.available = self.height;
+    }
+}
+
 impl Painter {
     pub fn new(renderer: &Renderer, dim: Dimensions) -> Self {
+        let body_line_height = renderer.line_height(&Style::Normal);
+        let footer_line_height = renderer.line_height(&Style::Footnote);
         Self {
             renderer: renderer.clone(),
             builder: renderer.new_builder(),
             properties: Vec::new(),
             queue: Vec::new(),
             layout: Layout {
+                body_template: Template::new(dim.width),
+                body_line_height,
+                footer_line_height,
+                top: 0.0,
                 width: dim.width,
                 height: dim.height,
-                page: Page::new(),
+                available: dim.height,
                 footnote: 0,
                 cross_ref: 0,
             },
-            dim,
             location: LocationState::default(),
             callers: vec![],
+            pages: vec![vec![]],
+            dim,
         }
     }
 
@@ -226,11 +470,51 @@ impl Painter {
     fn paint_paragraph(&mut self) {
         let (_, text, mut inline) = inline(&self.renderer, &mut self.builder, &self.properties);
 
-        log!("{:?}", text);
+        // log!("{:?}", text);
         log!("{:#?}", inline);
-        log!("{}", self.layout.width);
+        // log!("{} x {}", self.layout.width, self.layout.height);
 
-        log!("{:#?}", self.next_block(inline.as_mut_slice()));
+        let mut i = 0;
+        let mut template = Some(self.layout.get_template());
+        loop {
+            // get the next block of text we need to write to the same page
+            let (block, j) = self.next_block(
+                template.as_ref().unwrap().get_page(),
+                &mut inline.as_mut_slice()[i..],
+                &text,
+            );
+            // log!("{:?}", block);
+            // is there enough room on the current page
+            let height =
+                block.get_height(self.layout.body_line_height, self.layout.footer_line_height);
+
+            if height < self.layout.available {
+                self.layout.available -= height;
+                self.pages.last_mut().unwrap().extend(block.render_page(
+                    &Format {
+                        direction: Direction::LeftToRight,
+                    },
+                    template.take().unwrap(),
+                    self.layout.body_line_height,
+                    self.layout.footer_line_height,
+                    self.layout.top,
+                ));
+
+                match j {
+                    // wrote up to j, write the next block
+                    Some(j) => {
+                        i = j;
+                        template = Some(self.layout.get_template());
+                    }
+                    // finished everything
+                    None => break,
+                }
+            } else {
+                self.layout.reset();
+            }
+        }
+
+        log!("{:?}", self.pages.last().unwrap());
 
         // get ranges (over inline) of inlines in the next line of the current page
         //
@@ -264,40 +548,40 @@ impl Painter {
         // self.clean();
     }
 
-    fn next_block(&mut self, inline: &mut [Inline]) -> Page {
-        let mut page = Page::new();
+    fn next_block(
+        &mut self,
+        mut page: PageBuilder,
+        inline: &mut [Inline],
+        text: &[char],
+    ) -> (PageBuilder, Option<usize>) {
+        let mut publish = page.clone();
+        let mut reached = 0;
         for (i, inline) in inline
             .iter_mut()
             .enumerate()
             .skip_while(|(_, c)| c.is_whitespace)
         {
-            log!("{i}");
-            if inline.properties.style == Style::Caller {
-                let caller = self.get_caller(self.layout.footnote);
-                inline.width = caller.width;
-                println!("using caller {} ({})", caller.text, caller.width);
+            if inline.is_whitespace {
+                publish = page.clone();
+                reached = i;
             }
-            match inline.properties.section {
-                Section::Body => {
-                    if page.get_body_width() + inline.width < self.layout.width {
-                        page.add_body(i, inline.width);
-                    } else {
-                        log!("Hi");
-                        return page;
-                    }
-                }
-                Section::Footer => {
-                    if page.get_footer_width() + inline.width < self.layout.width {
-                        page.add_footer(i, inline.width);
-                    } else {
-                        log!("{}", inline.width);
-                        page.new_line_footer();
-                    }
-                }
+            let new_block = if inline.properties.style == Style::Caller {
+                let caller = self.get_caller(self.layout.footnote);
+                let text = caller.text.chars().collect::<Vec<_>>();
+                inline.range = 0..text.len();
+                inline.width = caller.width;
+                let mut caller = inline.clone();
+                caller.properties.section = Section::Body;
+                self.layout.footnote += 1;
+                page.try_add(&caller, &text) || page.try_add(inline, &text)
+            } else {
+                page.try_add(inline, text)
+            };
+            if new_block {
+                return (publish, Some(reached));
             }
         }
-        log!("Hey");
-        page
+        (page, None) // we know everything has fitted in the line
     }
 
     fn get_caller(&mut self, i: usize) -> &Caller {
@@ -489,4 +773,12 @@ where
     }
 
     &mut vec[i]
+}
+
+fn pop_or_copy_last<T: Clone>(v: &mut Vec<T>) -> Option<T> {
+    match v.len() {
+        0 => None,
+        1 => Some(v[0].clone()),
+        _ => v.pop(),
+    }
 }
