@@ -14,6 +14,10 @@ typedef enum {
   NORMAL = 1,
   HEADER = 2,
   CHAPTER = 3,
+
+  CALLER = 9,
+  FOOTNOTE = 10,
+  CROSSREF = 11,
 } Style;
 
 typedef struct {

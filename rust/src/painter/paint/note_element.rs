@@ -2,7 +2,7 @@ use core::{fmt::Debug, hash::Hash};
 use rkyv::Archive;
 use usfm::ArchivedNoteElement;
 
-use crate::painter::{Painter, Style, layout::Section};
+use crate::painter::Painter;
 
 use super::Paint;
 

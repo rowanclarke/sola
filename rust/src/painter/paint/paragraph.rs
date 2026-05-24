@@ -14,7 +14,7 @@ impl Paint for ArchivedParagraph {
                     painter
                         .add_text(" ")
                         .push_properties(Style::Verse, Section::Body)
-                        // .index_verse(verse_num.to_native())
+                        .index_verse(verse_num.to_native())
                         .add_text(verse_num.to_string())
                         .pop_properties();
                 }
@@ -24,9 +24,9 @@ impl Paint for ArchivedParagraph {
                 Content::Character(character) => character.paint(painter),
                 Content::Footnote(footnote) => footnote.paint(painter),
                 Content::CrossRef(cross_ref) => cross_ref.paint(painter),
-                _ => (),
             }
         }
-        painter.pop_properties().paint_paragraph(); //Format::Justified, LineFormat::new(20.0, 0.0, 0.0)
+        painter.pop_properties();
+        painter.paint_paragraph();
     }
 }

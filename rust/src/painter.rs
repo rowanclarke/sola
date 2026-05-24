@@ -1,43 +1,96 @@
-// mod format;
-mod layout;
+pub mod layout;
 mod paint;
 mod renderer;
-// mod writer;
 
-use std::{collections::VecDeque, ffi::c_char, mem, ops, slice::from_ref};
+use std::{collections::HashMap, ffi::c_char, mem, ops};
 
-// use format::{Action, Format, get_unformatted, justify, left};
-// use layout::Layout;
-pub use layout::{ArchivedIndex, ArchivedIndices, ArchivedPages, Index};
+pub use layout::{ArchivedIndex, ArchivedIndices, ArchivedPages, Index, Indices};
 pub use paint::Paint;
-use renderer::{Inline, inline};
+use renderer::shape;
 pub use renderer::{Renderer, TextStyle};
-use rkyv::{
-    Archive, Deserialize, Serialize, deserialize, rancor::Error, string::ArchivedString,
-    util::AlignedVec,
-};
-use skia_safe::textlayout::{ParagraphBuilder, RectHeightStyle, RectWidthStyle};
+use rkyv::{Archive, Deserialize, Serialize, rancor::Error};
 use usfm::{ArchivedBookIdentifier, BookIdentifier};
-// use writer::{LineFormat, Writer};
 
-use crate::{log, painter::layout::Section};
+use layout::{Page, Section, TextFragment};
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Action {
-    Index(Index),
+// ---------------------------------------------------------------------------
+// Core data types
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ItemKind {
+    Word,
+    Glue,
+    Caller { footnote_id: usize },
 }
 
-pub struct Painter {
-    renderer: Renderer,
-    builder: ParagraphBuilder,
-    dim: Dimensions,
-    properties: Vec<(usize, Properties)>,
-    queue: Vec<Properties>,
-    callers: Vec<Caller>,
-    layout: Layout,
-    location: LocationState,
-    pages: Vec<Page>,
+#[derive(Debug, Clone)]
+pub struct InlineItem {
+    pub range: ops::Range<usize>, // byte range into source text
+    pub style: Style,
+    pub width: f32,
+    pub kind: ItemKind,
+    pub index_id: Option<usize>,
 }
+
+#[derive(Debug, Clone)]
+pub struct BrokenLine {
+    pub item_range: ops::Range<usize>,
+    pub content_width: f32,
+    pub glue_count: u32,
+}
+
+#[derive(Debug, Clone)]
+pub enum Alignment {
+    Justified,
+    Left,
+    Center,
+}
+
+#[derive(Debug, Clone)]
+pub struct DropCap {
+    pub line_span: usize,
+    pub padding: f32,
+}
+
+#[derive(Debug, Clone)]
+pub struct ParagraphSpec {
+    pub text: String,
+    pub styles: Vec<(ops::Range<usize>, Style)>,
+    pub alignment: Alignment,
+    pub indent: (f32, f32), // (first_line, continuation)
+    pub drop_cap: Option<DropCap>,
+    pub spacing_before: f32,
+    pub spacing_after: f32,
+    pub index_markers: Vec<(usize, usize)>, // (byte_offset, index_registry_id)
+}
+
+#[derive(Debug, Clone)]
+pub struct FootnoteSpec {
+    pub caller_body_offset: usize,
+    pub content: ParagraphSpec,
+}
+
+#[derive(Debug, Clone)]
+pub struct CollectedParagraph {
+    pub body: ParagraphSpec,
+    pub footnotes: Vec<FootnoteSpec>,
+}
+
+// ---------------------------------------------------------------------------
+// Style stack entry
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Clone)]
+#[allow(dead_code)]
+struct StackEntry {
+    style: Style,
+    section: Section,
+}
+
+// ---------------------------------------------------------------------------
+// Location tracking
+// ---------------------------------------------------------------------------
 
 #[derive(Default)]
 struct LocationState {
@@ -46,618 +99,260 @@ struct LocationState {
     chapter: Option<u16>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Properties {
-    style: Style,
-    section: Section,
-    actions: Vec<Action>,
-}
+// ---------------------------------------------------------------------------
+// Painter (span collection phase)
+// ---------------------------------------------------------------------------
 
-pub struct Caller {
-    text: String,
-    width: f32,
-}
-
-#[derive(Debug, Clone)]
-struct OwnedInline {
-    text: String,
-    style: Style,
-    width: f32,
-    whitespace: f32, // width of whitespace
-}
-
-#[derive(Debug, Clone)]
-struct Line {
-    alignment: Alignment,
-    inlines: Vec<OwnedInline>,
-    used: f32,
-    total: f32,
-}
-
-#[derive(Debug, Clone)]
-struct PageBuilder {
-    current_body: usize,
-    current_footer: usize,
-    body: Vec<Line>,
-    footer: Vec<Line>,
-}
-
-// #[derive(Debug, Clone)]
-// struct Page {
-
-//     // body: Vec<Line>,
-//     // footer: Vec<Line>,
-// }
-
-type Page = Vec<TextFragment>;
-
-#[derive(Archive, Serialize, Debug, Clone)]
-pub struct TextFragment {
-    pub text: String,
-    pub rect: Rectangle,
-    pub style: Style,
-    pub word_spacing: f32,
-}
-
-pub enum Direction {
-    RightToLeft,
-    LeftToRight,
-}
-
-// per paragraph
-struct Format {
-    direction: Direction,
-}
-
-// per line
-#[derive(Debug, Clone)]
-enum Alignment {
-    Left(f32),
-    Right(f32),
-    Center,
-}
-
-impl OwnedInline {
-    fn new(inline: &Inline, text: &[char]) -> Self {
-        Self {
-            text: text[inline.range.clone()].iter().collect(),
-            style: inline.properties.style,
-            width: inline.width,
-            whitespace: 0.0,
-        }
-    }
-
-    fn push(&mut self, inline: &Inline, text: &[char]) {
-        self.text.extend(&text[inline.range.clone()]);
-        self.width += inline.width;
-        if inline.is_whitespace {
-            self.whitespace += inline.width;
-        }
-    }
-}
-
-// impl Page {
-//     fn empty() -> Self {
-//         Self {
-//             body: vec![],
-//             footer: vec![],
-//         }
-//     }
-
-// }
-
-impl PageBuilder {
-    fn append_page(&mut self, page: &mut Page) {
-        // self.body.append(&mut self.body);
-        // if self.footer.last().unwrap().inlines.is_empty() {
-        //     self.footer.pop();
-        // }
-        // self.footer.append(&mut self.footer);
-    }
-
-    // render the full page, cannot be partial page since footer needs to be complete to know where it is positioned
-    fn render_page(
-        self,
-        format: &Format,
-        template: Template,
-        body_line_height: f32,
-        footer_line_height: f32,
-        mut top: f32,
-    ) -> Vec<TextFragment> {
-        let mut vec: Vec<TextFragment> = template.fixed;
-        vec.iter_mut().for_each(|f| f.rect.top += top);
-        top += template.top;
-        for (LineTemplate { width, mut left }, line) in
-            template.lines.into_iter().zip(self.body.into_iter())
-        {
-            let whitespace: f32 = line.inlines.iter().map(|i| i.whitespace).sum();
-            let remaining = line.total - line.used;
-            let ratio = remaining / whitespace;
-            for inline in line.inlines {
-                let spacing = ratio * inline.whitespace;
-                let spaces = inline.text.chars().filter(|c| c.is_whitespace()).count() as f32;
-                let word_spacing = if spaces == 0.0 { 0.0 } else { spacing / spaces };
-                let height = body_line_height;
-                let width = inline.width + spacing;
-                vec.push(TextFragment {
-                    text: inline.text,
-                    rect: Rectangle {
-                        top,
-                        left,
-                        width,
-                        height,
-                    },
-                    style: inline.style,
-                    word_spacing,
-                });
-                left += width;
-            }
-        }
-        let top = height - footer_line_height * self.footer.len() as f32;
-        vec
-    }
-
-    fn get_body_width(&self) -> (f32, f32) {
-        let current = &self.body[self.current_body];
-        (current.used, current.total)
-    }
-
-    fn get_footer_width(&self) -> (f32, f32) {
-        let current = &self.footer[self.current_footer];
-        (current.used, current.total)
-    }
-
-    fn get_current_body_mut(&mut self) -> &mut Line {
-        &mut self.body[self.current_body]
-    }
-
-    fn get_current_footer_mut(&mut self) -> &mut Line {
-        &mut self.footer[self.current_footer]
-    }
-
-    fn get_height(&self, body_line_height: f32, footer_line_height: f32) -> f32 {
-        self.body.len() as f32 * body_line_height + self.footer.len() as f32 * footer_line_height
-    }
-
-    fn add_body(&mut self, inline: &Inline, text: &[char]) {
-        let line = self.get_current_body_mut();
-        match line.inlines.last_mut() {
-            Some(current) if current.style == inline.properties.style => current.push(inline, text),
-            Some(_) | None => line.inlines.push(OwnedInline::new(inline, text)),
-        }
-        line.used += inline.width;
-    }
-
-    fn add_footer(&mut self, inline: &Inline, text: &[char]) {
-        let line = self.get_current_footer_mut();
-        match line.inlines.last_mut() {
-            Some(current) if current.style == inline.properties.style => current.push(inline, text),
-            Some(_) | None => line.inlines.push(OwnedInline::new(inline, text)),
-        }
-        line.used += inline.width;
-    }
-
-    fn new_line_footer(&mut self, footer_width: f32) {
-        self.footer.push(Line {
-            alignment: Alignment::Left(0.0),
-            inlines: vec![],
-            used: 0.0,
-            total: footer_width,
-        });
-        self.current_footer += 1;
-    }
-
-    fn try_add(&mut self, inline: &Inline, text: &[char]) -> bool {
-        match inline.properties.section {
-            Section::Body => {
-                let (used, total) = self.get_body_width();
-                if used + inline.width < total {
-                    self.add_body(&inline, text);
-                } else if self.current_body < self.body.len() - 1 {
-                    self.current_body += 1;
-                } else {
-                    return true;
-                }
-            }
-            Section::Footer => {
-                let (used, total) = self.get_footer_width();
-                if used + inline.width < total {
-                    self.add_footer(&inline, text);
-                } else {
-                    self.new_line_footer(total);
-                }
-            }
-        }
-        false
-    }
-}
-
-#[derive(Clone, Copy)]
-struct LineTemplate {
-    width: f32,
-    left: f32,
-}
-
-#[derive(Clone)]
-struct Template {
-    lines: Vec<LineTemplate>,
-    top: f32,                 // top of first line
-    fixed: Vec<TextFragment>, // fixed graphics
-    width: f32,
-}
-
-impl Template {
-    fn new(width: f32) -> Self {
-        Self {
-            lines: vec![LineTemplate { width, left: 0.0 }],
-            top: 0.0,
-            fixed: vec![],
-            width,
-        }
-    }
-
-    fn push_fixed(&mut self, frag: TextFragment) {
-        self.fixed.push(frag);
-    }
-
-    // push line before current line
-    fn push_line(&mut self, width: f32, left: f32, shrink: f32) {
-        self.lines.push(LineTemplate {
-            width: width - left - shrink,
-            left,
-        });
-    }
-
-    fn get_page(&self) -> PageBuilder {
-        PageBuilder {
-            current_body: 0,
-            current_footer: 0,
-            body: self
-                .lines
-                .iter()
-                .map(|t| Line {
-                    alignment: Alignment::Left(0.0),
-                    inlines: vec![],
-                    used: 0.0,
-                    total: t.width,
-                })
-                .collect(),
-            footer: vec![Line {
-                alignment: Alignment::Left(0.0),
-                inlines: vec![],
-                used: 0.0,
-                total: self.width,
-            }],
-        }
-    }
-}
-
-struct Layout {
-    body_template: Template,
-    body_line_height: f32,
-    footer_line_height: f32,
-    top: f32,
-    width: f32,
-    height: f32,
-    available: f32,
-    footnote: usize,
-    cross_ref: usize,
-}
-
-impl Layout {
-    fn get_template(&mut self) -> Template {
-        mem::replace(&mut self.body_template, Template::new(self.width))
-    }
-
-    fn get_footer_width(&self) -> f32 {
-        self.width
-    }
-
-    fn reset(&mut self) {
-        self.top = 0.0;
-        self.footnote = 0;
-        self.cross_ref = 0;
-        self.available = self.height;
-    }
+pub struct Painter {
+    renderer: Renderer,
+    dim: Dimensions,
+    // Style stack
+    style_stack: Vec<StackEntry>,
+    // Current paragraph accumulation
+    current_text: String,
+    current_styles: Vec<(ops::Range<usize>, Style)>,
+    current_index_markers: Vec<(usize, usize)>,
+    // Footnote collection
+    collecting_footnote: bool,
+    footnote_id_in_progress: usize,
+    current_footnotes: Vec<FootnoteSpec>,
+    footnote_text: String,
+    footnote_styles: Vec<(ops::Range<usize>, Style)>,
+    // Pending state
+    pending_drop_cap: Option<DropCap>,
+    pending_drop_cap_text: Option<String>,
+    pending_drop_cap_style: Option<Style>,
+    // Index registry
+    index_registry: Vec<Index>,
+    // Location tracking
+    location: LocationState,
+    // Output
+    collected: Vec<CollectedParagraph>,
 }
 
 impl Painter {
     pub fn new(renderer: &Renderer, dim: Dimensions) -> Self {
-        let body_line_height = renderer.line_height(&Style::Normal);
-        let footer_line_height = renderer.line_height(&Style::Footnote);
         Self {
             renderer: renderer.clone(),
-            builder: renderer.new_builder(),
-            properties: Vec::new(),
-            queue: Vec::new(),
-            layout: Layout {
-                body_template: Template::new(dim.width),
-                body_line_height,
-                footer_line_height,
-                top: 0.0,
-                width: dim.width,
-                height: dim.height,
-                available: dim.height,
-                footnote: 0,
-                cross_ref: 0,
-            },
-            location: LocationState::default(),
-            callers: vec![],
-            pages: vec![vec![]],
             dim,
+            style_stack: Vec::new(),
+            current_text: String::new(),
+            current_styles: Vec::new(),
+            current_index_markers: Vec::new(),
+            collecting_footnote: false,
+            footnote_id_in_progress: 0,
+            current_footnotes: Vec::new(),
+            footnote_text: String::new(),
+            footnote_styles: Vec::new(),
+            pending_drop_cap: None,
+            pending_drop_cap_text: None,
+            pending_drop_cap_style: None,
+            index_registry: Vec::new(),
+            location: LocationState::default(),
+            collected: Vec::new(),
         }
     }
 
-    fn get_dimensions(&self) -> &Dimensions {
+    pub fn get_dimensions(&self) -> &Dimensions {
         &self.dim
     }
 
-    // fn paint_region(&mut self, format: Format, height: f32) {
-    //     let (_, text, inline) = inline(&self.renderer, &mut self.builder, &self.properties);
-    //     // HACK assume line height is the first inline, instead get max height of each line
-    //     let line_height = self.renderer.line_height(&inline[0].properties.style);
-    //     let mut layout = self.layout.sub_layout(self.dim.width, height, line_height);
-    //     let mut writer = Writer::new(
-    //         &text[..],
-    //         inline.as_slice(),
-    //         LineFormat::default(),
-    //         &mut layout,
-    //     );
-    //     writer.write().trim();
-    //     let unformatted = get_unformatted(&text, &inline, writer.get_lines());
-    //     let page = self.layout.request_height(height);
-    //     self.layout.mutate_body(height);
-    //     for action in self.properties.last_mut().unwrap().1.actions.iter() {
-    //         // HACK better management of actions
-    //         match action {
-    //             Action::Index(index) => {
-    //                 self.layout.add_index(index.clone(), page);
-    //             }
-    //         }
-    //     }
-    //     match format {
-    //         Format::Center => {
-    //             let total_height = unformatted.len() as f32 * line_height;
-    //             let top_offset = (height - total_height) / 2.0;
-    //             for line in unformatted {
-    //                 let region = &layout.get_line_unchecked(line.line);
-    //                 let rect = Rectangle {
-    //                     top: region.top + top_offset,
-    //                     left: region.left + line.metrics.remaining / 2.0,
-    //                     width: line.width,
-    //                     height: line_height,
-    //                 };
-    //                 self.layout.write(
-    //                     page,
-    //                     line.text.iter().collect::<String>(),
-    //                     rect,
-    //                     line.properties.style,
-    //                     0.0,
-    //                 );
-    //             }
-    //         }
-    //         Format::Left => todo!(),
-    //         _ => (),
-    //     }
-    //     self.clean();
-    // }
+    fn current_style(&self) -> Style {
+        self.style_stack
+            .last()
+            .map(|e| e.style)
+            .unwrap_or(Style::Normal)
+    }
 
-    // fn paint_drop_cap(&mut self) {
-    //     let (raw, _, inline) = inline(&self.renderer, &mut self.builder, &self.properties);
-    //     let Inline {
-    //         properties, width, ..
-    //     } = &inline[0];
-    //     let width = width + self.dim.drop_cap_padding;
-    //     let height = 2.0 * self.layout.get_line_height();
-    //     let page = self.layout.request_height(height);
-    //     let rect = self.layout.from_body(width, height);
-    //     self.layout.get_line(0).mutate(width, -width).lock();
-    //     self.layout.get_line(1).mutate(width, -width).lock();
-    //     self.layout
-    //         .write(page, raw.to_string(), rect, properties.style, 0.0);
-    //     for action in self.properties.last_mut().unwrap().1.actions.iter() {
-    //         // HACK better management of actions
-    //         match action {
-    //             Action::Index(index) => {
-    //                 self.layout.add_index(index.clone(), page);
-    //             }
-    //         }
-    //     }
-    //     self.properties.drain(..);
-    //     self.builder.reset();
-    // }
+    pub fn push_properties(&mut self, style: Style, section: Section) -> &mut Self {
+        self.style_stack.push(StackEntry { style, section });
+        self
+    }
 
-    fn paint_paragraph(&mut self) {
-        let (_, text, mut inline) = inline(&self.renderer, &mut self.builder, &self.properties);
+    pub fn pop_properties(&mut self) -> &mut Self {
+        self.style_stack.pop();
+        self
+    }
 
-        // log!("{:?}", text);
-        log!("{:#?}", inline);
-        // log!("{} x {}", self.layout.width, self.layout.height);
+    pub fn add_text(&mut self, text: impl AsRef<str>) -> &mut Self {
+        let text = text.as_ref();
+        let style = self.current_style();
 
-        let mut i = 0;
-        let mut template = Some(self.layout.get_template());
-        loop {
-            // get the next block of text we need to write to the same page
-            let (block, j) = self.next_block(
-                template.as_ref().unwrap().get_page(),
-                &mut inline.as_mut_slice()[i..],
-                &text,
-            );
-            // log!("{:?}", block);
-            // is there enough room on the current page
-            let height =
-                block.get_height(self.layout.body_line_height, self.layout.footer_line_height);
-
-            if height < self.layout.available {
-                self.layout.available -= height;
-                self.pages.last_mut().unwrap().extend(block.render_page(
-                    &Format {
-                        direction: Direction::LeftToRight,
-                    },
-                    template.take().unwrap(),
-                    self.layout.body_line_height,
-                    self.layout.footer_line_height,
-                    self.layout.top,
-                ));
-
-                match j {
-                    // wrote up to j, write the next block
-                    Some(j) => {
-                        i = j;
-                        template = Some(self.layout.get_template());
-                    }
-                    // finished everything
-                    None => break,
-                }
-            } else {
-                self.layout.reset();
+        if self.collecting_footnote {
+            let start = self.footnote_text.len();
+            self.footnote_text.push_str(text);
+            let end = self.footnote_text.len();
+            if start < end {
+                self.footnote_styles.push((start..end, style));
+            }
+        } else {
+            let start = self.current_text.len();
+            self.current_text.push_str(text);
+            let end = self.current_text.len();
+            if start < end {
+                self.current_styles.push((start..end, style));
             }
         }
-
-        log!("{:?}", self.pages.last().unwrap());
-
-        // get ranges (over inline) of inlines in the next line of the current page
-        //
-
-        // TODO know where to write to
-
-        // let mut writer = Writer::new(
-        //     &text[..],
-        //     inline.as_slice(),
-        //     line_format,
-        //     &mut self.layout,
-        //     Section::Body,
-        // );
-        // writer.write().trim();
-
-        // let lines = writer.get_lines();
-        // let unformatted = get_unformatted(&text, &inline[&Section::Body], lines);
-
-        // match format {
-        //     Format::Justified => {
-        //         let (tail, head) = unformatted.split_last().unwrap();
-        //         justify(&mut self.layout, layout::Section::Body, head);
-        //         left(&mut self.layout, layout::Section::Body, from_ref(tail));
-        //     }
-        //     Format::Left => {
-        //         left(&mut self.layout, layout::Section::Body, &unformatted);
-        //     }
-        //     _ => (),
-        // }
-
-        // self.clean();
+        self
     }
 
-    fn next_block(
-        &mut self,
-        mut page: PageBuilder,
-        inline: &mut [Inline],
-        text: &[char],
-    ) -> (PageBuilder, Option<usize>) {
-        let mut publish = page.clone();
-        let mut reached = 0;
-        for (i, inline) in inline
-            .iter_mut()
-            .enumerate()
-            .skip_while(|(_, c)| c.is_whitespace)
-        {
-            if inline.is_whitespace {
-                publish = page.clone();
-                reached = i;
-            }
-            let new_block = if inline.properties.style == Style::Caller {
-                let caller = self.get_caller(self.layout.footnote);
-                let text = caller.text.chars().collect::<Vec<_>>();
-                inline.range = 0..text.len();
-                inline.width = caller.width;
-                let mut caller = inline.clone();
-                caller.properties.section = Section::Body;
-                self.layout.footnote += 1;
-                page.try_add(&caller, &text) || page.try_add(inline, &text)
-            } else {
-                page.try_add(inline, text)
-            };
-            if new_block {
-                return (publish, Some(reached));
-            }
-        }
-        (page, None) // we know everything has fitted in the line
+    pub fn insert_caller(&mut self, _footnote_id: usize) {
+        // Insert a placeholder "+" character in the body text
+        // It will be replaced with the actual caller letter during page breaking
+        let style = Style::Caller;
+        let start = self.current_text.len();
+        self.current_text.push('+');
+        let end = self.current_text.len();
+        self.current_styles.push((start..end, style));
     }
 
-    fn get_caller(&mut self, i: usize) -> &Caller {
-        get_or_insert_with(&mut self.callers, i, |i| {
-            let mut builder = self.renderer.new_builder();
-            let text = usize_to_letters(i);
-            builder
-                .push_style(&self.renderer.get_style(&Style::Caller))
-                .add_text(&text);
-            let mut paragraph = builder.build();
-            paragraph.layout(f32::INFINITY);
-            let width = paragraph.get_rects_for_range(
-                0..text.len(),
-                RectHeightStyle::Tight,
-                RectWidthStyle::Tight,
-            )[0]
-            .rect
-            .width();
-            Caller { text, width }
-        })
+    fn next_footnote_id(&mut self) -> usize {
+        let id = self.current_footnotes.len();
+        id
     }
 
-    fn clean(&mut self) {
-        self.properties.drain(..);
-        // self.layout.drain_lines();
-        self.builder.reset();
+    pub fn begin_footnote(&mut self, footnote_id: usize) {
+        self.collecting_footnote = true;
+        self.footnote_id_in_progress = footnote_id;
+        self.footnote_text.clear();
+        self.footnote_styles.clear();
     }
 
-    fn push_properties(&mut self, style: Style, section: Section) -> &mut Self {
-        let properties = Properties {
-            style,
-            section,
-            actions: vec![],
+    pub fn end_footnote(&mut self) {
+        self.collecting_footnote = false;
+        // The caller_body_offset is the byte position of the "+" we inserted
+        // Find it by looking at the last Caller-styled range in current_styles
+        let caller_offset = self
+            .current_styles
+            .iter()
+            .rev()
+            .find(|(_, s)| *s == Style::Caller)
+            .map(|(r, _)| r.start)
+            .unwrap_or(0);
+
+        let content = ParagraphSpec {
+            text: mem::take(&mut self.footnote_text),
+            styles: mem::take(&mut self.footnote_styles),
+            alignment: Alignment::Left,
+            indent: (0.0, 0.0),
+            drop_cap: None,
+            spacing_before: 0.0,
+            spacing_after: 0.0,
+            index_markers: Vec::new(),
         };
-        self.queue.push(properties.clone());
-        self.builder.push_style(&self.renderer.get_style(&style));
-        self.properties.push((self.text_cursor(), properties));
-        self
+
+        self.current_footnotes.push(FootnoteSpec {
+            caller_body_offset: caller_offset,
+            content,
+        });
     }
 
-    fn pop_properties(&mut self) -> &mut Self {
-        self.queue.pop();
-        self.builder.pop();
-        self
+    pub fn set_pending_drop_cap(&mut self, drop_cap: DropCap) {
+        self.pending_drop_cap = Some(drop_cap);
     }
 
-    fn add_text(&mut self, text: impl AsRef<str>) -> &mut Self {
-        let current = self.properties.last().unwrap().clone();
-        let style = self.queue.last().unwrap();
-        if &current.1 != style {
-            self.properties.push((current.0, style.clone()));
+    pub fn set_pending_drop_cap_text(&mut self, text: String, style: Style) {
+        self.pending_drop_cap_text = Some(text);
+        self.pending_drop_cap_style = Some(style);
+    }
+
+    pub fn paint_paragraph(&mut self) {
+        self.finalize_paragraph(Alignment::Justified, (20.0, 0.0), 0.0, 0.0);
+    }
+
+    pub fn paint_paragraph_with_indent(&mut self, first: f32, cont: f32) {
+        self.finalize_paragraph(Alignment::Left, (first, cont), 0.0, 0.0);
+    }
+
+    pub fn paint_heading(&mut self) {
+        self.finalize_paragraph(
+            Alignment::Center,
+            (0.0, 0.0),
+            self.dim.header_height / 2.0,
+            self.dim.header_height / 2.0,
+        );
+    }
+
+    fn finalize_paragraph(
+        &mut self,
+        alignment: Alignment,
+        indent: (f32, f32),
+        spacing_before: f32,
+        spacing_after: f32,
+    ) {
+        // Prepend drop cap text if pending
+        if let Some(dc_text) = self.pending_drop_cap_text.take() {
+            let dc_style = self.pending_drop_cap_style.take().unwrap_or(Style::Chapter);
+            let dc_len = dc_text.len();
+
+            // Shift all existing style ranges and index markers
+            for (range, _) in &mut self.current_styles {
+                range.start += dc_len;
+                range.end += dc_len;
+            }
+            for (offset, _) in &mut self.current_index_markers {
+                *offset += dc_len;
+            }
+            for footnote in &mut self.current_footnotes {
+                footnote.caller_body_offset += dc_len;
+            }
+
+            // Prepend
+            self.current_text.insert_str(0, &dc_text);
+            self.current_styles.insert(0, (0..dc_len, dc_style));
         }
-        let current = self.properties.last_mut().unwrap();
-        current.0 += text.as_ref().chars().count();
-        self.builder.add_text(text);
-        self
+
+        let body = ParagraphSpec {
+            text: mem::take(&mut self.current_text),
+            styles: mem::take(&mut self.current_styles),
+            alignment,
+            indent,
+            drop_cap: self.pending_drop_cap.take(),
+            spacing_before,
+            spacing_after,
+            index_markers: mem::take(&mut self.current_index_markers),
+        };
+
+        let footnotes = mem::take(&mut self.current_footnotes);
+
+        self.collected.push(CollectedParagraph { body, footnotes });
     }
 
-    fn text_cursor(&self) -> usize {
-        self.properties.last().map_or(0, |(i, _)| *i)
+    pub fn clean(&mut self) {
+        self.current_text.clear();
+        self.current_styles.clear();
+        self.current_index_markers.clear();
+        self.current_footnotes.clear();
+        self.pending_drop_cap = None;
+        self.pending_drop_cap_text = None;
+        self.pending_drop_cap_style = None;
     }
+
+    // Index methods
 
     pub fn index_book(&mut self, book: &ArchivedBookIdentifier) -> &mut Self {
-        self.location.book = Some(deserialize::<_, Error>(book).unwrap());
+        let book: BookIdentifier = rkyv::deserialize::<_, Error>(book).unwrap();
+        self.location.book = Some(book);
         self
     }
 
-    pub fn index_header(&mut self, header: &ArchivedString) -> &mut Self {
-        self.location.header = Some(deserialize::<_, Error>(header).unwrap());
+    pub fn index_header(&mut self, header: &rkyv::string::ArchivedString) -> &mut Self {
+        let header: String = rkyv::deserialize::<_, Error>(header).unwrap();
+        self.location.header = Some(header.clone());
         let index = Index::new(
             self.location.book.clone().unwrap(),
-            self.location.header.clone().unwrap(),
+            header,
             None,
             None,
         );
-        self.add_action(Action::Index(index));
+        let id = self.index_registry.len();
+        self.index_registry.push(index);
+        let offset = if self.collecting_footnote {
+            self.footnote_text.len()
+        } else {
+            self.current_text.len()
+        };
+        self.current_index_markers.push((offset, id));
         self
     }
 
@@ -669,7 +364,14 @@ impl Painter {
             self.location.chapter,
             None,
         );
-        self.add_action(Action::Index(index));
+        let id = self.index_registry.len();
+        self.index_registry.push(index);
+        let offset = if self.collecting_footnote {
+            self.footnote_text.len()
+        } else {
+            self.current_text.len()
+        };
+        self.current_index_markers.push((offset, id));
         self
     }
 
@@ -680,35 +382,34 @@ impl Painter {
             self.location.chapter,
             Some(verse),
         );
-        self.add_action(Action::Index(index));
+        let id = self.index_registry.len();
+        self.index_registry.push(index);
+        let offset = if self.collecting_footnote {
+            self.footnote_text.len()
+        } else {
+            self.current_text.len()
+        };
+        self.current_index_markers.push((offset, id));
         self
     }
 
-    fn add_action(&mut self, action: Action) {
-        self.properties
-            .last_mut()
-            .unwrap()
-            .1
-            .actions
-            .push(action.clone());
-        self.queue.last_mut().unwrap().actions.push(action);
+    // Layout: run the full pipeline after all Paint visitors complete
+
+    pub fn layout(&mut self) -> (Vec<Page>, Indices) {
+        let mut breaker = PageBreaker::new(&self.renderer, &self.dim, &self.index_registry);
+
+        for collected in &self.collected {
+            breaker.process_paragraph(collected);
+        }
+
+        breaker.finalize()
     }
 
-    pub fn get_pages(&self) -> Result<AlignedVec, String> {
-        unimplemented!()
-        // rkyv::to_bytes::<Error>(self.layout.get_pages()).map_err(|e| e.to_string())
-    }
-
-    pub fn get_indices(&self) -> Result<AlignedVec, String> {
-        unimplemented!()
-        // rkyv::to_bytes::<Error>(self.layout.get_indices()).map_err(|e| e.to_string())
-    }
-
-    pub fn get_verses(&self) -> Result<AlignedVec, String> {
-        unimplemented!()
-        // rkyv::to_bytes::<Error>(self.layout.get_verses()).map_err(|e| e.to_string())
-    }
 }
+
+// ---------------------------------------------------------------------------
+// Style enum
+// ---------------------------------------------------------------------------
 
 #[derive(Archive, Serialize, Deserialize, Debug, Hash, PartialEq, Eq, Clone, Copy)]
 #[repr(i32)]
@@ -730,10 +431,10 @@ pub struct Text(*const c_char, usize, Rectangle, TextStyle);
 #[derive(Archive, Serialize, Deserialize, Debug, Clone, Copy)]
 #[repr(C)]
 pub struct Rectangle {
-    top: f32,
-    left: f32,
-    width: f32,
-    height: f32,
+    pub top: f32,
+    pub left: f32,
+    pub width: f32,
+    pub height: f32,
 }
 
 #[derive(Debug, Clone)]
@@ -745,7 +446,704 @@ pub struct Dimensions {
     pub drop_cap_padding: f32,
 }
 
-pub type Range = ops::Range<usize>;
+// ---------------------------------------------------------------------------
+// LineBreaker iterator
+// ---------------------------------------------------------------------------
+
+struct LineBreaker<'a> {
+    items: &'a [InlineItem],
+    cursor: usize,
+    line_index: usize,
+    width_fn: Box<dyn Fn(usize) -> (f32, f32) + 'a>, // line_index -> (left_offset, max_width)
+}
+
+impl<'a> LineBreaker<'a> {
+    fn new(
+        items: &'a [InlineItem],
+        width_fn: Box<dyn Fn(usize) -> (f32, f32) + 'a>,
+    ) -> Self {
+        Self {
+            items,
+            cursor: 0,
+            line_index: 0,
+            width_fn,
+        }
+    }
+}
+
+impl<'a> Iterator for LineBreaker<'a> {
+    type Item = BrokenLine;
+
+    fn next(&mut self) -> Option<BrokenLine> {
+        if self.cursor >= self.items.len() {
+            return None;
+        }
+
+        let (_left_offset, max_width) = (self.width_fn)(self.line_index);
+
+        // Skip leading glue on all lines
+        while self.cursor < self.items.len()
+            && matches!(self.items[self.cursor].kind, ItemKind::Glue)
+        {
+            self.cursor += 1;
+        }
+
+        if self.cursor >= self.items.len() {
+            return None;
+        }
+
+        let start = self.cursor;
+        let mut width = 0.0f32;
+        let mut last_break: Option<(usize, f32, u32)> = None;
+        let mut glue_count = 0u32;
+
+        while self.cursor < self.items.len() {
+            let item = &self.items[self.cursor];
+            match item.kind {
+                ItemKind::Glue => {
+                    last_break = Some((self.cursor, width, glue_count));
+                    glue_count += 1;
+                    width += item.width;
+                    self.cursor += 1;
+                }
+                ItemKind::Word | ItemKind::Caller { .. } => {
+                    if width + item.width > max_width && self.cursor > start {
+                        if let Some((brk, w, gc)) = last_break {
+                            self.cursor = brk + 1;
+                            self.line_index += 1;
+                            return Some(BrokenLine {
+                                item_range: start..brk,
+                                content_width: w,
+                                glue_count: gc,
+                            });
+                        }
+                        // No break opportunity: forced break after this word
+                        self.cursor += 1;
+                        self.line_index += 1;
+                        return Some(BrokenLine {
+                            item_range: start..self.cursor,
+                            content_width: width + item.width,
+                            glue_count,
+                        });
+                    }
+                    width += item.width;
+                    self.cursor += 1;
+                }
+            }
+        }
+
+        // Last line: trim trailing glue from content_width
+        let mut end = self.cursor;
+        let mut trimmed_width = width;
+        let mut trimmed_glue = glue_count;
+        while end > start && matches!(self.items[end - 1].kind, ItemKind::Glue) {
+            end -= 1;
+            trimmed_width -= self.items[end].width;
+            trimmed_glue -= 1;
+        }
+
+        self.line_index += 1;
+        Some(BrokenLine {
+            item_range: start..end,
+            content_width: trimmed_width,
+            glue_count: trimmed_glue,
+        })
+    }
+}
+
+// ---------------------------------------------------------------------------
+// PageBreaker
+// ---------------------------------------------------------------------------
+
+struct PageBreaker<'a> {
+    renderer: &'a Renderer,
+    dim: &'a Dimensions,
+    // Current page accumulation
+    header_fragments: Vec<TextFragment>,
+    body_fragments: Vec<TextFragment>,
+    footer_fragments: Vec<TextFragment>,
+    body_height: f32,
+    footer_height: f32,
+    caller_counter: usize,
+    page_index: usize,
+    // Output
+    pages: Vec<Page>,
+    indices: Indices,
+    index_registry: &'a [Index],
+}
+
+impl<'a> PageBreaker<'a> {
+    fn new(renderer: &'a Renderer, dim: &'a Dimensions, index_registry: &'a [Index]) -> Self {
+        Self {
+            renderer,
+            dim,
+            header_fragments: Vec::new(),
+            body_fragments: Vec::new(),
+            footer_fragments: Vec::new(),
+            body_height: 0.0,
+            footer_height: 0.0,
+            caller_counter: 0,
+            page_index: 0,
+            pages: Vec::new(),
+            indices: HashMap::new(),
+            index_registry,
+        }
+    }
+
+    fn available_body_height(&self) -> f32 {
+        self.dim.height - self.footer_height - self.body_height
+    }
+
+    fn emit_page(&mut self) {
+        let mut page_fragments = Vec::new();
+        page_fragments.append(&mut self.header_fragments);
+        page_fragments.append(&mut self.body_fragments);
+        page_fragments.append(&mut self.footer_fragments);
+        self.pages.push(page_fragments);
+
+        self.page_index += 1;
+        self.body_height = 0.0;
+        self.footer_height = 0.0;
+        self.caller_counter = 0;
+    }
+
+    /// Shape a footnote's ParagraphSpec with the actual caller letter substituted
+    /// for the "+" placeholder, so Skia measures the real glyph widths.
+    fn shape_footnote_with_caller(
+        renderer: &Renderer,
+        fn_spec: &FootnoteSpec,
+        caller_letter: &str,
+    ) -> (ParagraphSpec, Vec<InlineItem>) {
+        let orig = &fn_spec.content;
+
+        // Find the Caller-styled range (the "+" placeholder)
+        let caller_range = orig
+            .styles
+            .iter()
+            .find(|(_, s)| *s == Style::Caller)
+            .map(|(r, _)| r.clone());
+
+        let Some(cr) = caller_range else {
+            // No caller in this footnote content — shape as-is
+            let items = shape(renderer, orig);
+            return (orig.clone(), items);
+        };
+
+        let old_len = cr.end - cr.start; // byte length of "+"
+        let new_len = caller_letter.len();
+        let delta = new_len as isize - old_len as isize;
+
+        // Build new text with caller letter substituted
+        let mut new_text = String::with_capacity(orig.text.len().wrapping_add_signed(delta));
+        new_text.push_str(&orig.text[..cr.start]);
+        new_text.push_str(caller_letter);
+        new_text.push_str(&orig.text[cr.end..]);
+
+        // Shift style ranges
+        let new_styles: Vec<(ops::Range<usize>, Style)> = orig
+            .styles
+            .iter()
+            .map(|(r, s)| {
+                if r.start == cr.start {
+                    // This is the caller range itself
+                    (cr.start..cr.start + new_len, *s)
+                } else if r.start >= cr.end {
+                    // After the caller — shift by delta
+                    let start = (r.start as isize + delta) as usize;
+                    let end = (r.end as isize + delta) as usize;
+                    (start..end, *s)
+                } else {
+                    // Before the caller — unchanged
+                    (r.clone(), *s)
+                }
+            })
+            .collect();
+
+        // Shift index markers
+        let new_index_markers: Vec<(usize, usize)> = orig
+            .index_markers
+            .iter()
+            .map(|(offset, id)| {
+                if *offset >= cr.end {
+                    ((*offset as isize + delta) as usize, *id)
+                } else {
+                    (*offset, *id)
+                }
+            })
+            .collect();
+
+        let new_spec = ParagraphSpec {
+            text: new_text,
+            styles: new_styles,
+            alignment: orig.alignment.clone(),
+            indent: orig.indent,
+            drop_cap: orig.drop_cap.clone(),
+            spacing_before: orig.spacing_before,
+            spacing_after: orig.spacing_after,
+            index_markers: new_index_markers,
+        };
+
+        let items = shape(renderer, &new_spec);
+        (new_spec, items)
+    }
+
+    /// Compute footnote height by shaping with the given caller letter and
+    /// breaking into lines. Returns (shaped_spec, shaped_items, line_count).
+    fn measure_footnote(
+        renderer: &Renderer,
+        fn_spec: &FootnoteSpec,
+        caller_letter: &str,
+        page_width: f32,
+    ) -> (ParagraphSpec, Vec<InlineItem>, usize) {
+        let (spec, items) = Self::shape_footnote_with_caller(renderer, fn_spec, caller_letter);
+        let breaker = LineBreaker::new(&items, Box::new(move |_| (0.0, page_width)));
+        let line_count = breaker.count();
+        // Re-shape to get items again (iterator consumed them by reference, but
+        // LineBreaker borrows &items so we can't move items before counting).
+        // Actually LineBreaker borrows items, so count consumes the iterator not
+        // the items. Let's just break again for rendering.
+        (spec, items, line_count)
+    }
+
+    fn process_paragraph(&mut self, collected: &CollectedParagraph) {
+        let spec = &collected.body;
+
+        // Add spacing before
+        if spec.spacing_before > 0.0 {
+            if spec.spacing_before > self.available_body_height() {
+                self.emit_page();
+            }
+            self.body_height += spec.spacing_before;
+        }
+
+        // Shape the body paragraph
+        let all_items = shape(self.renderer, spec);
+
+        // If there's a drop cap, the drop cap text was prepended to spec.text.
+        // Find the byte length of the drop cap text so we can exclude those
+        // InlineItems from line breaking (the drop cap is rendered as a fixed
+        // fragment separately).
+        let dc_text_len = if spec.drop_cap.is_some() {
+            spec.styles
+                .iter()
+                .find(|(_, s)| *s == Style::Chapter)
+                .map(|(r, _)| r.end)
+                .unwrap_or(0)
+        } else {
+            0
+        };
+
+        // Split items: drop cap items vs body items
+        let body_item_start = all_items
+            .iter()
+            .position(|item| item.range.start >= dc_text_len)
+            .unwrap_or(all_items.len());
+        let body_items = &all_items[body_item_start..];
+
+        // Body line height is always Normal (drop cap has its own sizing)
+        let body_line_height = self.renderer.line_height(&Style::Normal);
+        let footer_line_height = self.renderer.line_height(&Style::Footnote);
+
+        // Create width function for line breaker
+        let page_width = self.dim.width;
+        let drop_cap = spec.drop_cap.clone();
+        let indent = spec.indent;
+
+        // If there's a drop cap, measure it
+        let dc_width = if let Some(ref _dc) = drop_cap {
+            // The drop cap text is the first styled range with Chapter style
+            let dc_range = spec
+                .styles
+                .iter()
+                .find(|(_, s)| *s == Style::Chapter)
+                .map(|(r, _)| r.clone());
+            if let Some(range) = dc_range {
+                let dc_text = &spec.text[range.clone()];
+                let mut builder = self.renderer.new_builder();
+                builder
+                    .push_style(&self.renderer.get_style(&Style::Chapter))
+                    .add_text(dc_text);
+                let mut paragraph = builder.build();
+                paragraph.layout(f32::INFINITY);
+                use skia_safe::textlayout::{RectHeightStyle, RectWidthStyle};
+                let rects = paragraph.get_rects_for_range(
+                    0..dc_text.len(),
+                    RectHeightStyle::Tight,
+                    RectWidthStyle::Tight,
+                );
+                if rects.is_empty() {
+                    0.0
+                } else {
+                    rects[0].rect.width()
+                }
+            } else {
+                0.0
+            }
+        } else {
+            0.0
+        };
+
+        let width_fn = move |line: usize| -> (f32, f32) {
+            if let Some(ref dc) = drop_cap {
+                if line < dc.line_span {
+                    return (dc_width + dc.padding, page_width - dc_width - dc.padding);
+                }
+            }
+            match line {
+                0 => (indent.0, page_width - indent.0),
+                _ => (indent.1, page_width - indent.1),
+            }
+        };
+
+        // Break body into lines
+        let breaker = LineBreaker::new(&body_items, Box::new(width_fn));
+        let body_lines: Vec<BrokenLine> = breaker.collect();
+
+        // Track the top of the first body line (may differ from initial
+        // body_height if a page break occurs before/during the first line).
+        let mut first_line_top: Option<f32> = None;
+
+        // Record indices from drop cap items (excluded from body_items)
+        for item in &all_items[..body_item_start] {
+            if let Some(index_id) = item.index_id {
+                if index_id < self.index_registry.len() {
+                    self.indices
+                        .insert(self.index_registry[index_id].clone(), self.page_index);
+                }
+            }
+        }
+
+        let num_lines = body_lines.len();
+
+        for (line_idx, line) in body_lines.iter().enumerate() {
+            let is_last_line = line_idx == num_lines - 1;
+
+            // Scan for callers in this line, assign provisional caller letters,
+            // and shape each footnote with the assigned letter for accurate widths.
+            let mut line_footnote_height = 0.0;
+            // (item_idx, caller_letter, footnote_id)
+            let mut line_callers: Vec<(usize, String, usize)> = Vec::new();
+            // Shaped footnote data, keyed by footnote_id
+            let mut shaped_footnotes: HashMap<usize, (ParagraphSpec, Vec<InlineItem>, usize)> =
+                HashMap::new();
+
+            for idx in line.item_range.clone() {
+                let item = &body_items[idx];
+                if let ItemKind::Caller { footnote_id } = item.kind {
+                    let caller_letter = usize_to_letters(self.caller_counter);
+                    line_callers.push((idx, caller_letter.clone(), footnote_id));
+                    self.caller_counter += 1;
+
+                    // Shape footnote with actual caller letter and compute height
+                    if footnote_id < collected.footnotes.len() {
+                        let (fn_spec_shaped, fn_items, fn_line_count) = Self::measure_footnote(
+                            self.renderer,
+                            &collected.footnotes[footnote_id],
+                            &caller_letter,
+                            page_width,
+                        );
+                        line_footnote_height += fn_line_count as f32 * footer_line_height;
+                        shaped_footnotes
+                            .insert(footnote_id, (fn_spec_shaped, fn_items, fn_line_count));
+                    }
+                }
+            }
+
+            // Check if line + footnotes fit on current page
+            let total_needed = body_line_height + line_footnote_height;
+            if total_needed > self.available_body_height()
+                && self.body_height > 0.0
+            {
+                self.emit_page();
+
+                // Re-assign callers with reset counter and re-shape footnotes
+                shaped_footnotes.clear();
+                for (_item_idx, caller_letter, footnote_id) in &mut line_callers {
+                    *caller_letter = usize_to_letters(self.caller_counter);
+                    self.caller_counter += 1;
+
+                    if *footnote_id < collected.footnotes.len() {
+                        let (fn_spec_shaped, fn_items, fn_line_count) = Self::measure_footnote(
+                            self.renderer,
+                            &collected.footnotes[*footnote_id],
+                            caller_letter,
+                            page_width,
+                        );
+                        shaped_footnotes
+                            .insert(*footnote_id, (fn_spec_shaped, fn_items, fn_line_count));
+                    }
+                }
+            }
+
+            // On the first body line, render the drop cap immediately so it
+            // ends up on the correct page (before any later page breaks move
+            // us to a different page).
+            if first_line_top.is_none() {
+                let flt = self.body_height;
+                first_line_top = Some(flt);
+
+                if let Some(ref dc) = spec.drop_cap {
+                    let dc_range = spec
+                        .styles
+                        .iter()
+                        .find(|(_, s)| *s == Style::Chapter)
+                        .map(|(r, _)| r.clone());
+                    if let Some(range) = dc_range {
+                        let dc_text = spec.text[range].to_string();
+                        let dc_line_height = body_line_height * dc.line_span as f32;
+                        self.body_fragments.push(TextFragment::new(
+                            dc_text,
+                            Rectangle {
+                                top: flt,
+                                left: 0.0,
+                                width: dc_width,
+                                height: dc_line_height,
+                            },
+                            Style::Chapter,
+                            0.0,
+                        ));
+                    }
+                }
+            }
+
+            // Compute left offset for this line
+            let (left_offset, line_width) = {
+                if let Some(ref dc) = spec.drop_cap {
+                    if line_idx < dc.line_span {
+                        (dc_width + dc.padding, page_width - dc_width - dc.padding)
+                    } else {
+                        match line_idx {
+                            0 => (spec.indent.0, page_width - spec.indent.0),
+                            _ => (spec.indent.1, page_width - spec.indent.1),
+                        }
+                    }
+                } else {
+                    match line_idx {
+                        0 => (spec.indent.0, page_width - spec.indent.0),
+                        _ => (spec.indent.1, page_width - spec.indent.1),
+                    }
+                }
+            };
+
+            // Build the (item_idx, caller_letter) slice for body extract_fragments
+            let body_caller_pairs: Vec<(usize, String)> = line_callers
+                .iter()
+                .map(|(idx, letter, _)| (*idx, letter.clone()))
+                .collect();
+
+            // Extract body fragments for this line
+            let top = self.body_height;
+            let fragments = extract_fragments(
+                &body_items,
+                &spec.text,
+                line,
+                top,
+                body_line_height,
+                left_offset,
+                line_width,
+                is_last_line,
+                &spec.alignment,
+                &body_caller_pairs,
+            );
+
+            // Record indices
+            for idx in line.item_range.clone() {
+                if let Some(index_id) = body_items[idx].index_id {
+                    if index_id < self.index_registry.len() {
+                        self.indices
+                            .insert(self.index_registry[index_id].clone(), self.page_index);
+
+                    }
+                }
+            }
+
+            self.body_fragments.extend(fragments);
+            self.body_height += body_line_height;
+
+            // Render footnote content for callers on this line using the
+            // properly shaped footnote items (with correct caller letter widths)
+            for (_item_idx, _caller_letter, footnote_id) in &line_callers {
+                if let Some((fn_spec_shaped, fn_items, _fn_line_count)) =
+                    shaped_footnotes.get(footnote_id)
+                {
+                    let fn_breaker =
+                        LineBreaker::new(fn_items, Box::new(|_| (0.0, page_width)));
+                    let fn_lines: Vec<BrokenLine> = fn_breaker.collect();
+
+                    let fn_num_lines = fn_lines.len();
+                    for (fn_line_idx, fn_line) in fn_lines.iter().enumerate() {
+                        let fn_top = self.dim.height
+                            - self.footer_height
+                            - (fn_num_lines - fn_line_idx) as f32 * footer_line_height;
+                        let fn_fragments = extract_fragments(
+                            fn_items,
+                            &fn_spec_shaped.text,
+                            fn_line,
+                            fn_top,
+                            footer_line_height,
+                            0.0,
+                            page_width,
+                            fn_line_idx == fn_num_lines - 1,
+                            &Alignment::Left,
+                            &[], // no caller substitution needed — text already has the real letter
+                        );
+                        self.footer_fragments.extend(fn_fragments);
+                    }
+                    self.footer_height += fn_num_lines as f32 * footer_line_height;
+                }
+            }
+        }
+
+        // Add spacing after
+        self.body_height += spec.spacing_after;
+    }
+
+    fn finalize(mut self) -> (Vec<Page>, Indices) {
+        // Emit the last page if it has content
+        if !self.body_fragments.is_empty()
+            || !self.footer_fragments.is_empty()
+            || !self.header_fragments.is_empty()
+        {
+            let mut page_fragments = Vec::new();
+            page_fragments.append(&mut self.header_fragments);
+            page_fragments.append(&mut self.body_fragments);
+            page_fragments.append(&mut self.footer_fragments);
+            self.pages.push(page_fragments);
+        }
+
+        (self.pages, self.indices)
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Fragment extraction
+// ---------------------------------------------------------------------------
+
+fn extract_fragments(
+    items: &[InlineItem],
+    text: &str,
+    line: &BrokenLine,
+    top: f32,
+    line_height: f32,
+    left_offset: f32,
+    line_width: f32,
+    is_last_line: bool,
+    alignment: &Alignment,
+    callers: &[(usize, String)], // (item_idx, caller_letter)
+) -> Vec<TextFragment> {
+    if line.item_range.is_empty() {
+        return vec![];
+    }
+
+    let word_spacing = match alignment {
+        Alignment::Justified if !is_last_line && line.glue_count > 0 => {
+            (line_width - line.content_width) / line.glue_count as f32
+        }
+        _ => 0.0,
+    };
+
+    let start_left = match alignment {
+        Alignment::Center => left_offset + (line_width - line.content_width) / 2.0,
+        _ => left_offset,
+    };
+
+    let mut fragments = Vec::new();
+    let mut left = start_left;
+    let mut current_text = String::new();
+    let mut current_style: Option<Style> = None;
+    let mut current_left = left;
+    let mut current_width = 0.0f32;
+    let mut current_word_spacing = 0.0f32;
+
+    for idx in line.item_range.clone() {
+        let item = &items[idx];
+
+        // Get the text for this item - if it's a caller, use the assigned letter
+        let segment: String = if let ItemKind::Caller { .. } = item.kind {
+            callers
+                .iter()
+                .find(|(i, _)| *i == idx)
+                .map(|(_, letter)| letter.clone())
+                .unwrap_or_else(|| text[item.range.clone()].to_string())
+        } else {
+            text[item.range.clone()].to_string()
+        };
+
+        let effective_width = if matches!(item.kind, ItemKind::Glue) {
+            item.width + word_spacing
+        } else {
+            item.width
+        };
+
+        let item_word_spacing = if matches!(item.kind, ItemKind::Glue) {
+            word_spacing
+        } else {
+            0.0
+        };
+
+        if current_style == Some(item.style) {
+            current_text.push_str(&segment);
+            current_width += effective_width;
+            // Use the max word_spacing for the merged fragment
+            if item_word_spacing > current_word_spacing {
+                current_word_spacing = item_word_spacing;
+            }
+            left += effective_width;
+        } else {
+            if let Some(style) = current_style {
+                fragments.push(TextFragment::new(
+                    mem::take(&mut current_text),
+                    Rectangle {
+                        top,
+                        left: current_left,
+                        width: current_width,
+                        height: line_height,
+                    },
+                    style,
+                    current_word_spacing,
+                ));
+            }
+            left += effective_width;
+            // When a new fragment starts with glue, absorb it as a
+            // positional gap instead of text content.  Flutter's
+            // wordSpacing doesn't apply to a leading space in a TextSpan.
+            if matches!(item.kind, ItemKind::Glue) {
+                current_text = String::new();
+                current_style = Some(item.style);
+                current_left = left;
+                current_width = 0.0;
+                current_word_spacing = item_word_spacing;
+            } else {
+                current_text = segment;
+                current_style = Some(item.style);
+                current_left = left - effective_width;
+                current_width = effective_width;
+                current_word_spacing = item_word_spacing;
+            }
+        }
+    }
+
+    // Flush last fragment
+    if let Some(style) = current_style {
+        fragments.push(TextFragment::new(
+            current_text,
+            Rectangle {
+                top,
+                left: current_left,
+                width: current_width,
+                height: line_height,
+            },
+            style,
+            current_word_spacing,
+        ));
+    }
+
+    fragments
+}
+
+// ---------------------------------------------------------------------------
+// Utility functions
+// ---------------------------------------------------------------------------
 
 fn usize_to_letters(mut i: usize) -> String {
     let mut s = String::new();
@@ -764,21 +1162,3 @@ fn usize_to_letters(mut i: usize) -> String {
     s.chars().rev().collect()
 }
 
-fn get_or_insert_with<T, F>(vec: &mut Vec<T>, i: usize, mut f: F) -> &mut T
-where
-    F: FnMut(usize) -> T,
-{
-    if i >= vec.len() {
-        vec.extend((vec.len()..=i).map(&mut f));
-    }
-
-    &mut vec[i]
-}
-
-fn pop_or_copy_last<T: Clone>(v: &mut Vec<T>) -> Option<T> {
-    match v.len() {
-        0 => None,
-        1 => Some(v[0].clone()),
-        _ => v.pop(),
-    }
-}

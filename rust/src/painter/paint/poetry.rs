@@ -15,7 +15,7 @@ impl Paint for ArchivedPoetry {
                     painter
                         .add_text(" ")
                         .push_properties(Style::Verse, Section::Body)
-                        // .index_verse(verse_num.to_native())
+                        .index_verse(verse_num.to_native())
                         .add_text(verse_num.to_string())
                         .pop_properties();
                 }
@@ -27,10 +27,13 @@ impl Paint for ArchivedPoetry {
             }
         }
         match self.style {
-            PoetryKind::Normal(indent_level) => painter.pop_properties().paint_paragraph(
-//Format::Left,
-//LineFormat::new(20. * indent_level as f32, 20. * 2.0, 0.0),
-            ),
+            PoetryKind::Normal(indent_level) => {
+                painter.pop_properties();
+                painter.paint_paragraph_with_indent(
+                    20.0 * indent_level as f32,
+                    20.0 * 2.0,
+                );
+            }
             _ => painter.clean(),
         }
     }

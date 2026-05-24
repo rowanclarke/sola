@@ -7,6 +7,14 @@ use super::Paint;
 impl Paint for ArchivedFootnote {
     fn paint(&self, painter: &mut Painter) {
         use usfm::ArchivedFootnoteElement as Element;
+
+        // 1. Insert caller placeholder in BODY text
+        let fn_id = painter.next_footnote_id();
+        painter.insert_caller(fn_id);
+
+        // 2. Collect footnote CONTENT as separate paragraph
+        painter.begin_footnote(fn_id);
+
         painter.push_properties(Style::Caller, Section::Footer);
         match &self.caller {
             ArchivedCaller::Auto => painter.add_text("+"),
@@ -14,6 +22,7 @@ impl Paint for ArchivedFootnote {
             _ => painter,
         }
         .pop_properties();
+
         painter.push_properties(Style::Footnote, Section::Footer);
         for element in self.elements.iter() {
             match element {
@@ -24,5 +33,7 @@ impl Paint for ArchivedFootnote {
             }
         }
         painter.pop_properties();
+
+        painter.end_footnote();
     }
 }

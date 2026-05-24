@@ -1,6 +1,6 @@
 use usfm::ArchivedBook;
 
-use crate::painter::{Painter, Style};
+use crate::painter::{DropCap, Painter, Style, layout::Section};
 
 use super::Paint;
 
@@ -15,12 +15,17 @@ impl Paint for ArchivedBook {
                 Content::Paragraph(paragraph) => paragraph.paint(painter),
                 Content::Poetry(poetry) => poetry.paint(painter),
                 Content::Element(element) => element.paint(painter),
-                // Content::Chapter(n) => painter
-                //     .push_style(Style::Chapter)
-                //     .index_chapter(n.to_native())
-                //     .add_text(n.to_string())
-                //     .pop_style()
-                //     .paint_drop_cap(),
+                Content::Chapter(n) => {
+                    painter.set_pending_drop_cap(DropCap {
+                        line_span: 2,
+                        padding: painter.get_dimensions().drop_cap_padding,
+                    });
+                    painter.push_properties(Style::Chapter, Section::Body);
+                    painter.index_chapter(n.to_native());
+                    let chapter_text = n.to_string();
+                    painter.set_pending_drop_cap_text(chapter_text, Style::Chapter);
+                    painter.pop_properties();
+                }
                 _ => (),
             }
         }

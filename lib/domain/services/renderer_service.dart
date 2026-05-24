@@ -11,6 +11,9 @@ const _defaultStyles = [
   (rust.Style.HEADER, TextStyle(fontFamily: 'AveriaSerifLibre', fontSize: 24, height: 1.0, letterSpacing: 0, wordSpacing: 0)),
   (rust.Style.VERSE, TextStyle(fontFamily: 'AveriaSerifLibre', fontSize: 10, height: 1.0, letterSpacing: 0, wordSpacing: 0)),
   (rust.Style.CHAPTER, TextStyle(fontFamily: 'AveriaSerifLibre', fontSize: 48, height: 1.0, letterSpacing: 0, wordSpacing: 0)),
+  (rust.Style.CALLER, TextStyle(fontFamily: 'AveriaSerifLibre', fontSize: 10, height: 1.0, letterSpacing: 0, wordSpacing: 0)),
+  (rust.Style.FOOTNOTE, TextStyle(fontFamily: 'AveriaSerifLibre', fontSize: 12, height: 1.5, letterSpacing: 0, wordSpacing: 0)),
+  (rust.Style.CROSSREF, TextStyle(fontFamily: 'AveriaSerifLibre', fontSize: 12, height: 1.5, letterSpacing: 0, wordSpacing: 0)),
 ];
 
 void registerDefaultStyles(Pointer<Void> renderer) {

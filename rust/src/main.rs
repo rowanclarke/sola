@@ -128,6 +128,28 @@ fn main() {
     let mut painter = Painter::new(&renderer, dim);
 
     archived.paint(&mut painter);
+
+    let (pages, indices) = painter.layout();
+    println!("Pages: {}", pages.len());
+    for (i, page) in pages.iter().enumerate() {
+        println!("  Page {}: {} fragments", i, page.len());
+        for frag in page {
+            println!(
+                "    {:?} @ ({:.1}, {:.1}) {:.1}x{:.1} +{:.2}: {:?}",
+                frag.style,
+                frag.rect.left,
+                frag.rect.top,
+                frag.rect.width,
+                frag.rect.height,
+                frag.word_spacing,
+                frag.text
+            );
+        }
+    }
+    println!("Indices: {}", indices.len());
+    for (index, page) in &indices {
+        println!("  {:?} -> page {}", index, page);
+    }
 }
 
 #[macro_export]

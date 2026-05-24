@@ -6,8 +6,8 @@ mod search;
 use error::SolaError;
 use ffi::{read_bytes, read_ref, read_str, run_ffi};
 use painter::{
-    ArchivedIndex, ArchivedIndices, ArchivedPages, Dimensions, Index, Paint, Painter, Renderer,
-    Style, Text, TextStyle,
+    ArchivedIndex, ArchivedIndices, ArchivedPages, Dimensions, Index, Indices, Paint, Painter,
+    Renderer, Style, Text, TextStyle,
 };
 use rkyv::deserialize;
 use rkyv::rancor::Error as RkyvError;
@@ -16,6 +16,15 @@ use std::ffi::{c_char, c_void};
 use std::mem;
 use std::num::TryFromIntError;
 use usfm::{ArchivedBook, parse};
+
+use crate::painter::layout::Page;
+
+/// Holds the result of layout() for FFI access.
+struct LayoutResult {
+    pages: Vec<Page>,
+    indices: Indices,
+    verses: Vec<Index>,
+}
 
 // ---------------------------------------------------------------------------
 // Renderer setup (infallible)
@@ -173,14 +182,33 @@ pub extern "C" fn layout(
     log!("[FFI] layout starting...");
     run_ffi(
         || {
+            log!("a");
             let renderer = unsafe { read_ref::<Renderer>(renderer) };
             let book = unsafe { read_ref::<ArchivedBook>(book) };
             let dim = unsafe { Box::from_raw(dim) };
 
+            log!("b");
             let mut painter = Painter::new(renderer, *dim.clone());
             book.paint(&mut painter);
+
+            log!("c");
+            let (pages, indices) = painter.layout();
+            log!("Hello");
+
+            // Extract verses from indices (all entries with a verse field)
+            let verses: Vec<Index> = indices
+                .keys()
+                .filter(|idx| idx.verse.is_some())
+                .cloned()
+                .collect();
+
+            let result = LayoutResult {
+                pages,
+                indices,
+                verses,
+            };
             log!("[FFI] layout complete");
-            Ok(Box::into_raw(Box::new(painter)) as *mut c_void)
+            Ok(Box::into_raw(Box::new(result)) as *mut c_void)
         },
         out_error,
         out_error_len,
@@ -190,16 +218,17 @@ pub extern "C" fn layout(
 
 #[unsafe(no_mangle)]
 pub extern "C" fn serialize_pages(
-    painter: *const c_void,
+    layout_result: *const c_void,
     out: *mut *const u8,
     out_len: *mut usize,
     out_error: *mut *mut c_char,
     out_error_len: *mut usize,
 ) {
-    let Some(pages) = run_ffi(
+    let Some(bytes) = run_ffi(
         || {
-            let painter = unsafe { read_ref::<Painter>(painter) };
-            painter.get_pages().map_err(|e| SolaError::Serialization(e))
+            let result = unsafe { read_ref::<LayoutResult>(layout_result) };
+            rkyv::to_bytes::<RkyvError>(&result.pages)
+                .map_err(|e| SolaError::Serialization(e.to_string()))
         },
         out_error,
         out_error_len,
@@ -207,10 +236,10 @@ pub extern "C" fn serialize_pages(
         return;
     };
     unsafe {
-        *out = pages.as_ptr();
-        *out_len = pages.len();
+        *out = bytes.as_ptr();
+        *out_len = bytes.len();
     }
-    mem::forget(pages);
+    mem::forget(bytes);
 }
 
 #[unsafe(no_mangle)]
@@ -273,18 +302,17 @@ pub extern "C" fn page(
 
 #[unsafe(no_mangle)]
 pub extern "C" fn serialize_indices(
-    painter: *const c_void,
+    layout_result: *const c_void,
     out: *mut *const u8,
     out_len: *mut usize,
     out_error: *mut *mut c_char,
     out_error_len: *mut usize,
 ) {
-    let Some(indices) = run_ffi(
+    let Some(bytes) = run_ffi(
         || {
-            let painter = unsafe { read_ref::<Painter>(painter) };
-            painter
-                .get_indices()
-                .map_err(|e| SolaError::Serialization(e))
+            let result = unsafe { read_ref::<LayoutResult>(layout_result) };
+            rkyv::to_bytes::<RkyvError>(&result.indices)
+                .map_err(|e| SolaError::Serialization(e.to_string()))
         },
         out_error,
         out_error_len,
@@ -292,10 +320,10 @@ pub extern "C" fn serialize_indices(
         return;
     };
     unsafe {
-        *out = indices.as_ptr();
-        *out_len = indices.len();
+        *out = bytes.as_ptr();
+        *out_len = bytes.len();
     }
-    mem::forget(indices);
+    mem::forget(bytes);
 }
 
 #[unsafe(no_mangle)]
@@ -379,18 +407,17 @@ pub extern "C" fn get_index(
 
 #[unsafe(no_mangle)]
 pub extern "C" fn serialize_verses(
-    painter: *const c_void,
+    layout_result: *const c_void,
     out: *mut *const u8,
     out_len: *mut usize,
     out_error: *mut *mut c_char,
     out_error_len: *mut usize,
 ) {
-    let Some(verses) = run_ffi(
+    let Some(bytes) = run_ffi(
         || {
-            let painter = unsafe { read_ref::<Painter>(painter) };
-            painter
-                .get_verses()
-                .map_err(|e| SolaError::Serialization(e))
+            let result = unsafe { read_ref::<LayoutResult>(layout_result) };
+            rkyv::to_bytes::<RkyvError>(&result.verses)
+                .map_err(|e| SolaError::Serialization(e.to_string()))
         },
         out_error,
         out_error_len,
@@ -398,10 +425,10 @@ pub extern "C" fn serialize_verses(
         return;
     };
     unsafe {
-        *out = verses.as_ptr();
-        *out_len = verses.len();
+        *out = bytes.as_ptr();
+        *out_len = bytes.len();
     }
-    mem::forget(verses);
+    mem::forget(bytes);
 }
 
 // ---------------------------------------------------------------------------
