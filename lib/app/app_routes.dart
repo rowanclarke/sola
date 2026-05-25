@@ -5,8 +5,8 @@ import '../presentation/screens/reader_screen.dart';
 import '../presentation/screens/rendering_config_screen.dart';
 
 abstract class AppRoutes {
-  static const String library = '/';
-  static const String reader = '/reader';
+  static const String library = '/library';
+  static const String reader = '/';
   static const String renderingConfig = '/rendering_config';
   static const String search = '/search';
 }

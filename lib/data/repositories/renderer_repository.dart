@@ -95,7 +95,7 @@ class RendererRepository {
 
     final pages = List.generate(
       numPages,
-      (n) => PageModel(_rendererService.getPage(archivedPages, n)),
+      (n) => PageModel(n + 1),
     );
     _pageCache[cacheKey] = pages;
     debugPrint('[RendererRepo] Deserialized $numPages pages');

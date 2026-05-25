@@ -1,7 +1,5 @@
-import 'package:rust/rust.dart';
-
 class PageModel {
-  final List<Text> page;
+  final int pageNumber; // 1-based
 
-  PageModel(this.page);
+  PageModel(this.pageNumber);
 }
