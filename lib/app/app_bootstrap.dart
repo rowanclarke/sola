@@ -3,18 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
-import '../data/repositories/bible_repository.dart';
+import '../data/repositories/language_repository.dart';
 import '../data/repositories/library_repository.dart';
-import '../data/repositories/renderer_repository.dart';
-import '../data/repositories/search_repository.dart';
 import '../data/repositories/session_repository.dart';
 import '../domain/services/file_service.dart';
-import '../domain/services/model_service.dart';
-import '../domain/services/renderer_service.dart';
-import '../presentation/viewmodels/library_viewmodel.dart';
-import '../presentation/viewmodels/reader_viewmodel.dart';
-import '../presentation/viewmodels/rendering_viewmodel.dart';
-import '../presentation/viewmodels/search_viewmodel.dart';
+import '../presentation/viewmodels/onboarding_viewmodel.dart';
 import 'app_routes.dart';
 
 class AppBootstrap {
@@ -23,58 +16,46 @@ class AppBootstrap {
     final dir = await getApplicationSupportDirectory();
     debugPrint('[Bootstrap] App directory: ${dir.path}');
     final fileService = FileService(dir);
-    final rendererService = RendererService();
-
-    rendererService.registerStyles();
 
     final sessionRepository = SessionRepository(fileService: fileService);
     await sessionRepository.init();
 
     final libraryRepository = LibraryRepository(fileService: fileService);
-    final bibleRepository = BibleRepository(
+    final languageRepository = LanguageRepository(
       fileService: fileService,
-    );
-    final rendererRepository = RendererRepository(
-      fileService: fileService,
-      rendererService: rendererService,
-      bibleRepository: bibleRepository,
-    );
-    final modelService = ModelService(fileService: fileService);
-    final searchRepository = SearchRepository(
-      fileService: fileService,
-      modelService: modelService,
+      libraryRepository: libraryRepository,
     );
 
-    final libraryViewModel = LibraryViewModel(
+    final onboardingViewModel = OnboardingViewModel(
+      languageRepository: languageRepository,
       libraryRepository: libraryRepository,
       sessionRepository: sessionRepository,
-      bibleRepository: bibleRepository,
-    );
-    final renderingViewModel = RenderingViewModel();
-    final readerViewModel = ReaderViewModel(
-      rendererRepository: rendererRepository,
-      sessionRepository: sessionRepository,
-    );
-    final searchViewModel = SearchViewModel(
-      searchRepository: searchRepository,
-      sessionRepository: sessionRepository,
     );
 
+    // Determine initial route based on session state
+    final session = sessionRepository.currentSession;
+    final hasCompletedOnboarding = session.currentLanguageCode != null &&
+        session.currentTranslationId != null;
+    final initialRoute = hasCompletedOnboarding
+        ? AppRoutes.reader
+        : AppRoutes.language;
+
+    debugPrint('[Bootstrap] Initial route: $initialRoute');
     debugPrint('[Bootstrap] All services and viewmodels created');
+
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider.value(value: libraryViewModel),
-        ChangeNotifierProvider.value(value: renderingViewModel),
-        ChangeNotifierProvider.value(value: readerViewModel),
-        ChangeNotifierProvider.value(value: searchViewModel),
+        ChangeNotifierProvider.value(value: onboardingViewModel),
       ],
-      child: const SolaApp(),
+      child: SolaApp(initialRoute: initialRoute),
     );
   }
 }
 
 class SolaApp extends StatelessWidget {
-  const SolaApp({super.key});
+  final String initialRoute;
+
+  const SolaApp({super.key, required this.initialRoute});
 
   @override
   Widget build(BuildContext context) {
@@ -85,7 +66,7 @@ class SolaApp extends StatelessWidget {
         child: child!,
       ),
       onGenerateRoute: AppRouteGenerator.generateRoute,
-      initialRoute: AppRoutes.library,
+      initialRoute: initialRoute,
     );
   }
 }

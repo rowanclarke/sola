@@ -24,6 +24,14 @@ class SessionRepository {
         'page=${_currentSession.currentPageNumber}');
   }
 
+  Future<void> setCurrentLanguage(String code) async {
+    debugPrint('[SessionRepo] Setting language: $code');
+    _currentSession = _currentSession.copyWith(
+      currentLanguageCode: code,
+    );
+    await _persistSession();
+  }
+
   Future<void> setCurrentTranslation(String translationId) async {
     debugPrint('[SessionRepo] Setting translation: $translationId');
     _currentSession = _currentSession.copyWith(
