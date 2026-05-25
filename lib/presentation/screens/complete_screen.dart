@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../viewmodels/onboarding_viewmodel.dart';
+import '../widgets/step_indicator.dart';
 import '../../app/app_routes.dart';
 
 const _ink = Color(0xFF18181b);
@@ -22,46 +23,13 @@ class CompleteScreen extends StatelessWidget {
           builder: (context, vm, _) {
             return Column(
               children: [
-                _buildStepIndicator(),
+                const StepIndicator(currentStep: 3, totalSteps: 3),
                 Expanded(child: _buildContent(vm)),
                 _buildButtons(context, vm),
               ],
             );
           },
         ),
-      ),
-    );
-  }
-
-  Widget _buildStepIndicator() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const Text(
-            'STEP 3 OF 3',
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w500,
-              color: _mid,
-              letterSpacing: 0.5,
-            ),
-          ),
-          Row(
-            children: List.generate(3, (i) {
-              return Container(
-                width: 18,
-                height: 3,
-                margin: EdgeInsets.only(left: i > 0 ? 5 : 0),
-                decoration: BoxDecoration(
-                  color: _ink,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              );
-            }),
-          ),
-        ],
       ),
     );
   }
@@ -113,7 +81,7 @@ class CompleteScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE4E4E7)),
+                  border: Border.all(color: _line),
                 ),
                 child: Row(
                   children: [
@@ -156,7 +124,7 @@ class CompleteScreen extends StatelessWidget {
                           const SizedBox(height: 2),
                           Text(
                             langInfo != null
-                                ? '${langInfo.description} · ${translation.language}'
+                                ? '${langInfo.description} \u00b7 ${translation.language}'
                                 : translation.language,
                             style: const TextStyle(
                               fontSize: 11,

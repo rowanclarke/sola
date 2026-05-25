@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 
 import '../../data/repositories/language_repository.dart';
 import '../viewmodels/onboarding_viewmodel.dart';
+import '../widgets/selectable_list_row.dart';
+import '../widgets/step_indicator.dart';
 import '../../app/app_routes.dart';
 
 const _ink = Color(0xFF18181b);
@@ -83,11 +85,10 @@ class _LanguageScreenState extends State<LanguageScreen> {
             }
             return Column(
               children: [
-                _buildStepIndicator(),
+                const StepIndicator(currentStep: 1, totalSteps: 3),
                 Expanded(
                   child: Stack(
                     children: [
-                      // Background: detected content
                       Center(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
@@ -98,7 +99,6 @@ class _LanguageScreenState extends State<LanguageScreen> {
                           ],
                         ),
                       ),
-                      // Picker sheet
                       _buildPickerSheet(vm),
                     ],
                   ),
@@ -108,39 +108,6 @@ class _LanguageScreenState extends State<LanguageScreen> {
             );
           },
         ),
-      ),
-    );
-  }
-
-  Widget _buildStepIndicator() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const Text(
-            'STEP 1 OF 3',
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w500,
-              color: _mid,
-              letterSpacing: 0.5,
-            ),
-          ),
-          Row(
-            children: List.generate(3, (i) {
-              return Container(
-                width: 18,
-                height: 3,
-                margin: EdgeInsets.only(left: i > 0 ? 5 : 0),
-                decoration: BoxDecoration(
-                  color: i < 1 ? _ink : _line,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              );
-            }),
-          ),
-        ],
       ),
     );
   }
@@ -203,23 +170,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: _ink,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      info.bcp47.toUpperCase(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
+                  _buildLanguageBadge(info.bcp47),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -442,7 +393,14 @@ class _LanguageScreenState extends State<LanguageScreen> {
                   final lang = vm.filteredLanguages[i];
                   final isSelected =
                       vm.selectedLanguageCode == lang.bcp47;
-                  return _buildLanguageRow(vm, lang, isSelected);
+                  return SelectableListRow(
+                    leading: _buildLanguageBadge(lang.bcp47),
+                    title: lang.nativeName,
+                    subtitle:
+                        '${lang.description} \u00b7 ${lang.translationCount} translations',
+                    isSelected: isSelected,
+                    onTap: () => vm.selectLanguage(lang.bcp47),
+                  );
                 },
                 itemCount: vm.filteredLanguages.length,
               ),
@@ -453,67 +411,27 @@ class _LanguageScreenState extends State<LanguageScreen> {
     );
   }
 
-  Widget _buildLanguageRow(
-    OnboardingViewModel vm,
-    LanguageInfo lang,
-    bool isSelected,
-  ) {
-    return InkWell(
-      onTap: () => vm.selectLanguage(lang.bcp47),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? _fill : Colors.transparent,
-          border: Border(bottom: BorderSide(color: _line, width: 0.5)),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    lang.nativeName,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      color: _ink,
-                    ),
-                  ),
-                  const SizedBox(height: 1),
-                  Text(
-                    '${lang.description} · ${lang.translationCount} translations',
-                    style: const TextStyle(fontSize: 12, color: _mid),
-                  ),
-                ],
-              ),
-            ),
-            if (isSelected)
-              Container(
-                width: 22,
-                height: 22,
-                decoration: const BoxDecoration(
-                  color: _ink,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.check, color: Colors.white, size: 12),
-              )
-            else
-              Container(
-                width: 22,
-                height: 22,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: _line, width: 1.5),
-                ),
-              ),
-          ],
+  // --------------- shared helpers ---------------
+
+  Widget _buildLanguageBadge(String bcp47) {
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        color: _ink,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        bcp47.toUpperCase(),
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );
   }
-
-  // --------------- shared continue button ---------------
 
   Widget _buildContinueButton(BuildContext context, OnboardingViewModel vm) {
     final info = vm.selectedLanguageInfo;
