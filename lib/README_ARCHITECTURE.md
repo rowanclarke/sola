@@ -17,8 +17,7 @@ This document describes the clean MVVM architecture of the Sola Flutter Bible ap
   - `translation.dart` - Represents a Bible translation with metadata (id, title, language, url)
   - `book.dart` - Structured Bible data (Book, Chapter, Verse, VerseData)
   - `page_model.dart` - Represents a single rendered page (wraps Rust `Text` objects)
-  - `rendering_config.dart` - Rendering options (fontSize) and progress data
-  - `session_model.dart` - Persistent session state (currentTranslationId, currentBookId, currentPageNumber)
+  - `session_model.dart` - Persistent session state (currentLanguageCode, currentTranslationId, currentBookId, currentPageNumber)
 
 - **Session State** (`lib/core/session/`)
   - `session_state.dart` - Observable session state (ChangeNotifier)
@@ -30,7 +29,8 @@ This document describes the clean MVVM architecture of the Sola Flutter Bible ap
 
 **Repositories** (`lib/data/repositories/`)
 - `session_repository.dart` - Single source of truth for cross-screen state
-- `library_repository.dart` - Translation metadata caching
+- `language_repository.dart` - Language metadata and translation listings from bundled assets
+- `library_repository.dart` - Translation metadata caching and download management
 - `bible_repository.dart` - Serialized book data caching
 - `renderer_repository.dart` - Rendered pages caching (index handling is done on the Rust backend)
 - `search_repository.dart` - Embeddings and search results caching
@@ -53,21 +53,24 @@ This document describes the clean MVVM architecture of the Sola Flutter Bible ap
 
 **ViewModels** (`lib/presentation/viewmodels/`)
 - `session_viewmodel.dart` - Observes SessionRepository, exposes current state
-- `library_viewmodel.dart` - Manages translation library UI state
-- `rendering_viewmodel.dart` - Orchestrates rendering configuration and progress
+- `onboarding_viewmodel.dart` - Manages language/translation selection and download during onboarding
 - `reader_viewmodel.dart` - Manages page display and navigation
 - `search_viewmodel.dart` - Manages search input and results
 
 **Navigation:** ViewModels never navigate directly. They expose callbacks that Screens use to trigger navigation. Navigation is always done in Screen code via `Navigator`.
 
 **Screens** (`lib/presentation/screens/`)
-- `library_screen.dart` - Browse, download, and select translations
-- `rendering_config_screen.dart` - Configure and preview rendering
+- `language_screen.dart` - Select language during onboarding (step 1)
+- `translation_screen.dart` - Browse, download, and select translations (step 2)
+- `complete_screen.dart` - Onboarding completion confirmation (step 3)
 - `reader_screen.dart` - Display pages with pagination
 - `search_screen.dart` - Search interface
 
 **Widgets** (`lib/presentation/widgets/`)
-- Minimal, reusable UI components (to be styled later)
+- `step_indicator.dart` - Visual step progress indicator for onboarding
+- `selectable_list_row.dart` - Tappable row with selection state
+- `searchable_list_view.dart` - Filterable list with search input
+- Minimal, reusable UI components
 
 ### 5. App Layer (`lib/app/`)
 
@@ -79,29 +82,26 @@ This document describes the clean MVVM architecture of the Sola Flutter Bible ap
 
 ## Data Flow
 
-### Opening a Translation
+### Onboarding Flow
 
 ```
-LibraryScreen
-  → LibraryViewModel.openTranslation()
-    → LibraryRepository (download if needed)
+LanguageScreen (Step 1)
+  → OnboardingViewModel.selectLanguage()
+    → LanguageRepository.getLanguageInfo()
+  → OnboardingViewModel.goToTranslationStep()
+    → SessionRepository.setCurrentLanguage()
+    → Navigate to TranslationScreen
+
+TranslationScreen (Step 2)
+  → OnboardingViewModel.downloadTranslation()
+    → LibraryRepository.downloadTranslation()
+    → BibleRepository.serializeTranslation()
+  → OnboardingViewModel.goToCompleteStep()
     → SessionRepository.setCurrentTranslation()
-    → SessionState notifies listeners
-    → Screen callback triggers navigation to RenderingConfigScreen
-```
+    → Navigate to CompleteScreen
 
-### Rendering
-
-```
-RenderingConfigScreen
-  → RenderingViewModel.startRendering()
-    → RendererRepository.renderAndSave()
-      → BibleRepository.getSerializedBook()
-      → RendererService.renderBook()
-      → FileService.writeBytes() (caching)
-      → Progress callbacks
-    → SessionRepository.setCurrentBook/Page()
-    → Screen callback triggers navigation to ReaderScreen
+CompleteScreen (Step 3)
+  → Navigate to ReaderScreen
 ```
 
 ### Reading with Search
@@ -235,18 +235,18 @@ Services and repositories are concrete classes (not abstract interfaces). This k
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    Presentation Layer                       │
-│  (LibraryScreen, ReaderScreen, RenderingConfigScreen,       │
-│   SearchScreen, Widgets)                                    │
+│  (LanguageScreen, TranslationScreen, CompleteScreen,        │
+│   ReaderScreen, SearchScreen, Widgets)                      │
 └─────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────┐
 │                    ViewModel Layer                          │
-│  (LibraryVM, ReaderVM, RenderingVM, SearchVM, SessionVM)    │
+│  (OnboardingVM, ReaderVM, SearchVM, SessionVM)              │
 └─────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────┐
 │                    Data Layer                               │
-│  (Repositories: Session, Library, Bible, Renderer, Search)  │
+│  (Repos: Session, Language, Library, Bible, Renderer, Search)│
 │                    (Caching & Persistence)                  │
 └─────────────────────────────────────────────────────────────┘
                               ↓
