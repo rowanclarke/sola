@@ -5,6 +5,8 @@ import '../../core/models/page_model.dart';
 import '../viewmodels/reader_viewmodel.dart';
 import '../viewmodels/search_viewmodel.dart';
 import '../widgets/page_view_widget.dart';
+import '../widgets/reader_top_panel.dart';
+import '../widgets/scrubber_widget.dart';
 
 class ReaderScreen extends StatefulWidget {
   const ReaderScreen({super.key});
@@ -20,14 +22,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
   double? _lastWidth;
   double? _lastHeight;
 
-  // Search bar state
-  final FocusNode _searchFocusNode = FocusNode();
-  final TextEditingController _searchController = TextEditingController();
+  final GlobalKey<ReaderTopPanelState> _topPanelKey = GlobalKey();
 
-  // Swipe-down search gesture state
+  // Swipe-down search gesture state (full-page)
   Offset? _startPosition;
   bool _isVerticalDrag = false;
   bool _hasDecidedDirection = false;
+  double _dragOffset = 0;
   static const _directionThreshold = 10.0;
   static const _verticalBias = 1.3;
   static const _horizontalPadding = 48.0;
@@ -36,23 +37,21 @@ class _ReaderScreenState extends State<ReaderScreen> {
   @override
   void dispose() {
     _pageController.dispose();
-    _searchFocusNode.dispose();
-    _searchController.dispose();
     super.dispose();
   }
 
   void _triggerLoad(double width, double height) {
-    if (width == _lastWidth && height == _lastHeight) return;
+    if (_lastWidth != null && _lastHeight != null) return;
     _lastWidth = width;
     _lastHeight = height;
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted) return;
-      await context.read<ReaderViewModel>().loadPages(width, height);
       if (!mounted) return;
       final bookIds = await context.read<ReaderViewModel>().loadAll(
         width,
         height,
       );
+      if (!mounted) return;
+      await context.read<ReaderViewModel>().loadPages(width, height);
       if (!mounted) return;
       context.read<SearchViewModel>().initSearch(
         bookIds: bookIds,
@@ -74,18 +73,20 @@ class _ReaderScreenState extends State<ReaderScreen> {
               behavior: HitTestBehavior.translucent,
               child: Column(
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                    child: _SearchBar(
-                      focusNode: _searchFocusNode,
-                      controller: _searchController,
-                      searchVm: searchVm,
-                    ),
+                  ReaderTopPanel(
+                    key: _topPanelKey,
+                    searchViewModel: searchVm,
+                    onResultTap: (bookId, page) {
+                      readerVm.navigateTo(bookId, page);
+                    },
                   ),
                   Expanded(child: _buildReaderContent(readerVm, searchVm)),
-                  const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Text('Placeholder', textAlign: TextAlign.center),
+                  ScrubberWidget(
+                    currentGlobalPage: readerVm.currentGlobalPage,
+                    bookData: readerVm.bookData,
+                    onNavigate: (bookId, localPage) {
+                      readerVm.navigateTo(bookId, localPage);
+                    },
                   ),
                 ],
               ),
@@ -108,6 +109,19 @@ class _ReaderScreenState extends State<ReaderScreen> {
             .floorToDouble();
 
         _triggerLoad(contentWidth, contentHeight);
+
+        if (readerVm.isRendering) {
+          return const Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Rendering'),
+              ],
+            ),
+          );
+        }
 
         if (readerVm.error != null) {
           return Center(
@@ -144,287 +158,68 @@ class _ReaderScreenState extends State<ReaderScreen> {
           }
         });
 
-        return Stack(
-          children: [
-            Listener(
-              onPointerDown: (event) {
-                _startPosition = event.position;
-                _isVerticalDrag = false;
-                _hasDecidedDirection = false;
-              },
-              onPointerMove: (event) {
-                if (_startPosition == null) return;
-                if (_hasDecidedDirection) {
-                  if (_isVerticalDrag) {
-                    searchVm.handleDragUpdate(event.delta.dy);
-                  }
-                  return;
-                }
-                final delta = event.position - _startPosition!;
-                final distance = delta.distance;
-                if (distance < _directionThreshold) return;
+        // Listener wraps the PageView to detect full-page vertical drags
+        return Listener(
+          onPointerDown: (event) {
+            _startPosition = event.position;
+            _isVerticalDrag = false;
+            _hasDecidedDirection = false;
+            _dragOffset = 0;
+          },
+          onPointerMove: (event) {
+            if (_startPosition == null) return;
+            if (_hasDecidedDirection) {
+              if (_isVerticalDrag) {
+                _dragOffset += event.delta.dy;
+                _topPanelKey.currentState?.handleDragUpdate(_dragOffset);
+              }
+              return;
+            }
+            final delta = event.position - _startPosition!;
+            if (delta.distance < _directionThreshold) return;
 
-                _hasDecidedDirection = true;
-                _isVerticalDrag =
-                    (delta.dy.abs() * _verticalBias) > delta.dx.abs() &&
+            _hasDecidedDirection = true;
+            _isVerticalDrag =
+                (delta.dy.abs() * _verticalBias) > delta.dx.abs() &&
                     delta.dy > 0;
-                if (_isVerticalDrag) {
-                  setState(() {});
-                }
-              },
-              onPointerUp: (_) {
-                if (_isVerticalDrag) {
-                  final triggered = searchVm.handleDragEnd();
-                  if (triggered) {
-                    _searchFocusNode.requestFocus();
-                  }
-                }
-                _startPosition = null;
-                _isVerticalDrag = false;
-                _hasDecidedDirection = false;
-                setState(() {});
-              },
-              child: AbsorbPointer(
-                absorbing: _isVerticalDrag,
-                child: PageView.builder(
-                  key: _pageViewKey,
-                  controller: _pageController,
-                  itemCount: readerVm.pages.length,
-                  onPageChanged: (i) => readerVm.setPage(i),
-                  itemBuilder: (_, i) => Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: _horizontalPadding,
-                      vertical: _verticalPadding,
-                    ),
-                    child: Center(
-                      child: PageViewWidget(
-                        page: readerVm.pages[i],
-                        width: contentWidth,
-                        height: contentHeight,
-                      ),
-                    ),
+            if (_isVerticalDrag) {
+              setState(() {});
+            }
+          },
+          onPointerUp: (_) {
+            if (_isVerticalDrag) {
+              _topPanelKey.currentState?.handleDragEnd();
+            }
+            _startPosition = null;
+            _isVerticalDrag = false;
+            _hasDecidedDirection = false;
+            _dragOffset = 0;
+            setState(() {});
+          },
+          child: AbsorbPointer(
+            absorbing: _isVerticalDrag,
+            child: PageView.builder(
+              key: _pageViewKey,
+              controller: _pageController,
+              itemCount: readerVm.pages.length,
+              onPageChanged: (i) => readerVm.setPage(i),
+              itemBuilder: (_, i) => Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: _horizontalPadding,
+                  vertical: _verticalPadding,
+                ),
+                child: Center(
+                  child: PageViewWidget(
+                    page: readerVm.pages[i],
+                    width: contentWidth,
+                    height: contentHeight,
                   ),
                 ),
               ),
             ),
-            Positioned(
-              top: searchVm.dragOffset + SearchViewModel.startDescent,
-              left: 0,
-              right: 0,
-              child: IgnorePointer(
-                child: Opacity(
-                  opacity:
-                      (searchVm.dragOffset / SearchViewModel.triggerThreshold)
-                          .clamp(0.0, 1.0),
-                  child: const Icon(Icons.search, size: 48, color: Colors.grey),
-                ),
-              ),
-            ),
-          ],
+          ),
         );
       },
-    );
-  }
-}
-
-class _SearchBar extends StatefulWidget {
-  final FocusNode focusNode;
-  final TextEditingController controller;
-  final SearchViewModel searchVm;
-
-  const _SearchBar({
-    required this.focusNode,
-    required this.controller,
-    required this.searchVm,
-  });
-
-  @override
-  State<_SearchBar> createState() => _SearchBarState();
-}
-
-class _SearchBarState extends State<_SearchBar> {
-  bool _hasFocus = false;
-  final OverlayPortalController _overlayController = OverlayPortalController();
-  final LayerLink _link = LayerLink();
-
-  @override
-  void initState() {
-    super.initState();
-    widget.focusNode.addListener(_onFocusChange);
-    _overlayController.show();
-  }
-
-  @override
-  void dispose() {
-    widget.focusNode.removeListener(_onFocusChange);
-    super.dispose();
-  }
-
-  void _onFocusChange() {
-    setState(() {
-      _hasFocus = widget.focusNode.hasFocus;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final vm = widget.searchVm;
-
-    return CompositedTransformTarget(
-      link: _link,
-      child: OverlayPortal(
-        controller: _overlayController,
-        overlayChildBuilder: (_) => _buildOverlayContent(vm),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.95),
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Stack(
-            children: [
-              TextField(
-                focusNode: widget.focusNode,
-                controller: widget.controller,
-                decoration: InputDecoration(
-                  hintText: vm.isModelLoading
-                      ? 'Loading...'
-                      : 'Search anything...',
-                  prefixIcon: vm.isModelLoading
-                      ? const Padding(
-                          padding: EdgeInsets.all(12),
-                          child: SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                        )
-                      : const Icon(Icons.search),
-                  suffixIcon: _hasFocus
-                      ? IconButton(
-                          icon: const Icon(Icons.close),
-                          onPressed: () {
-                            widget.controller.clear();
-                            vm.clearSearch();
-                            widget.focusNode.unfocus();
-                          },
-                        )
-                      : null,
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 14,
-                  ),
-                ),
-                onChanged: (query) => vm.onQueryChanged(query),
-              ),
-              if (vm.isSearching)
-                const Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: LinearProgressIndicator(minHeight: 2),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildOverlayContent(SearchViewModel vm) {
-    if (!_hasFocus || (vm.error == null && vm.results.isEmpty)) {
-      return const SizedBox.shrink();
-    }
-
-    final dropdownWidth = MediaQuery.sizeOf(context).width - 32;
-
-    return CompositedTransformFollower(
-      link: _link,
-      targetAnchor: Alignment.bottomLeft,
-      followerAnchor: Alignment.topLeft,
-      offset: const Offset(0, 4),
-      child: Align(
-        alignment: Alignment.topLeft,
-        child: SizedBox(
-          width: dropdownWidth,
-          child: Material(
-            type: MaterialType.transparency,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (vm.error != null)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.95),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Text(
-                      vm.error!,
-                      style: const TextStyle(color: Colors.red, fontSize: 13),
-                    ),
-                  ),
-                if (vm.results.isNotEmpty)
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.95),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: ListView.builder(
-                      itemCount: vm.results.length,
-                      shrinkWrap: true,
-                      itemBuilder: (context, i) {
-                        final result = vm.results[i];
-                        return ListTile(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          title: Text(result.index.reference),
-                          subtitle: Text('Page ${result.index.page + 1}'),
-                          trailing: const Icon(Icons.arrow_forward, size: 18),
-                          onTap: () {
-                            context.read<ReaderViewModel>().navigateTo(
-                              result.index.book,
-                              result.index.page,
-                            );
-                            widget.controller.clear();
-                            vm.clearSearch();
-                            widget.focusNode.unfocus();
-                          },
-                        );
-                      },
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

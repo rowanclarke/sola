@@ -10,10 +10,12 @@ class ReaderViewModel extends ChangeNotifier {
   List<PageModel> _pages = [];
   int _currentPageIndex = 0;
   bool _isLoading = false;
+  bool _isRendering = false;
   String? _currentCacheKey;
   String? _error;
   double _lastWidth = 0;
   double _lastHeight = 0;
+  Map<String, ({int pageCount, String title})> _bookData = {};
 
   ReaderViewModel({
     required RendererRepository rendererRepository,
@@ -24,7 +26,23 @@ class ReaderViewModel extends ChangeNotifier {
   List<PageModel> get pages => _pages;
   int get currentPageIndex => _currentPageIndex;
   bool get isLoading => _isLoading;
+  bool get isRendering => _isRendering;
   String? get error => _error;
+  Map<String, ({int pageCount, String title})> get bookData => _bookData;
+
+  String get currentBookId =>
+      _sessionRepository.currentSession.currentBookId ?? 'GEN';
+
+  int get currentGlobalPage {
+    int offset = 0;
+    for (final entry in _bookData.entries) {
+      if (entry.key == currentBookId) {
+        return offset + _currentPageIndex;
+      }
+      offset += entry.value.pageCount;
+    }
+    return 0;
+  }
 
   Future<void> loadPages(double width, double height) async {
     _lastWidth = width;
@@ -84,18 +102,22 @@ class ReaderViewModel extends ChangeNotifier {
       debugPrint('[ReaderVM] No translation selected, skipping load');
       return [];
     }
+    _isRendering = true;
+    notifyListeners();
     try {
-      return await _rendererRepository.renderAll(
+      final result = await _rendererRepository.renderAll(
         translationId: translationId,
         width: width,
         height: height,
       );
+      _bookData = result;
+      return result.keys.toList();
     } catch (e) {
       debugPrint('[ReaderVM] Error loading pages: $e');
       _error = e.toString();
       return [];
     } finally {
-      _isLoading = false;
+      _isRendering = false;
       notifyListeners();
     }
   }

@@ -30,6 +30,10 @@ class AppBootstrap {
     final sessionRepository = SessionRepository(fileService: fileService);
     await sessionRepository.init();
 
+    if (sessionRepository.currentSession.currentBookId == null) {
+      await sessionRepository.setCurrentBook('GEN');
+    }
+
     final libraryRepository = LibraryRepository(fileService: fileService);
     final languageRepository = LanguageRepository(
       fileService: fileService,
