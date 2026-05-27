@@ -3,9 +3,9 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
 
 class FileService {
@@ -64,16 +64,32 @@ class FileService {
     return File(_resolve(filePath)).delete();
   }
 
-  Future<void> extractRemote(String url, String path) async {
+  Future<void> extractRemote(
+    String url,
+    String path, {
+    CancelToken? cancelToken,
+    void Function(double progress)? onProgress,
+  }) async {
     final dir = Directory(_resolve(path));
     if (await dir.exists()) {
       debugPrint('[FileService] Already extracted: $path');
       return;
     }
     debugPrint('[FileService] Downloading $url ...');
-    final response = await http.get(Uri.parse(url));
-    debugPrint('[FileService] Downloaded ${response.bodyBytes.length} bytes, extracting...');
-    final archive = ZipDecoder().decodeBytes(response.bodyBytes);
+    final dio = Dio();
+    final response = await dio.get<List<int>>(
+      url,
+      options: Options(responseType: ResponseType.bytes),
+      cancelToken: cancelToken,
+      onReceiveProgress: (received, total) {
+        if (total > 0 && onProgress != null) {
+          onProgress(received / total);
+        }
+      },
+    );
+    final bytes = response.data!;
+    debugPrint('[FileService] Downloaded ${bytes.length} bytes, extracting...');
+    final archive = ZipDecoder().decodeBytes(bytes);
     for (final file in archive) {
       final filePath = p.join(dir.path, file.name);
       if (file.isFile) {
