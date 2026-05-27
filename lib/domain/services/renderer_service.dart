@@ -85,4 +85,11 @@ class RendererService {
   List<rust.Text> getPage(Pointer<Void> pages, int n) {
     return rust.getPage(renderer, pages, n);
   }
+
+  String getBookTitle(Uint8List indicesBytes) {
+    final archived = getArchivedIndices(indicesBytes);
+    final entries = rust.searchIndex(archived, '');
+    if (entries.isEmpty) return '';
+    return rust.getIndex(archived, entries[0]).header;
+  }
 }

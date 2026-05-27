@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:sola/core/models/page_model.dart';
@@ -5,6 +7,18 @@ import 'package:sola/data/repositories/bible_repository.dart';
 import 'package:sola/domain/services/file_service.dart';
 import 'package:sola/domain/services/render_isolate.dart';
 import 'package:sola/domain/services/renderer_service.dart';
+
+const _canonicalBookOrder = [
+  'GEN','EXO','LEV','NUM','DEU','JOS','JDG','RUT',
+  '1SA','2SA','1KI','2KI','1CH','2CH','EZR','NEH',
+  'EST','JOB','PSA','PRO','ECC','SNG','ISA','JER',
+  'LAM','EZK','DAN','HOS','JOL','AMO','OBA','JON',
+  'MIC','NAM','HAB','ZEP','HAG','ZEC','MAL',
+  'MAT','MRK','LUK','JHN','ACT','ROM','1CO','2CO',
+  'GAL','EPH','PHP','COL','1TH','2TH','1TI','2TI',
+  'TIT','PHM','HEB','JAS','1PE','2PE','1JN','2JN',
+  '3JN','JUD','REV',
+];
 
 class RendererRepository {
   final FileService _fileService;
@@ -102,7 +116,7 @@ class RendererRepository {
     return pages;
   }
 
-  Future<List<String>> renderAll({
+  Future<Map<String, ({int pageCount, String title})>> renderAll({
     required String translationId,
     required double width,
     required double height,
@@ -110,10 +124,33 @@ class RendererRepository {
     final books = await _bibleRepository.getSerializedBooks(
       translationId: translationId,
     );
+    // First pass: render all books
+    final dirs = <String, String>{};
     for (final book in books.entries) {
-      await _renderBook(translationId, book.key, width, height, book.value);
+      dirs[book.key] = await _renderBook(
+        translationId, book.key, width, height, book.value,
+      );
     }
-    return books.keys.toList();
+    // Second pass: read page counts and titles
+    final unsorted = <String, ({int pageCount, String title})>{};
+    for (final entry in dirs.entries) {
+      final pagesBytes = await _fileService.readBytes('${entry.value}/pages');
+      final archivedPages = _rendererService.getArchivedPages(pagesBytes);
+      final pageCount = _rendererService.getNumPages(archivedPages);
+
+      final indicesBytes = await _fileService.readBytes('${entry.value}/indices');
+      final title = _rendererService.getBookTitle(indicesBytes);
+
+      unsorted[entry.key] = (pageCount: pageCount, title: title);
+    }
+    // Sort into canonical Bible order
+    final result = <String, ({int pageCount, String title})>{};
+    for (final id in _canonicalBookOrder) {
+      if (unsorted.containsKey(id)) {
+        result[id] = unsorted[id]!;
+      }
+    }
+    return result;
   }
 
   void invalidateCache() {
