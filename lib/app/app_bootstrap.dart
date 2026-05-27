@@ -4,6 +4,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
 import '../data/repositories/bible_repository.dart';
+import '../data/repositories/language_repository.dart';
 import '../data/repositories/library_repository.dart';
 import '../data/repositories/renderer_repository.dart';
 import '../data/repositories/search_repository.dart';
@@ -11,9 +12,8 @@ import '../data/repositories/session_repository.dart';
 import '../domain/services/file_service.dart';
 import '../domain/services/model_service.dart';
 import '../domain/services/renderer_service.dart';
-import '../presentation/viewmodels/library_viewmodel.dart';
+import '../presentation/viewmodels/onboarding_viewmodel.dart';
 import '../presentation/viewmodels/reader_viewmodel.dart';
-import '../presentation/viewmodels/rendering_viewmodel.dart';
 import '../presentation/viewmodels/search_viewmodel.dart';
 import 'app_routes.dart';
 
@@ -31,6 +31,10 @@ class AppBootstrap {
     await sessionRepository.init();
 
     final libraryRepository = LibraryRepository(fileService: fileService);
+    final languageRepository = LanguageRepository(
+      fileService: fileService,
+      libraryRepository: libraryRepository,
+    );
     final bibleRepository = BibleRepository(
       fileService: fileService,
     );
@@ -45,12 +49,12 @@ class AppBootstrap {
       modelService: modelService,
     );
 
-    final libraryViewModel = LibraryViewModel(
+    final onboardingViewModel = OnboardingViewModel(
+      languageRepository: languageRepository,
       libraryRepository: libraryRepository,
       sessionRepository: sessionRepository,
       bibleRepository: bibleRepository,
     );
-    final renderingViewModel = RenderingViewModel();
     final readerViewModel = ReaderViewModel(
       rendererRepository: rendererRepository,
       sessionRepository: sessionRepository,
@@ -60,21 +64,31 @@ class AppBootstrap {
       sessionRepository: sessionRepository,
     );
 
+    // Determine initial route based on session state
+    final session = sessionRepository.currentSession;
+    final hasCompletedOnboarding = session.currentLanguageCode != null
+        && session.currentTranslationId != null;
+    final initialRoute = hasCompletedOnboarding
+        ? AppRoutes.reader
+        : AppRoutes.language;
+
+    debugPrint('[Bootstrap] Initial route: $initialRoute');
     debugPrint('[Bootstrap] All services and viewmodels created');
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider.value(value: libraryViewModel),
-        ChangeNotifierProvider.value(value: renderingViewModel),
+        ChangeNotifierProvider.value(value: onboardingViewModel),
         ChangeNotifierProvider.value(value: readerViewModel),
         ChangeNotifierProvider.value(value: searchViewModel),
       ],
-      child: const SolaApp(),
+      child: SolaApp(initialRoute: initialRoute),
     );
   }
 }
 
 class SolaApp extends StatelessWidget {
-  const SolaApp({super.key});
+  final String initialRoute;
+
+  const SolaApp({super.key, required this.initialRoute});
 
   @override
   Widget build(BuildContext context) {
@@ -85,7 +99,7 @@ class SolaApp extends StatelessWidget {
         child: child!,
       ),
       onGenerateRoute: AppRouteGenerator.generateRoute,
-      initialRoute: AppRoutes.library,
+      initialRoute: initialRoute,
     );
   }
 }

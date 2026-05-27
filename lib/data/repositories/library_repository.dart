@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:sola/core/models/translation.dart';
 import 'package:sola/domain/services/file_service.dart';
@@ -34,9 +35,19 @@ class LibraryRepository {
     return list;
   }
 
-  Future<void> downloadTranslation(String translationId, String downloadUrl) async {
+  Future<void> downloadTranslation(
+    String translationId,
+    String downloadUrl, {
+    CancelToken? cancelToken,
+    void Function(double progress)? onProgress,
+  }) async {
     debugPrint('[LibraryRepo] Downloading $translationId from $downloadUrl');
-    await _fileService.extractRemote(downloadUrl, 'library/$translationId');
+    await _fileService.extractRemote(
+      downloadUrl,
+      'library/$translationId',
+      cancelToken: cancelToken,
+      onProgress: onProgress,
+    );
     _downloadedTranslationsCache = null;
     debugPrint('[LibraryRepo] Download complete: $translationId');
   }

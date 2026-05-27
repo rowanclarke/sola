@@ -8,6 +8,8 @@ class Translation {
   final int ot;
   final bool downloadable;
   final String textDirection;
+  final String bcp47;
+  final String bcp47Tag;
 
   const Translation({
     required this.id,
@@ -19,6 +21,8 @@ class Translation {
     this.ot = 0,
     this.downloadable = false,
     this.textDirection = 'ltr',
+    this.bcp47 = '',
+    this.bcp47Tag = '',
   });
 
   factory Translation.fromJson(Map<String, dynamic> json) {
@@ -32,6 +36,8 @@ class Translation {
       ot: json['ot'] as int? ?? 0,
       downloadable: json['downloadable'] as bool? ?? false,
       textDirection: json['text_direction'] as String? ?? 'ltr',
+      bcp47: json['bcp47'] as String? ?? '',
+      bcp47Tag: json['bcp47_tag'] as String? ?? '',
     );
   }
 
@@ -46,6 +52,8 @@ class Translation {
       'ot': ot,
       'downloadable': downloadable,
       'text_direction': textDirection,
+      'bcp47': bcp47,
+      'bcp47_tag': bcp47Tag,
     };
   }
 }
