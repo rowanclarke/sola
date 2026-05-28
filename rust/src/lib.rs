@@ -182,18 +182,14 @@ pub extern "C" fn layout(
     log!("[FFI] layout starting...");
     run_ffi(
         || {
-            log!("a");
             let renderer = unsafe { read_ref::<Renderer>(renderer) };
             let book = unsafe { read_ref::<ArchivedBook>(book) };
             let dim = unsafe { Box::from_raw(dim) };
 
-            log!("b");
             let mut painter = Painter::new(renderer, *dim.clone());
             book.paint(&mut painter);
 
-            log!("c");
             let (pages, indices) = painter.layout();
-            log!("Hello");
 
             // Extract verses from indices (all entries with a verse field)
             let verses: Vec<Index> = indices

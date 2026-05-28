@@ -14,7 +14,8 @@ use skia_safe::{
     },
 };
 
-use super::{InlineItem, ItemKind, ParagraphSpec, Style, Text, layout::ArchivedPage};
+use super::{Style, Text, layout::ArchivedPage};
+use super::layout::{InlineItem, ItemKind, ParagraphSpec};
 
 #[derive(Debug, Clone, Copy)]
 #[repr(C)]

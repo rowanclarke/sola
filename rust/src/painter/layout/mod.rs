@@ -1,15 +1,28 @@
+#[allow(dead_code)]
+pub mod artefact;
+#[allow(dead_code)]
+pub mod column;
+#[allow(dead_code)]
+pub mod container;
+pub mod fragment;
+pub mod inline;
+pub mod line_breaker;
+pub mod paragraph;
+pub mod pipeline;
+#[allow(dead_code)]
+pub mod scaffold;
+#[allow(dead_code)]
+pub mod template;
+
 use std::collections::HashMap;
 
 use rkyv::{Archive, Deserialize, Serialize, vec::ArchivedVec};
 use usfm::BookIdentifier;
 
-use super::{Rectangle, Style};
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Section {
-    Body,
-    Footer,
-}
+// Re-exports
+pub use fragment::{Section, TextFragment};
+pub use inline::{InlineItem, ItemKind};
+pub use paragraph::{Alignment, CollectedParagraph, DropCap, FootnoteSpec, ParagraphSpec};
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash, Serialize, Archive, Deserialize)]
 #[rkyv(derive(Debug, PartialEq, Eq, Hash))]
@@ -41,22 +54,3 @@ pub type ArchivedPage = <Page as Archive>::Archived;
 pub type Page = Vec<TextFragment>;
 pub type ArchivedIndices = <Indices as Archive>::Archived;
 pub type Indices = HashMap<Index, usize>;
-
-#[derive(Archive, Serialize, Debug)]
-pub struct TextFragment {
-    pub text: String,
-    pub rect: Rectangle,
-    pub style: Style,
-    pub word_spacing: f32,
-}
-
-impl TextFragment {
-    pub fn new(text: String, rect: Rectangle, style: Style, word_spacing: f32) -> Self {
-        Self {
-            text,
-            rect,
-            style,
-            word_spacing,
-        }
-    }
-}
