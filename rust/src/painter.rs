@@ -369,7 +369,7 @@ impl Painter {
         let buffer = mem::take(&mut self.buffer);
         let artefacts = mem::take(&mut self.pending_artefacts);
 
-        self.fill_paragraph(&buffer, &artefacts, alignment, indent);
+        self.fill_paragraph(&buffer, &artefacts, alignment, indent, 0);
     }
 
     fn fill_paragraph(
@@ -378,9 +378,10 @@ impl Painter {
         artefacts: &[(Section, Artefact)],
         alignment: Alignment,
         indent: (f32, f32),
+        stream_offset: usize,
     ) {
         // 1. Resolve and shape: walk buffer entries, resolve state-deps, shape text
-        let stream = self.resolve_and_shape(buffer);
+        let (stream, buf_map) = self.resolve_and_shape(buffer);
 
         if stream.is_empty() && artefacts.is_empty() {
             return;
@@ -454,8 +455,8 @@ impl Painter {
             stream.len(), artefacts.len(), alignment, indent);
 
         // 3. Walk stream, fill templates, push to scaffold
-        let mut cursor = 0;
-        let mut template_idx = 0;
+        let mut cursor = stream_offset;
+        let mut template_idx = if stream_offset > 0 { 1 } else { 0 };
         while cursor < stream.len() {
             let mut template = Template::new();
 
@@ -526,7 +527,7 @@ impl Painter {
                     eprintln!("[paint_paragraph]   scaffold accepted template #{} (remaining={})",
                         template_idx, self.scaffold.remaining());
                 }
-                Err(rejected) => {
+                Err(_rejected) => {
                     eprintln!("[paint_paragraph]   scaffold FULL (remaining={}), page break",
                         self.scaffold.remaining());
                     // Page break: finalize current scaffold
@@ -538,8 +539,21 @@ impl Painter {
                     self.pages.push(page);
                     self.scaffold = Scaffold::new(self.dim.width, self.dim.height);
                     self.state.reset();
-                    // Push the rejected template onto the new scaffold
-                    let _ = self.scaffold.push(rejected);
+
+                    // Find remaining buffer entries and recurse
+                    let buf_start = buf_map[cursor_before];
+                    let entry_first_stream = buf_map.iter().position(|&b| b == buf_start).unwrap_or(0);
+                    let items_to_skip = cursor_before - entry_first_stream;
+
+                    // Recursive re-fill with remaining buffer + continuation indent
+                    self.fill_paragraph(
+                        &buffer[buf_start..],
+                        &[],                    // no artefacts on continuation
+                        alignment,
+                        (indent.1, indent.1),   // continuation indent
+                        items_to_skip,
+                    );
+                    return;
                 }
             }
             template_idx += 1;
@@ -637,10 +651,12 @@ impl Painter {
         Ok(())
     }
 
-    /// Resolve buffer entries: evaluate state-deps, concatenate text, shape into stream items.
-    /// Appends resolved text to self.source_text for later use by scaffold.finalize().
-    fn resolve_and_shape(&mut self, buffer: &[BufferEntry]) -> Vec<StreamItem> {
+    /// Resolve buffer entries: evaluate state-deps, shape each entry independently.
+    /// Returns (stream, buf_map) where buf_map[i] is the buffer entry index that
+    /// produced stream[i].
+    fn resolve_and_shape(&mut self, buffer: &[BufferEntry]) -> (Vec<StreamItem>, Vec<usize>) {
         let mut stream: Vec<StreamItem> = Vec::new();
+        let mut buf_map: Vec<usize> = Vec::new();
         let mut pending_index_id: Option<usize> = None;
 
         // First pass: resolve all entries into (text, style, section) segments + markers
@@ -649,18 +665,19 @@ impl Painter {
             style: Style,
             section: Section,
             index_id: Option<usize>,
+            buf_idx: usize,
         }
         enum ResolvedEntry {
             Segment(ResolvedSegment),
-            BeginGrouped,
-            EndGrouped,
-            BeginExpanded,
-            EndExpanded,
+            BeginGrouped(usize),
+            EndGrouped(usize),
+            BeginExpanded(usize),
+            EndExpanded(usize),
         }
 
         let mut resolved: Vec<ResolvedEntry> = Vec::new();
 
-        for entry in buffer {
+        for (buf_idx, entry) in buffer.iter().enumerate() {
             match entry {
                 BufferEntry::Segment { text, style, section } => {
                     let idx = pending_index_id.take();
@@ -669,6 +686,7 @@ impl Painter {
                         style: *style,
                         section: *section,
                         index_id: idx,
+                        buf_idx,
                     }));
                 }
                 BufferEntry::StateDep(f, section) => {
@@ -680,20 +698,21 @@ impl Painter {
                             style,
                             section: *section,
                             index_id: idx,
+                            buf_idx,
                         }));
                     }
                 }
                 BufferEntry::BeginGrouped => {
-                    resolved.push(ResolvedEntry::BeginGrouped);
+                    resolved.push(ResolvedEntry::BeginGrouped(buf_idx));
                 }
                 BufferEntry::EndGrouped => {
-                    resolved.push(ResolvedEntry::EndGrouped);
+                    resolved.push(ResolvedEntry::EndGrouped(buf_idx));
                 }
                 BufferEntry::BeginExpanded => {
-                    resolved.push(ResolvedEntry::BeginExpanded);
+                    resolved.push(ResolvedEntry::BeginExpanded(buf_idx));
                 }
                 BufferEntry::EndExpanded => {
-                    resolved.push(ResolvedEntry::EndExpanded);
+                    resolved.push(ResolvedEntry::EndExpanded(buf_idx));
                 }
                 BufferEntry::IndexMarker(id) => {
                     pending_index_id = Some(*id);
@@ -701,80 +720,49 @@ impl Painter {
             }
         }
 
-        // Second pass: group consecutive segments with same section, shape them together
+        // Second pass: shape each segment independently (no batching)
         let mut i = 0;
         while i < resolved.len() {
             match &resolved[i] {
-                ResolvedEntry::BeginGrouped => {
+                ResolvedEntry::BeginGrouped(bi) => {
+                    buf_map.push(*bi);
                     stream.push(StreamItem::BeginGrouped);
                     i += 1;
                 }
-                ResolvedEntry::EndGrouped => {
+                ResolvedEntry::EndGrouped(bi) => {
+                    buf_map.push(*bi);
                     stream.push(StreamItem::EndGrouped);
                     i += 1;
                 }
-                ResolvedEntry::BeginExpanded => {
+                ResolvedEntry::BeginExpanded(bi) => {
+                    buf_map.push(*bi);
                     stream.push(StreamItem::BeginExpanded);
                     i += 1;
                 }
-                ResolvedEntry::EndExpanded => {
+                ResolvedEntry::EndExpanded(bi) => {
+                    buf_map.push(*bi);
                     stream.push(StreamItem::EndExpanded);
                     i += 1;
                 }
                 ResolvedEntry::Segment(seg) => {
-                    // Collect consecutive segments with same section
-                    let section = seg.section;
-                    let mut segments: Vec<(String, Style)> = Vec::new();
-                    let mut index_ids: Vec<Option<usize>> = Vec::new();
-
-                    while i < resolved.len() {
-                        if let ResolvedEntry::Segment(s) = &resolved[i] {
-                            if s.section == section {
-                                segments.push((s.text.clone(), s.style));
-                                index_ids.push(s.index_id);
-                                i += 1;
-                            } else {
-                                break;
-                            }
-                        } else {
-                            break;
+                    let segments = vec![(seg.text.clone(), seg.style)];
+                    let mut items = shape_segments(&self.renderer, &segments, seg.section);
+                    // Assign index_id to first item if present
+                    if let Some(idx_id) = seg.index_id {
+                        if let Some(first) = items.first_mut() {
+                            first.index_id = Some(idx_id);
                         }
                     }
-
-                    // Shape the collected segments
-                    let mut items = shape_segments(
-                        &self.renderer,
-                        &segments,
-                        section,
-                    );
-
-                    // Assign index_ids: first item within each segment's byte range
-                    let mut seg_byte_offset = 0usize;
-                    for (seg_idx, (seg_text, _)) in segments.iter().enumerate() {
-                        if let Some(idx_id) = index_ids[seg_idx] {
-                            let mut offset = 0;
-                            for item in items.iter_mut() {
-                                if offset >= seg_byte_offset
-                                    && offset < seg_byte_offset + seg_text.len()
-                                {
-                                    item.index_id = Some(idx_id);
-                                    break;
-                                }
-                                offset += item.text.len();
-                            }
-                        }
-                        seg_byte_offset += seg_text.len();
-                    }
-
-                    // Push items to stream
                     for item in items {
+                        buf_map.push(seg.buf_idx);
                         stream.push(StreamItem::Inline(item));
                     }
+                    i += 1;
                 }
             }
         }
 
-        stream
+        (stream, buf_map)
     }
 
     // --- Final layout ---

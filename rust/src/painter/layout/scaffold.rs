@@ -62,39 +62,45 @@ impl Scaffold {
         indices: &mut Indices,
     ) -> Vec<TextFragment> {
         let mut all_fragments = Vec::new();
-        let mut y_top = 0.0f32;
-        let mut y_bottom = self.height;
 
+        // Pass 1: TopDown containers (body text, headers, etc.)
+        let mut y_top = 0.0f32;
         for template in &self.templates {
-            // Process TopDown containers first, then BottomUp
             for (_, fill) in template.containers.iter().filter(|(_, f)| f.direction == StackDirection::TopDown) {
                 let frags = self.extract_container(
                     fill, y_top, index_registry, page_index, indices,
                 );
-                y_top += fill.total_height();
-                all_fragments.extend(frags);
-            }
-            for (_, fill) in template.containers.iter().filter(|(_, f)| f.direction == StackDirection::BottomUp) {
-                y_bottom -= fill.total_height();
-                let frags = self.extract_container(
-                    fill, y_bottom, index_registry, page_index, indices,
-                );
-                all_fragments.extend(frags);
-            }
-
-            // Add artefact fragments (offset by artefact's own padding)
-            for (_, fill) in template.containers.iter() {
+                // Add artefact fragments for this container
                 for artefact in &fill.artefacts {
-                    let y_offset = match fill.direction {
-                        StackDirection::TopDown => y_top - fill.total_height(),
-                        StackDirection::BottomUp => y_bottom,
-                    };
                     for frag in &artefact.fragments {
                         let mut placed = frag.clone();
-                        placed.rect.top += y_offset + artefact.padding.top;
+                        placed.rect.top += y_top + artefact.padding.top;
                         all_fragments.push(placed);
                     }
                 }
+                y_top += fill.total_height();
+                all_fragments.extend(frags);
+            }
+        }
+
+        // Pass 2: BottomUp containers (footnotes), placed top-to-bottom
+        // within the footer area starting at self.bottom_cursor
+        let mut y_footer = self.bottom_cursor;
+        for template in &self.templates {
+            for (_, fill) in template.containers.iter().filter(|(_, f)| f.direction == StackDirection::BottomUp) {
+                let frags = self.extract_container(
+                    fill, y_footer, index_registry, page_index, indices,
+                );
+                // Add artefact fragments for this container
+                for artefact in &fill.artefacts {
+                    for frag in &artefact.fragments {
+                        let mut placed = frag.clone();
+                        placed.rect.top += y_footer + artefact.padding.top;
+                        all_fragments.push(placed);
+                    }
+                }
+                y_footer += fill.total_height();
+                all_fragments.extend(frags);
             }
         }
 

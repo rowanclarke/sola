@@ -12,12 +12,17 @@ impl Paint for ArchivedParagraph {
         for content in self.contents.iter() {
             match content {
                 Content::Verse(verse_num) => {
-                    painter
-                        .add_text(" ")
-                        .push_properties(Style::Verse, Section::Body)
-                        .index_verse(verse_num.to_native())
-                        .add_text(verse_num.to_string())
-                        .pop_properties();
+                    let v = verse_num.to_native();
+                    if v > 1 {
+                        painter
+                            .add_text(" ")
+                            .push_properties(Style::Verse, Section::Body)
+                            .index_verse(v)
+                            .add_text(v.to_string())
+                            .pop_properties();
+                    } else {
+                        painter.index_verse(v);
+                    }
                 }
                 Content::Line(text) => {
                     painter.add_text(text);
