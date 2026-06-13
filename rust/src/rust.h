@@ -7,6 +7,7 @@ typedef struct {
   float height;
   float letter_spacing;
   float word_spacing;
+  int underline;
 } TextStyle;
 
 typedef enum {
@@ -14,6 +15,7 @@ typedef enum {
   NORMAL = 1,
   HEADER = 2,
   CHAPTER = 3,
+  WORD = 4,
 
   CALLER = 9,
   FOOTNOTE = 10,

@@ -26,6 +26,7 @@ pub struct TextStyle {
     pub height: f32,
     pub letter_spacing: f32,
     pub word_spacing: f32,
+    pub underline: i32,
 }
 
 impl TextStyle {
@@ -37,6 +38,7 @@ impl TextStyle {
             ))
         }
     }
+
 }
 
 #[derive(Debug, Clone)]

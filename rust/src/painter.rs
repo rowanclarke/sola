@@ -5,9 +5,7 @@ mod renderer;
 
 use std::{ffi::c_char, mem};
 
-pub use layout::{
-    Alignment, ArchivedIndex, ArchivedIndices, ArchivedPages, Index, Indices,
-};
+pub use layout::{Alignment, ArchivedIndex, ArchivedIndices, ArchivedPages, Index, Indices};
 pub use paint::Paint;
 pub use renderer::{Renderer, TextStyle};
 use rkyv::{Archive, Deserialize, Serialize, rancor::Error};
@@ -15,12 +13,12 @@ use usfm::{ArchivedBookIdentifier, BookIdentifier};
 
 use layout::{
     Page, Section, TextFragment,
-    inline::{ItemKind, StreamItem},
-    container::{BufferEntry, StackDirection},
-    scaffold::Scaffold,
-    template::{ContainerFill, Template},
     artefact::{Artefact, ArtefactAnchor, ArtefactPadding},
+    container::{BufferEntry, StackDirection},
+    inline::{ItemKind, StreamItem},
+    scaffold::Scaffold,
     state::LayoutState,
+    template::{ContainerFill, Template},
 };
 use renderer::shape_segments;
 
@@ -35,6 +33,7 @@ pub enum Style {
     Normal = 1,
     Header = 2,
     Chapter = 3,
+    Word = 4,
 
     Caller = 9,
     Footnote = 10,
@@ -280,12 +279,7 @@ impl Painter {
     pub fn index_header(&mut self, header: &rkyv::string::ArchivedString) -> &mut Self {
         let header: String = rkyv::deserialize::<_, Error>(header).unwrap();
         self.location.header = Some(header.clone());
-        let index = Index::new(
-            self.location.book.clone().unwrap(),
-            header,
-            None,
-            None,
-        );
+        let index = Index::new(self.location.book.clone().unwrap(), header, None, None);
         let id = self.index_registry.len();
         self.index_registry.push(index);
         self.add_index_marker(id);
@@ -331,7 +325,8 @@ impl Painter {
 
     pub fn paint_heading(&mut self, text: impl AsRef<str>) {
         // Discard any text segments from buffer, keep index markers
-        self.buffer.retain(|e| matches!(e, BufferEntry::IndexMarker(_)));
+        self.buffer
+            .retain(|e| matches!(e, BufferEntry::IndexMarker(_)));
 
         // Create centered header fragment as a non-wrapping artefact
         let fragment = self.raw(text.as_ref(), Style::Header);
@@ -341,7 +336,12 @@ impl Painter {
 
         let padding = self.dim.header_height / 2.0;
         let artefact = Artefact::new(
-            ArtefactPadding { top: padding, bottom: padding, left: 0.0, right: 0.0 },
+            ArtefactPadding {
+                top: padding,
+                bottom: padding,
+                left: 0.0,
+                right: 0.0,
+            },
             self.dim.width,
             centered.rect.height,
             ArtefactAnchor::Left,
@@ -361,11 +361,7 @@ impl Painter {
 
     // --- The core: paint_paragraph ---
 
-    fn do_paint_paragraph(
-        &mut self,
-        alignment: Alignment,
-        indent: (f32, f32),
-    ) {
+    fn do_paint_paragraph(&mut self, alignment: Alignment, indent: (f32, f32)) {
         let buffer = mem::take(&mut self.buffer);
         let artefacts = mem::take(&mut self.pending_artefacts);
 
@@ -393,10 +389,8 @@ impl Painter {
             for entry in buffer {
                 if let BufferEntry::IndexMarker(id) = entry {
                     if *id < self.index_registry.len() {
-                        self.indices.insert(
-                            self.index_registry[*id].clone(),
-                            self.pages.len(),
-                        );
+                        self.indices
+                            .insert(self.index_registry[*id].clone(), self.pages.len());
                     }
                 }
             }
@@ -406,28 +400,44 @@ impl Painter {
             template.ensure_container(
                 Section::Body,
                 ContainerFill::new(
-                    1, self.dim.width, StackDirection::TopDown,
-                    body_line_height, alignment, indent,
+                    1,
+                    self.dim.width,
+                    StackDirection::TopDown,
+                    body_line_height,
+                    alignment,
+                    indent,
                 ),
             );
             for (section, artefact) in artefacts.iter() {
-                eprintln!("[paint_paragraph] artefact-only: adding {:?} artefact (height={})",
-                    section, artefact.total_height());
+                eprintln!(
+                    "[paint_paragraph] artefact-only: adding {:?} artefact (height={})",
+                    section,
+                    artefact.total_height()
+                );
                 template.add_artefact(*section, artefact.clone());
             }
             if let Some(fill) = template.containers.get_mut(&Section::Body) {
                 fill.is_paragraph_end = true;
             }
-            eprintln!("[paint_paragraph] artefact-only template height={}", template.total_height());
+            eprintln!(
+                "[paint_paragraph] artefact-only template height={}",
+                template.total_height()
+            );
             match self.scaffold.push(template) {
                 Ok(()) => {
-                    eprintln!("[paint_paragraph]   scaffold accepted artefact template (remaining={})",
-                        self.scaffold.remaining());
+                    eprintln!(
+                        "[paint_paragraph]   scaffold accepted artefact template (remaining={})",
+                        self.scaffold.remaining()
+                    );
                 }
                 Err(rejected) => {
-                    eprintln!("[paint_paragraph]   scaffold FULL, page break for artefact template");
+                    eprintln!(
+                        "[paint_paragraph]   scaffold FULL, page break for artefact template"
+                    );
                     let page = self.scaffold.finalize(
-                        &self.index_registry, self.pages.len(), &mut self.indices,
+                        &self.index_registry,
+                        self.pages.len(),
+                        &mut self.indices,
                     );
                     self.pages.push(page);
                     self.scaffold = Scaffold::new(self.dim.width, self.dim.height);
@@ -451,8 +461,13 @@ impl Painter {
             indent: (0.0, 0.0),
         };
 
-        eprintln!("[paint_paragraph] stream has {} items, {} artefacts, alignment={:?}, indent={:?}",
-            stream.len(), artefacts.len(), alignment, indent);
+        eprintln!(
+            "[paint_paragraph] stream has {} items, {} artefacts, alignment={:?}, indent={:?}",
+            stream.len(),
+            artefacts.len(),
+            alignment,
+            indent
+        );
 
         // 3. Walk stream, fill templates, push to scaffold
         let mut cursor = stream_offset;
@@ -484,8 +499,14 @@ impl Painter {
             // Add pending artefacts only to first template
             if template_idx == 0 {
                 for (section, artefact) in artefacts.iter() {
-                    eprintln!("[paint_paragraph]   template #{}: adding artefact to {:?} (line_span={}, {} fragments)",
-                        template_idx, section, artefact.line_span, artefact.fragments.len());
+                    eprintln!(
+                        "[paint_paragraph]   template #{}: adding artefact {:?} to {:?} (line_span={}, {} fragments)",
+                        template_idx,
+                        artefact.fragments[0].text,
+                        section,
+                        artefact.line_span,
+                        artefact.fragments.len()
+                    );
                     template.add_artefact(*section, artefact.clone());
                 }
             }
@@ -494,18 +515,25 @@ impl Painter {
             let cursor_before = cursor;
             match self.next_template(&mut template, &stream, &mut cursor, &footer_config) {
                 Ok(()) => {
-                    eprintln!("[paint_paragraph]   template #{}: filled OK, cursor {} -> {}",
-                        template_idx, cursor_before, cursor);
+                    eprintln!(
+                        "[paint_paragraph]   template #{}: filled OK, cursor {} -> {}",
+                        template_idx, cursor_before, cursor
+                    );
                 }
                 Err(rollback_cursor) => {
-                    eprintln!("[paint_paragraph]   template #{}: Err, rollback cursor {} -> {}",
-                        template_idx, cursor_before, rollback_cursor);
+                    eprintln!(
+                        "[paint_paragraph]   template #{}: Err, rollback cursor {} -> {}",
+                        template_idx, cursor_before, rollback_cursor
+                    );
                     cursor = rollback_cursor;
                 }
             }
 
             if template.is_empty() {
-                eprintln!("[paint_paragraph]   template #{}: empty, breaking", template_idx);
+                eprintln!(
+                    "[paint_paragraph]   template #{}: empty, breaking",
+                    template_idx
+                );
                 break;
             }
 
@@ -517,19 +545,28 @@ impl Painter {
                 }
             }
 
-            eprintln!("[paint_paragraph]   template #{}: height={}, containers: {:?}, paragraph_end={}",
-                template_idx, template.total_height(),
-                template.containers.keys().collect::<Vec<_>>(), reached_end);
+            eprintln!(
+                "[paint_paragraph]   template #{}: height={}, containers: {:?}, paragraph_end={}",
+                template_idx,
+                template.total_height(),
+                template.containers.keys().collect::<Vec<_>>(),
+                reached_end
+            );
 
             // Push template to scaffold
             match self.scaffold.push(template) {
                 Ok(()) => {
-                    eprintln!("[paint_paragraph]   scaffold accepted template #{} (remaining={})",
-                        template_idx, self.scaffold.remaining());
+                    eprintln!(
+                        "[paint_paragraph]   scaffold accepted template #{} (remaining={})",
+                        template_idx,
+                        self.scaffold.remaining()
+                    );
                 }
                 Err(_rejected) => {
-                    eprintln!("[paint_paragraph]   scaffold FULL (remaining={}), page break",
-                        self.scaffold.remaining());
+                    eprintln!(
+                        "[paint_paragraph]   scaffold FULL (remaining={}), page break",
+                        self.scaffold.remaining()
+                    );
                     // Page break: finalize current scaffold
                     let page = self.scaffold.finalize(
                         &self.index_registry,
@@ -542,15 +579,18 @@ impl Painter {
 
                     // Find remaining buffer entries and recurse
                     let buf_start = buf_map[cursor_before];
-                    let entry_first_stream = buf_map.iter().position(|&b| b == buf_start).unwrap_or(0);
+                    let entry_first_stream =
+                        buf_map.iter().position(|&b| b == buf_start).unwrap_or(0);
                     let items_to_skip = cursor_before - entry_first_stream;
 
                     // Recursive re-fill with remaining buffer + continuation indent
+                    // Carry artefacts forward if the page break happened before they were placed
+                    let carry_artefacts = if template_idx == 0 { artefacts } else { &[] };
                     self.fill_paragraph(
                         &buffer[buf_start..],
-                        &[],                    // no artefacts on continuation
+                        carry_artefacts,
                         alignment,
-                        (indent.1, indent.1),   // continuation indent
+                        (indent.1, indent.1), // continuation indent
                         items_to_skip,
                     );
                     return;
@@ -679,7 +719,11 @@ impl Painter {
 
         for (buf_idx, entry) in buffer.iter().enumerate() {
             match entry {
-                BufferEntry::Segment { text, style, section } => {
+                BufferEntry::Segment {
+                    text,
+                    style,
+                    section,
+                } => {
                     let idx = pending_index_id.take();
                     resolved.push(ResolvedEntry::Segment(ResolvedSegment {
                         text: text.clone(),
@@ -770,11 +814,9 @@ impl Painter {
     pub fn layout(&mut self) -> (Vec<Page>, Indices) {
         // Finalize last scaffold
         if !self.scaffold.templates.is_empty() {
-            let page = self.scaffold.finalize(
-                &self.index_registry,
-                self.pages.len(),
-                &mut self.indices,
-            );
+            let page =
+                self.scaffold
+                    .finalize(&self.index_registry, self.pages.len(), &mut self.indices);
             self.pages.push(page);
         }
 

@@ -60,6 +60,7 @@ fn main() {
             height: 1.5,
             letter_spacing: 0.0,
             word_spacing: 0.0,
+            underline: 0,
         },
     );
     renderer.insert_style(
@@ -71,6 +72,7 @@ fn main() {
             height: 1.0,
             letter_spacing: 0.0,
             word_spacing: 0.0,
+            underline: 0,
         },
     );
     renderer.insert_style(
@@ -82,6 +84,7 @@ fn main() {
             height: 1.0,
             letter_spacing: 0.0,
             word_spacing: 0.0,
+            underline: 0,
         },
     );
     renderer.insert_style(
@@ -93,6 +96,19 @@ fn main() {
             height: 1.0,
             letter_spacing: 0.0,
             word_spacing: 0.0,
+            underline: 0,
+        },
+    );
+    renderer.insert_style(
+        Style::Word,
+        TextStyle {
+            font_family,
+            font_family_len,
+            font_size: 16.0,
+            height: 1.5,
+            letter_spacing: 0.0,
+            word_spacing: 0.0,
+            underline: 1,
         },
     );
     renderer.insert_style(
@@ -104,6 +120,7 @@ fn main() {
             height: 1.0,
             letter_spacing: 0.0,
             word_spacing: 0.0,
+            underline: 0,
         },
     );
     renderer.insert_style(
@@ -115,6 +132,7 @@ fn main() {
             height: 1.5,
             letter_spacing: 0.0,
             word_spacing: 0.0,
+            underline: 0,
         },
     );
     renderer.insert_style(
@@ -126,6 +144,7 @@ fn main() {
             height: 1.5,
             letter_spacing: 0.0,
             word_spacing: 0.0,
+            underline: 0,
         },
     );
     let dim = Dimensions {

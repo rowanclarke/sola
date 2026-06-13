@@ -882,6 +882,9 @@ final class TextStyle extends ffi.Struct {
 
   @ffi.Float()
   external double word_spacing;
+
+  @ffi.Int32()
+  external int underline;
 }
 
 enum Style {
@@ -889,6 +892,7 @@ enum Style {
   NORMAL(1),
   HEADER(2),
   CHAPTER(3),
+  WORD(4),
   CALLER(9),
   FOOTNOTE(10),
   CROSSREF(11);
@@ -901,6 +905,7 @@ enum Style {
     1 => NORMAL,
     2 => HEADER,
     3 => CHAPTER,
+    4 => WORD,
     9 => CALLER,
     10 => FOOTNOTE,
     11 => CROSSREF,
