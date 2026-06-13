@@ -257,12 +257,15 @@ pub extern "C" fn get_search_result(
                 .map_err(|e| SolaError::Search(e.to_string()))?;
             let book = deserialized.book.to_identifier();
             let header = deserialized.header;
+            let header_ptr = header.as_ptr();
+            let header_len = header.len();
+            mem::forget(header); // prevent drop — Dart reads this pointer
             Ok((
                 page_val,
                 book.as_ptr(),
                 book.len(),
-                header.as_ptr(),
-                header.len(),
+                header_ptr,
+                header_len,
                 deserialized.chapter,
                 deserialized.verse,
             ))
