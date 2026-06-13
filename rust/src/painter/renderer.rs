@@ -1,4 +1,9 @@
-use std::{collections::HashMap, ffi::c_char, slice::from_raw_parts, str::from_utf8_unchecked};
+use std::{
+    collections::HashMap,
+    ffi::c_char,
+    slice::from_raw_parts,
+    str::from_utf8_unchecked,
+};
 
 use rkyv::{api::low::deserialize, rancor::Error};
 use skia_safe::{
@@ -9,20 +14,19 @@ use skia_safe::{
     },
 };
 
-use super::{
-    Properties, Range, Style, Text,
-    layout::ArchivedPage,
-};
+use super::{Style, Text, layout::ArchivedPage};
+use super::layout::{InlineItem, ItemKind, Section};
 
 #[derive(Debug, Clone, Copy)]
 #[repr(C)]
 pub struct TextStyle {
-    font_family: *const c_char,
-    font_family_len: usize,
+    pub font_family: *const c_char,
+    pub font_family_len: usize,
     pub font_size: f32,
     pub height: f32,
     pub letter_spacing: f32,
     pub word_spacing: f32,
+    pub underline: i32,
 }
 
 impl TextStyle {
@@ -34,7 +38,9 @@ impl TextStyle {
             ))
         }
     }
+
 }
+
 #[derive(Debug, Clone)]
 pub struct Renderer {
     font_provider: TypefaceFontProvider,
@@ -62,12 +68,14 @@ impl Renderer {
         text_style.height * text_style.font_size
     }
 
+    #[allow(dead_code)]
     pub fn line_padding(&self, style: &Style) -> f32 {
         let height = self.line_height(style);
         let metrics = self.get_metrics(style);
         height + metrics.ascent - metrics.descent
     }
 
+    #[allow(dead_code)]
     pub fn top_offset(&self, style: &Style) -> f32 {
         match style {
             Style::Verse => self.line_padding(&Style::Normal) / 2.0,
@@ -95,6 +103,7 @@ impl Renderer {
         paragraph_text_style
     }
 
+    #[allow(dead_code)]
     pub fn get_metrics(&self, style: &Style) -> FontMetrics {
         let text_style = &self.style_collection[style];
         let font_mgr: FontMgr = self.font_provider.clone().into();
@@ -108,81 +117,155 @@ impl Renderer {
     pub fn page(&self, page: &ArchivedPage) -> Vec<Text> {
         page.iter()
             .map(|fragment| {
-                let mut style = self.style_collection[&deserialize::<_, Error>(&fragment.style).unwrap()];
+                let mut style =
+                    self.style_collection[&deserialize::<_, Error>(&fragment.style).unwrap()];
                 style.word_spacing += fragment.word_spacing.to_native();
                 let text = fragment.text.as_bytes();
                 let len = text.len();
                 let ptr = text.as_ptr() as *const c_char;
-                Text(ptr, len, deserialize::<_, Error>(&fragment.rect).unwrap(), style)
+                Text(
+                    ptr,
+                    len,
+                    deserialize::<_, Error>(&fragment.rect).unwrap(),
+                    style,
+                )
             })
             .collect()
     }
 }
 
-#[derive(Debug)]
-pub struct Inline {
-    // TODO: index &str instead of &[char]
-    pub range: Range,
-    pub is_whitespace: bool,
-    pub properties: Properties,
-    pub width: f32,
-    pub top_offset: f32,
-}
+/// Shape a list of (text, style) segments into InlineItems with Skia-measured widths.
+///
+/// All segments are laid out as a single Skia paragraph at infinite width for measurement,
+/// then split on word/whitespace boundaries and style boundaries.
+/// Each InlineItem carries its text directly as a String.
+pub fn shape_segments(
+    renderer: &Renderer,
+    segments: &[(String, Style)],
+    section: Section,
+) -> Vec<InlineItem> {
+    // Concatenate all segment text for shaping
+    let full_text: String = segments.iter().map(|(t, _)| t.as_str()).collect();
+    if full_text.is_empty() {
+        return vec![];
+    }
 
-pub fn inline<'a>(
-    renderer: &'a Renderer,
-    builder: &'a mut ParagraphBuilder,
-    properties: &'a [(usize, Properties)],
-) -> (&'a str, Vec<char>, Vec<Inline>) {
+    let mut builder = renderer.new_builder();
+
+    // Build Skia paragraph from all segments
+    for (text, style) in segments {
+        builder.push_style(&renderer.get_style(style));
+        builder.add_text(text);
+        builder.pop();
+    }
+
     let mut paragraph = builder.build();
     paragraph.layout(f32::INFINITY);
-    let raw = builder.get_text();
-    let text: Vec<_> = raw.chars().collect();
-    let mut inline: Vec<Inline> = vec![];
-    let mut start = 0;
-    let mut push = |range: Range, style: usize| {
-        let rect = paragraph.get_rects_for_range(
-            range.clone(),
-            RectHeightStyle::Tight,
-            RectWidthStyle::Tight,
-        )[0]
-        .rect;
-        let is_whitespace = text[range.clone()]
-            .iter()
-            .find(|chr| chr.is_whitespace())
-            .is_some();
-        let properties = properties[style].1.clone();
-        let top_offset = renderer.top_offset(&properties.style);
-        inline.push(Inline {
-            range,
-            is_whitespace,
-            properties,
-            width: rect.width(),
-            top_offset,
-        });
-    };
-    let mut style = 0;
-    let mut word = !text[0].is_whitespace();
-    for (i, chr) in text.iter().enumerate() {
-        if i >= properties[style].0 {
-            push(start..i, style);
-            start = i;
-            style += 1;
-            word = !chr.is_whitespace();
-            continue;
+
+    // Build style map: for each byte offset, which style applies
+    let mut style_runs: Vec<(usize, usize, Style)> = Vec::new();
+    let mut offset = 0;
+    for (text, style) in segments {
+        let len = text.len();
+        if len > 0 {
+            style_runs.push((offset, offset + len, *style));
         }
-        if chr.is_whitespace() {
-            if word {
-                push(start..i, style);
-                start = i;
-                word = false;
+        offset += len;
+    }
+
+    let style_at = |pos: usize| -> Style {
+        for &(start, end, style) in &style_runs {
+            if pos >= start && pos < end {
+                return style;
             }
-        } else if !word {
-            push(start..i, style);
-            start = i;
-            word = true;
+        }
+        Style::Normal
+    };
+
+    // Build style boundaries
+    let mut style_boundaries: Vec<usize> = Vec::new();
+    for &(start, end, _) in &style_runs {
+        style_boundaries.push(start);
+        style_boundaries.push(end);
+    }
+    style_boundaries.sort();
+    style_boundaries.dedup();
+
+    // Split text into segments at word/whitespace and style boundaries
+    let text = &full_text;
+    let mut seg_ranges: Vec<(usize, usize)> = Vec::new();
+    let mut seg_start = 0;
+
+    for (i, ch) in text.char_indices() {
+        let byte_len = ch.len_utf8();
+        let next = i + byte_len;
+
+        let is_style_boundary = style_boundaries.contains(&next) && next < text.len();
+
+        let current_ws = ch.is_whitespace();
+        let next_ws = if next < text.len() {
+            text[next..].chars().next().map_or(false, |c| c.is_whitespace())
+        } else {
+            current_ws
+        };
+        let is_word_boundary = next < text.len() && current_ws != next_ws;
+
+        if is_style_boundary || is_word_boundary {
+            if seg_start < next {
+                seg_ranges.push((seg_start, next));
+            }
+            seg_start = next;
         }
     }
-    push(start..text.len(), style);
-    (raw, text, inline)
+    if seg_start < text.len() {
+        seg_ranges.push((seg_start, text.len()));
+    }
+
+    // Build UTF-16 offset mapping for Skia
+    let utf16_offsets: Vec<usize> = {
+        let mut offsets = vec![0usize; text.len() + 1];
+        let mut utf16_pos = 0;
+        for (byte_pos, ch) in text.char_indices() {
+            offsets[byte_pos] = utf16_pos;
+            utf16_pos += ch.len_utf16();
+        }
+        offsets[text.len()] = utf16_pos;
+        offsets
+    };
+
+    // Measure each segment and produce InlineItems
+    let mut items: Vec<InlineItem> = Vec::new();
+    for (start, end) in seg_ranges {
+        let segment_text = &text[start..end];
+        let style = style_at(start);
+        let is_whitespace = segment_text.chars().all(|c| c.is_whitespace());
+
+        let rects = paragraph.get_rects_for_range(
+            utf16_offsets[start]..utf16_offsets[end],
+            RectHeightStyle::Tight,
+            RectWidthStyle::Tight,
+        );
+        let width = if rects.is_empty() {
+            0.0
+        } else {
+            rects.iter().map(|r| r.rect.width()).sum()
+        };
+
+        let kind = if is_whitespace {
+            ItemKind::Glue
+        } else {
+            ItemKind::Word
+        };
+
+        items.push(InlineItem {
+            text: segment_text.to_string(),
+            style,
+            width,
+            kind,
+            section,
+            index_id: None,
+        });
+    }
+
+    items
 }

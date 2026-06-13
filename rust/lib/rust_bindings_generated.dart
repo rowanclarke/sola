@@ -882,13 +882,20 @@ final class TextStyle extends ffi.Struct {
 
   @ffi.Float()
   external double word_spacing;
+
+  @ffi.Int32()
+  external int underline;
 }
 
 enum Style {
   VERSE(0),
   NORMAL(1),
   HEADER(2),
-  CHAPTER(3);
+  CHAPTER(3),
+  WORD(4),
+  CALLER(9),
+  FOOTNOTE(10),
+  CROSSREF(11);
 
   final int value;
   const Style(this.value);
@@ -898,6 +905,10 @@ enum Style {
     1 => NORMAL,
     2 => HEADER,
     3 => CHAPTER,
+    4 => WORD,
+    9 => CALLER,
+    10 => FOOTNOTE,
+    11 => CROSSREF,
     _ => throw ArgumentError("Unknown value for Style: $value"),
   };
 }

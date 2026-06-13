@@ -2,7 +2,8 @@ import 'dart:ffi';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:ffi/ffi.dart';
-import 'package:flutter/painting.dart' show TextStyle;
+import 'dart:ui' show Color;
+import 'package:flutter/painting.dart' show TextDecoration, TextStyle, FontWeight, TextBaseline;
 import 'rust_bindings_generated.dart' as bind;
 export 'rust_bindings_generated.dart' show Style;
 
@@ -100,6 +101,7 @@ void registerStyle(
   ctextStyle.ref.height = textStyle.height!;
   ctextStyle.ref.letter_spacing = textStyle.letterSpacing!;
   ctextStyle.ref.word_spacing = textStyle.wordSpacing!;
+  ctextStyle.ref.underline = (textStyle.decoration == TextDecoration.underline) ? 1 : 0;
   _bindings.register_style(renderer, style, ctextStyle);
 }
 
@@ -110,9 +112,13 @@ TextStyle toTextStyle(bind.TextStyle textStyle) {
   return TextStyle(
     fontFamily: fontFamily,
     fontSize: textStyle.font_size,
+    fontWeight: FontWeight.w700,
     height: textStyle.height,
     letterSpacing: textStyle.letter_spacing,
     wordSpacing: textStyle.word_spacing,
+    textBaseline: TextBaseline.alphabetic,
+    decoration: textStyle.underline != 0 ? TextDecoration.underline : null,
+    decorationColor: textStyle.underline != 0 ? const Color(0xFF71717A) : null,
   );
 }
 

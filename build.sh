@@ -10,6 +10,7 @@ case "$1" in
     docker exec -it "$CONTAINER" sh -c "cd rust && dart run ffigen --config ffigen.yaml"
     ;;
   run)
+    docker exec -d "$CONTAINER" sh -c 'while true; do socat TCP-LISTEN:3000,fork,reuseaddr TCP:127.0.0.1:3001; sleep 1; done'
     docker exec -it "$CONTAINER" flutter run --vm-service-port=3001
     ;;
   pair)
@@ -20,9 +21,6 @@ case "$1" in
     ;;
   list)
     docker exec -it "$CONTAINER" adb devices
-    ;;
-  serve)
-    docker exec -it "$CONTAINER" socat TCP-LISTEN:3000,fork,reuseaddr TCP:127.0.0.1:3001 &
     ;;
   *)
     echo "Usage: $0 {gen|run|connect|serve}"

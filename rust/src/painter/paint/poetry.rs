@@ -1,6 +1,6 @@
 use usfm::ArchivedPoetry;
 
-use crate::painter::{Style, format::Format, writer::LineFormat};
+use crate::painter::{Style, layout::Section};
 
 use super::Paint;
 
@@ -8,27 +8,33 @@ impl Paint for ArchivedPoetry {
     fn paint(&self, painter: &mut crate::painter::Painter) {
         use usfm::ArchivedParagraphContents as Content;
         use usfm::ArchivedPoetryStyle as PoetryKind;
-        painter.push_style(Style::Normal);
+        painter.set_container(Section::Body);
+        painter.push_properties(Style::Normal, Section::Body);
         for content in self.contents.iter() {
             match content {
                 Content::Verse(verse_num) => {
                     painter
                         .add_text(" ")
-                        .push_style(Style::Verse)
+                        .push_properties(Style::Verse, Section::Body)
                         .index_verse(verse_num.to_native())
                         .add_text(verse_num.to_string())
-                        .pop_style();
+                        .pop_properties();
                 }
-                Content::Line(text) => { painter.add_text(text); }
+                Content::Line(text) => {
+                    painter.add_text(text);
+                }
                 Content::Character(character) => character.paint(painter),
                 _ => (),
             }
         }
         match self.style {
-            PoetryKind::Normal(indent_level) => painter.pop_style().paint_paragraph(
-                Format::Left,
-                LineFormat::new(20. * indent_level as f32, 20. * 2.0, 0.0),
-            ),
+            PoetryKind::Normal(indent_level) => {
+                painter.pop_properties();
+                painter.paint_paragraph_with_indent(
+                    20.0 * indent_level as f32,
+                    20.0 * 3.0,
+                );
+            }
             _ => painter.clean(),
         }
     }
