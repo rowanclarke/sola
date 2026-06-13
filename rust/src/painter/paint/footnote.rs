@@ -1,4 +1,4 @@
-use usfm::{ArchivedCaller, ArchivedFootnote};
+use usfm::ArchivedFootnote;
 
 use crate::painter::{Painter, Style, layout::Section};
 
@@ -8,21 +8,10 @@ impl Paint for ArchivedFootnote {
     fn paint(&self, painter: &mut Painter) {
         use usfm::ArchivedFootnoteElement as Element;
 
-        // 1. Insert caller placeholder in BODY text
-        let fn_id = painter.next_footnote_id();
-        painter.insert_caller(fn_id);
+        // Group: caller in body + expanded footnote content in footer
+        painter.begin_footnote();
 
-        // 2. Collect footnote CONTENT as separate paragraph
-        painter.begin_footnote(fn_id);
-
-        painter.push_properties(Style::Caller, Section::Footer);
-        match &self.caller {
-            ArchivedCaller::Auto => painter.add_text("+"),
-            ArchivedCaller::Some(s) => painter.add_text(s.to_string()),
-            _ => painter,
-        }
-        .pop_properties();
-
+        // Footnote content (already in expanded/footer context)
         painter.push_properties(Style::Footnote, Section::Footer);
         for element in self.elements.iter() {
             match element {

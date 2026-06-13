@@ -1,189 +1,191 @@
-use super::container::{ContainerId, FilledContainer, PlacedLine};
+use super::artefact::ArtefactAnchor;
+use super::container::StackDirection;
 use super::fragment::{TextFragment, extract_fragments};
-use super::paragraph::Alignment;
-use super::template::ContentSource;
+use super::inline::BrokenLine;
+use super::line_breaker::LineBreaker;
+use super::template::{ContainerFill, Template};
 use super::{Index, Indices};
 
-#[derive(Debug, Clone)]
-pub struct ScaffoldLine {
-    pub top: f32,
-    pub left: f32,
-    pub width: f32,
-    pub placed: PlacedLine,
-}
-
-#[derive(Debug, Clone)]
-pub struct ScaffoldContainer {
-    pub id: ContainerId,
-    pub alignment: Alignment,
-    pub lines: Vec<ScaffoldLine>,
-}
-
-#[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct Scaffold {
-    pub column_x: f32,
-    pub column_y: f32,
-    pub column_width: f32,
-    pub column_height: f32,
-    pub containers: Vec<ScaffoldContainer>,
+    pub width: f32,
+    pub height: f32,
+    pub top_cursor: f32,
+    pub bottom_cursor: f32,
+    pub templates: Vec<Template>,
 }
 
 impl Scaffold {
-    pub fn from_filled(
-        column_x: f32,
-        column_y: f32,
-        column_width: f32,
-        column_height: f32,
-        filled: Vec<FilledContainer>,
-        _sources: &[ContentSource],
-    ) -> Self {
-        let containers = filled
-            .into_iter()
-            .map(|fc| {
-                let lines = fc
-                    .lines
-                    .into_iter()
-                    .map(|pl| {
-                        ScaffoldLine {
-                            top: column_y + pl.y,
-                            left: column_x + pl.x,
-                            width: pl.width,
-                            placed: pl,
-                        }
-                    })
-                    .collect();
-                ScaffoldContainer {
-                    id: fc.spec.id,
-                    alignment: fc.spec.alignment,
-                    lines,
+    pub fn new(width: f32, height: f32) -> Self {
+        Self {
+            width,
+            height,
+            top_cursor: 0.0,
+            bottom_cursor: height,
+            templates: Vec::new(),
+        }
+    }
+
+    pub fn remaining(&self) -> f32 {
+        self.bottom_cursor - self.top_cursor
+    }
+
+    /// Try to push a template. Returns Ok on success, Err(template) if scaffold is full.
+    pub fn push(&mut self, template: Template) -> Result<(), Template> {
+        let height = template.total_height();
+        if height > self.remaining() && !self.templates.is_empty() {
+            return Err(template);
+        }
+
+        // Advance cursors based on container directions
+        for fill in template.containers.values() {
+            let container_height = fill.total_height();
+            match fill.direction {
+                StackDirection::TopDown => {
+                    self.top_cursor += container_height;
                 }
-            })
-            .collect();
-
-        Scaffold {
-            column_x,
-            column_y,
-            column_width,
-            column_height,
-            containers,
-        }
-    }
-
-    pub fn to_fragments(
-        &self,
-        sources: &[ContentSource],
-        callers: &[(usize, usize, String)], // (item_idx, source_id, caller_letter)
-    ) -> Vec<TextFragment> {
-        let mut all_fragments = Vec::new();
-
-        for container in &self.containers {
-            let num_lines = container.lines.len();
-
-            for (line_idx, scaffold_line) in container.lines.iter().enumerate() {
-                let source = &sources[scaffold_line.placed.source_id];
-                let is_last_line = line_idx == num_lines - 1;
-                let line_height =
-                    scaffold_line.placed.line.item_range.clone().next().map_or(0.0, |_| {
-                        // We need the actual line height from the source style.
-                        // Since we don't have the renderer here, we rely on the
-                        // y-difference between consecutive lines or the placed data.
-                        // For now, we calculate from top differences or use a stored value.
-                        0.0 // Will be filled by caller
-                    });
-
-                // Build caller pairs for this line and source
-                let line_callers: Vec<(usize, String)> = callers
-                    .iter()
-                    .filter(|(item_idx, src_id, _)| {
-                        *src_id == scaffold_line.placed.source_id
-                            && scaffold_line.placed.line.item_range.contains(item_idx)
-                    })
-                    .map(|(item_idx, _, letter)| (*item_idx, letter.clone()))
-                    .collect();
-
-                let fragments = extract_fragments(
-                    &source.items,
-                    &source.text,
-                    &scaffold_line.placed.line,
-                    scaffold_line.top,
-                    line_height,
-                    scaffold_line.left,
-                    scaffold_line.width,
-                    is_last_line,
-                    &container.alignment,
-                    &line_callers,
-                );
-
-                all_fragments.extend(fragments);
+                StackDirection::BottomUp => {
+                    self.bottom_cursor -= container_height;
+                }
             }
         }
 
-        all_fragments
+        self.templates.push(template);
+        Ok(())
     }
 
-    pub fn to_fragments_with_heights(
+    /// Finalize scaffold into a Page, recording indices.
+    pub fn finalize(
         &self,
-        sources: &[ContentSource],
-        callers: &[(usize, usize, String)],
-        renderer: &crate::painter::renderer::Renderer,
-    ) -> Vec<TextFragment> {
-        let mut all_fragments = Vec::new();
-
-        for container in &self.containers {
-            let num_lines = container.lines.len();
-
-            for (line_idx, scaffold_line) in container.lines.iter().enumerate() {
-                let source = &sources[scaffold_line.placed.source_id];
-                let is_last_line = line_idx == num_lines - 1;
-                let line_height = renderer.line_height(&source.style);
-
-                let line_callers: Vec<(usize, String)> = callers
-                    .iter()
-                    .filter(|(item_idx, src_id, _)| {
-                        *src_id == scaffold_line.placed.source_id
-                            && scaffold_line.placed.line.item_range.contains(item_idx)
-                    })
-                    .map(|(item_idx, _, letter)| (*item_idx, letter.clone()))
-                    .collect();
-
-                let fragments = extract_fragments(
-                    &source.items,
-                    &source.text,
-                    &scaffold_line.placed.line,
-                    scaffold_line.top,
-                    line_height,
-                    scaffold_line.left,
-                    scaffold_line.width,
-                    is_last_line,
-                    &container.alignment,
-                    &line_callers,
-                );
-
-                all_fragments.extend(fragments);
-            }
-        }
-
-        all_fragments
-    }
-
-    pub fn record_indices(
-        &self,
-        sources: &[ContentSource],
         index_registry: &[Index],
         page_index: usize,
         indices: &mut Indices,
-    ) {
-        for container in &self.containers {
-            for scaffold_line in &container.lines {
-                let source = &sources[scaffold_line.placed.source_id];
-                for item_idx in scaffold_line.placed.line.item_range.clone() {
-                    if let Some(index_id) = source.items[item_idx].index_id {
-                        if index_id < index_registry.len() {
-                            indices.insert(index_registry[index_id].clone(), page_index);
-                        }
+    ) -> Vec<TextFragment> {
+        let mut all_fragments = Vec::new();
+        let mut y_top = 0.0f32;
+        let mut y_bottom = self.height;
+
+        for template in &self.templates {
+            // Process TopDown containers first, then BottomUp
+            for (_, fill) in template.containers.iter().filter(|(_, f)| f.direction == StackDirection::TopDown) {
+                let frags = self.extract_container(
+                    fill, y_top, index_registry, page_index, indices,
+                );
+                y_top += fill.total_height();
+                all_fragments.extend(frags);
+            }
+            for (_, fill) in template.containers.iter().filter(|(_, f)| f.direction == StackDirection::BottomUp) {
+                y_bottom -= fill.total_height();
+                let frags = self.extract_container(
+                    fill, y_bottom, index_registry, page_index, indices,
+                );
+                all_fragments.extend(frags);
+            }
+
+            // Add artefact fragments (offset by artefact's own padding)
+            for (_, fill) in template.containers.iter() {
+                for artefact in &fill.artefacts {
+                    let y_offset = match fill.direction {
+                        StackDirection::TopDown => y_top - fill.total_height(),
+                        StackDirection::BottomUp => y_bottom,
+                    };
+                    for frag in &artefact.fragments {
+                        let mut placed = frag.clone();
+                        placed.rect.top += y_offset + artefact.padding.top;
+                        all_fragments.push(placed);
                     }
                 }
             }
         }
+
+        all_fragments
+    }
+
+    fn extract_container(
+        &self,
+        fill: &ContainerFill,
+        y_start: f32,
+        index_registry: &[Index],
+        page_index: usize,
+        indices: &mut Indices,
+    ) -> Vec<TextFragment> {
+        if fill.items.is_empty() {
+            return Vec::new();
+        }
+
+        let mut fragments = Vec::new();
+        let line_height = fill.line_height;
+
+        // Run LineBreaker to get proper line breaks
+        let indent = fill.indent;
+        let available_width = fill.available_width;
+        let artefacts = &fill.artefacts;
+        let width_fn: Box<dyn Fn(usize) -> (f32, f32)> = Box::new(move |line: usize| {
+            let ind = if line == 0 { indent.0 } else { indent.1 };
+            let left_artefact: f32 = artefacts
+                .iter()
+                .filter(|a| line < a.line_span && a.anchor == ArtefactAnchor::Left)
+                .map(|a| a.total_width())
+                .sum();
+            let left_offset = ind.max(left_artefact);
+            let right_artefact: f32 = artefacts
+                .iter()
+                .filter(|a| line < a.line_span && a.anchor == ArtefactAnchor::Right)
+                .map(|a| a.total_width())
+                .sum();
+            (left_offset, available_width - left_offset - right_artefact)
+        });
+
+        let mut breaker = LineBreaker::new(&fill.items, width_fn);
+        let mut lines: Vec<BrokenLine> = Vec::new();
+        while let Some(bl) = breaker.next() {
+            lines.push(bl);
+        }
+
+        let num_lines = lines.len();
+        for (line_idx, broken_line) in lines.iter().enumerate() {
+            // Only the last line of the paragraph (not just this template) skips justification
+            let is_last = line_idx == num_lines - 1 && fill.is_paragraph_end;
+            let y = y_start + (line_idx as f32 * line_height);
+
+            let (left_offset, line_width) = {
+                let ind = if line_idx == 0 { fill.indent.0 } else { fill.indent.1 };
+                let left_artefact: f32 = fill.artefacts
+                    .iter()
+                    .filter(|a| line_idx < a.line_span && a.anchor == ArtefactAnchor::Left)
+                    .map(|a| a.total_width())
+                    .sum();
+                let left_offset = ind.max(left_artefact);
+                let right_artefact: f32 = fill.artefacts
+                    .iter()
+                    .filter(|a| line_idx < a.line_span && a.anchor == ArtefactAnchor::Right)
+                    .map(|a| a.total_width())
+                    .sum();
+                (left_offset, fill.available_width - left_offset - right_artefact)
+            };
+
+            // Record indices
+            for item_idx in broken_line.item_range.clone() {
+                if let Some(index_id) = fill.items[item_idx].index_id {
+                    if index_id < index_registry.len() {
+                        indices.insert(index_registry[index_id].clone(), page_index);
+                    }
+                }
+            }
+
+            let frags = extract_fragments(
+                &fill.items,
+                broken_line,
+                y,
+                line_height,
+                left_offset,
+                line_width,
+                is_last,
+                &fill.alignment,
+            );
+            fragments.extend(frags);
+        }
+
+        fragments
     }
 }

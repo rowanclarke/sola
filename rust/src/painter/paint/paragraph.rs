@@ -7,6 +7,7 @@ use super::Paint;
 impl Paint for ArchivedParagraph {
     fn paint(&self, painter: &mut Painter) {
         use usfm::ArchivedParagraphContents as Content;
+        painter.set_container(Section::Body);
         painter.push_properties(Style::Normal, Section::Body);
         for content in self.contents.iter() {
             match content {

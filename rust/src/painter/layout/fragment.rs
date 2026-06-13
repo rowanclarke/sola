@@ -4,14 +4,8 @@ use rkyv::{Archive, Serialize};
 
 use crate::painter::{Rectangle, Style};
 
+use super::Alignment;
 use super::inline::{BrokenLine, InlineItem, ItemKind};
-use super::paragraph::Alignment;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Section {
-    Body,
-    Footer,
-}
 
 #[derive(Archive, Serialize, Debug, Clone)]
 pub struct TextFragment {
@@ -34,7 +28,6 @@ impl TextFragment {
 
 pub fn extract_fragments(
     items: &[InlineItem],
-    text: &str,
     line: &BrokenLine,
     top: f32,
     line_height: f32,
@@ -42,7 +35,6 @@ pub fn extract_fragments(
     line_width: f32,
     is_last_line: bool,
     alignment: &Alignment,
-    callers: &[(usize, String)], // (item_idx, caller_letter)
 ) -> Vec<TextFragment> {
     if line.item_range.is_empty() {
         return vec![];
@@ -70,17 +62,7 @@ pub fn extract_fragments(
 
     for idx in line.item_range.clone() {
         let item = &items[idx];
-
-        // Get the text for this item - if it's a caller, use the assigned letter
-        let segment: String = if let ItemKind::Caller { .. } = item.kind {
-            callers
-                .iter()
-                .find(|(i, _)| *i == idx)
-                .map(|(_, letter)| letter.clone())
-                .unwrap_or_else(|| text[item.range.clone()].to_string())
-        } else {
-            text[item.range.clone()].to_string()
-        };
+        let segment = &item.text;
 
         let effective_width = if matches!(item.kind, ItemKind::Glue) {
             item.width + word_spacing
@@ -95,9 +77,8 @@ pub fn extract_fragments(
         };
 
         if current_style == Some(item.style) {
-            current_text.push_str(&segment);
+            current_text.push_str(segment);
             current_width += effective_width;
-            // Use the max word_spacing for the merged fragment
             if item_word_spacing > current_word_spacing {
                 current_word_spacing = item_word_spacing;
             }
@@ -117,9 +98,6 @@ pub fn extract_fragments(
                 ));
             }
             left += effective_width;
-            // When a new fragment starts with glue, absorb it as a
-            // positional gap instead of text content.  Flutter's
-            // wordSpacing doesn't apply to a leading space in a TextSpan.
             if matches!(item.kind, ItemKind::Glue) {
                 current_text = String::new();
                 current_style = Some(item.style);
@@ -127,7 +105,7 @@ pub fn extract_fragments(
                 current_width = 0.0;
                 current_word_spacing = item_word_spacing;
             } else {
-                current_text = segment;
+                current_text = segment.to_string();
                 current_style = Some(item.style);
                 current_left = left - effective_width;
                 current_width = effective_width;
@@ -136,7 +114,6 @@ pub fn extract_fragments(
         }
     }
 
-    // Flush last fragment
     if let Some(style) = current_style {
         fragments.push(TextFragment::new(
             current_text,

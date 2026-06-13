@@ -6,7 +6,7 @@ pub struct LineBreaker<'a> {
     items: &'a [InlineItem],
     cursor: usize,
     line_index: usize,
-    width_fn: WidthFn<'a>, // line_index -> (left_offset, max_width)
+    width_fn: WidthFn<'a>,
 }
 
 impl<'a> LineBreaker<'a> {
@@ -59,7 +59,7 @@ impl<'a> Iterator for LineBreaker<'a> {
                     width += item.width;
                     self.cursor += 1;
                 }
-                ItemKind::Word | ItemKind::Caller { .. } => {
+                ItemKind::Word => {
                     if width + item.width > max_width && self.cursor > start {
                         if let Some((brk, w, gc)) = last_break {
                             self.cursor = brk + 1;

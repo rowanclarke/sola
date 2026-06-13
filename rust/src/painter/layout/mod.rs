@@ -1,16 +1,15 @@
 #[allow(dead_code)]
 pub mod artefact;
 #[allow(dead_code)]
-pub mod column;
-#[allow(dead_code)]
 pub mod container;
 pub mod fragment;
+#[allow(dead_code)]
 pub mod inline;
 pub mod line_breaker;
-pub mod paragraph;
-pub mod pipeline;
 #[allow(dead_code)]
 pub mod scaffold;
+#[allow(dead_code)]
+pub mod state;
 #[allow(dead_code)]
 pub mod template;
 
@@ -20,9 +19,21 @@ use rkyv::{Archive, Deserialize, Serialize, vec::ArchivedVec};
 use usfm::BookIdentifier;
 
 // Re-exports
-pub use fragment::{Section, TextFragment};
+pub use fragment::TextFragment;
 pub use inline::{InlineItem, ItemKind};
-pub use paragraph::{Alignment, CollectedParagraph, DropCap, FootnoteSpec, ParagraphSpec};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Section {
+    Body,
+    Footer,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Alignment {
+    Left,
+    Center,
+    Justified,
+}
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash, Serialize, Archive, Deserialize)]
 #[rkyv(derive(Debug, PartialEq, Eq, Hash))]
@@ -49,8 +60,11 @@ impl Index {
     }
 }
 
+#[allow(dead_code)]
 pub type ArchivedPages = ArchivedVec<ArchivedPage>;
+#[allow(dead_code)]
 pub type ArchivedPage = <Page as Archive>::Archived;
 pub type Page = Vec<TextFragment>;
+#[allow(dead_code)]
 pub type ArchivedIndices = <Indices as Archive>::Archived;
 pub type Indices = HashMap<Index, usize>;

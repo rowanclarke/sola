@@ -1,6 +1,6 @@
 use usfm::ArchivedElement;
 
-use crate::painter::{Painter, Style, layout::Section};
+use crate::painter::Painter;
 
 use super::Paint;
 
@@ -11,11 +11,8 @@ impl Paint for ArchivedElement {
         for content in self.contents.iter() {
             match (&self.ty, content) {
                 (ArchivedElementType::Header, Content::Line(header)) => {
-                    painter.push_properties(Style::Header, Section::Body);
                     painter.index_header(header);
-                    painter.add_text(header);
-                    painter.pop_properties();
-                    painter.paint_heading();
+                    painter.paint_heading(header);
                 }
                 _ => (),
             }

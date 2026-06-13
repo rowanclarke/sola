@@ -1,6 +1,8 @@
 use usfm::ArchivedBook;
 
-use crate::painter::{DropCap, Painter, Style, layout::Section};
+use crate::painter::{Painter, Style};
+use crate::painter::layout::Section;
+use crate::painter::layout::artefact::{Artefact, ArtefactAnchor, ArtefactPadding};
 
 use super::Paint;
 
@@ -16,15 +18,28 @@ impl Paint for ArchivedBook {
                 Content::Poetry(poetry) => poetry.paint(painter),
                 Content::Element(element) => element.paint(painter),
                 Content::Chapter(n) => {
-                    painter.set_pending_drop_cap(DropCap {
-                        line_span: 2,
-                        padding: painter.get_dimensions().drop_cap_padding,
-                    });
-                    painter.push_properties(Style::Chapter, Section::Body);
-                    painter.index_chapter(n.to_native());
-                    let chapter_text = n.to_string();
-                    painter.set_pending_drop_cap_text(chapter_text, Style::Chapter);
-                    painter.pop_properties();
+                    let chapter_num = n.to_native();
+                    painter.index_chapter(chapter_num);
+
+                    let chapter_text = chapter_num.to_string();
+                    let fragment = painter.raw(&chapter_text, Style::Chapter);
+                    let padding = painter.get_dimensions().drop_cap_padding;
+
+                    let artefact = Artefact::new(
+                        ArtefactPadding {
+                            top: 0.0,
+                            bottom: 0.0,
+                            left: 0.0,
+                            right: padding,
+                        },
+                        fragment.rect.width,
+                        fragment.rect.height,
+                        ArtefactAnchor::Left,
+                        true,
+                        2,
+                        vec![fragment],
+                    );
+                    painter.add_artefact(Section::Body, artefact);
                 }
                 _ => (),
             }

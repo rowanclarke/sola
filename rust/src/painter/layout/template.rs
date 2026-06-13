@@ -1,424 +1,265 @@
-use crate::painter::Style;
-use crate::painter::renderer::Renderer;
+use std::collections::HashMap;
 
-use super::container::{
-    ContainerId, ContainerSpec, FilledContainer, PlacedLine, StackDirection,
-};
-use super::fragment::usize_to_letters;
+use super::Alignment;
+use super::Section;
+use super::artefact::{Artefact, ArtefactAnchor};
+use super::container::StackDirection;
 use super::inline::{InlineItem, ItemKind};
-use super::line_breaker::LineBreaker;
-use super::paragraph::DropCap;
 
+/// Tracks the fill state of one container within a template.
 #[derive(Debug, Clone)]
-pub struct ContentSource {
-    pub id: usize,
-    pub text: String,
+pub struct ContainerFill {
     pub items: Vec<InlineItem>,
-    pub style: Style,
-}
-
-#[derive(Debug, Clone)]
-pub struct TemplateState {
-    pub caller_counter: usize,
-}
-
-impl TemplateState {
-    pub fn new() -> Self {
-        Self { caller_counter: 0 }
-    }
-
-    pub fn caller_letter(&self, counter: usize) -> String {
-        usize_to_letters(counter)
-    }
-
-    pub fn next_caller(&mut self) -> usize {
-        let current = self.caller_counter;
-        self.caller_counter += 1;
-        current
-    }
-
-    pub fn reset_callers(&mut self) {
-        self.caller_counter = 0;
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct Overflow {
-    pub container_id: ContainerId,
-    pub source_id: usize,
-    pub item_cursor: usize,
-    pub remaining_items: Vec<InlineItem>,
-    pub remaining_text: String,
-    pub continuation_style: Style,
+    pub num_lines: usize,
+    pub current_line_width: f32,
+    pub max_lines: usize,
+    pub available_width: f32,
+    pub direction: StackDirection,
+    pub line_height: f32,
+    pub alignment: Alignment,
     pub indent: (f32, f32),
-    pub drop_cap: Option<DropCap>,
-    pub drop_cap_width: f32,
+    pub artefacts: Vec<Artefact>,
+    pub is_paragraph_end: bool,
 }
 
-#[derive(Debug)]
-pub enum AllocResult {
-    Placed,
-    Full(Overflow),
-    Hot,
-}
-
-struct ContainerState {
-    spec: ContainerSpec,
-    direction: StackDirection,
-    lines: Vec<PlacedLine>,
-    consumed_height: f32,
-    /// Tracks the line_breaker cursor for the current source being allocated
-    line_breaker_cursor: usize,
-    /// Current line index within this container (for width_fn)
-    line_index: usize,
-}
-
-pub struct Template {
-    column_width: f32,
-    column_height: f32,
-    containers: Vec<ContainerState>,
-    sources: Vec<ContentSource>,
-    state: TemplateState,
-    is_hot: bool,
-    /// Callers found during allocation: (item_idx, source_id, caller_letter)
-    callers: Vec<(usize, usize, String)>,
-    /// Current source allocation state
-    current_indent: (f32, f32),
-    current_drop_cap: Option<DropCap>,
-    current_drop_cap_width: f32,
-}
-
-/// Compute (left_offset, line_width) for a given line index, indent, and optional drop cap.
-fn compute_line_dims(
-    line: usize,
-    column_width: f32,
-    indent: (f32, f32),
-    drop_cap_width: f32,
-    drop_cap: &Option<DropCap>,
-) -> (f32, f32) {
-    if let Some(dc) = drop_cap {
-        if line < dc.line_span {
-            return (
-                drop_cap_width + dc.padding,
-                column_width - drop_cap_width - dc.padding,
-            );
+impl ContainerFill {
+    pub fn new(
+        max_lines: usize,
+        available_width: f32,
+        direction: StackDirection,
+        line_height: f32,
+        alignment: Alignment,
+        indent: (f32, f32),
+    ) -> Self {
+        Self {
+            items: Vec::new(),
+            num_lines: 1,
+            current_line_width: 0.0,
+            max_lines,
+            available_width,
+            direction,
+            line_height,
+            alignment,
+            indent,
+            artefacts: Vec::new(),
+            is_paragraph_end: false,
         }
     }
-    match line {
-        0 => (indent.0, column_width - indent.0),
-        _ => (indent.1, column_width - indent.1),
+
+    /// Width available for a given line index, accounting for indent and artefacts.
+    /// Left-anchored artefacts replace (not add to) the indent when larger.
+    fn line_width(&self, line_idx: usize) -> f32 {
+        let indent = if line_idx == 0 {
+            self.indent.0
+        } else {
+            self.indent.1
+        };
+        let left_artefact: f32 = self
+            .artefacts
+            .iter()
+            .filter(|a| line_idx < a.line_span && a.anchor == ArtefactAnchor::Left)
+            .map(|a| a.total_width())
+            .sum();
+        let left_offset = indent.max(left_artefact);
+        let right_artefact: f32 = self
+            .artefacts
+            .iter()
+            .filter(|a| line_idx < a.line_span && a.anchor == ArtefactAnchor::Right)
+            .map(|a| a.total_width())
+            .sum();
+        self.available_width - left_offset - right_artefact
     }
+
+    /// Try to push an item. Returns Err if container is full (max_lines exceeded).
+    pub fn push(&mut self, item: InlineItem) -> Result<(), ()> {
+        let width = self.line_width(self.num_lines - 1);
+        match item.kind {
+            ItemKind::Glue => {
+                self.current_line_width += item.width;
+                self.items.push(item);
+                Ok(())
+            }
+            ItemKind::Word => {
+                if self.current_line_width + item.width > width
+                    && self.current_line_width > 0.0
+                {
+                    // Need a new line
+                    if self.num_lines >= self.max_lines {
+                        return Err(());
+                    }
+                    self.num_lines += 1;
+                    self.current_line_width = item.width;
+                    self.items.push(item);
+                    Ok(())
+                } else {
+                    self.current_line_width += item.width;
+                    self.items.push(item);
+                    Ok(())
+                }
+            }
+        }
+    }
+
+    /// Force push an item, ignoring max_lines constraint.
+    pub fn force_push(&mut self, item: InlineItem) {
+        let width = self.line_width(self.num_lines - 1);
+        match item.kind {
+            ItemKind::Glue => {
+                self.current_line_width += item.width;
+            }
+            ItemKind::Word => {
+                if self.current_line_width + item.width > width
+                    && self.current_line_width > 0.0
+                {
+                    self.num_lines += 1;
+                    self.current_line_width = item.width;
+                } else {
+                    self.current_line_width += item.width;
+                }
+            }
+        }
+        self.items.push(item);
+    }
+
+    /// Truncate to n items and recalculate line state.
+    pub fn truncate(&mut self, n: usize) {
+        self.items.truncate(n);
+        // Recalculate
+        self.num_lines = 1;
+        self.current_line_width = 0.0;
+        for i in 0..self.items.len() {
+            let width = self.line_width(self.num_lines - 1);
+            match self.items[i].kind {
+                ItemKind::Glue => {
+                    self.current_line_width += self.items[i].width;
+                }
+                ItemKind::Word => {
+                    if self.current_line_width + self.items[i].width > width
+                        && self.current_line_width > 0.0
+                    {
+                        self.num_lines += 1;
+                        self.current_line_width = self.items[i].width;
+                    } else {
+                        self.current_line_width += self.items[i].width;
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn item_count(&self) -> usize {
+        self.items.len()
+    }
+
+    pub fn total_height(&self) -> f32 {
+        let text_height = if self.items.is_empty() {
+            0.0
+        } else {
+            self.num_lines as f32 * self.line_height
+        };
+
+        let mut height = text_height;
+        for a in &self.artefacts {
+            if a.wrap {
+                // Wrapping artefact overlaps with text lines;
+                // container must be at least as tall as the artefact
+                height = height.max(a.total_height());
+            } else {
+                // Non-wrapping artefact takes its own vertical space
+                height += a.total_height();
+            }
+        }
+
+        height
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.items.is_empty()
+    }
+}
+
+/// A template represents one "placement unit" pushed to the scaffold.
+/// Usually one line in the active container plus associated expanded content.
+pub struct Template {
+    pub containers: HashMap<Section, ContainerFill>,
+    pub hot: bool,
 }
 
 impl Template {
-    pub fn new(column_width: f32, column_height: f32) -> Self {
+    pub fn new() -> Self {
         Self {
-            column_width,
-            column_height,
-            containers: Vec::new(),
-            sources: Vec::new(),
-            state: TemplateState::new(),
-            is_hot: false,
-            callers: Vec::new(),
-            current_indent: (0.0, 0.0),
-            current_drop_cap: None,
-            current_drop_cap_width: 0.0,
+            containers: HashMap::new(),
+            hot: false,
         }
     }
 
-    pub fn add_container(
-        &mut self,
-        spec: ContainerSpec,
-        direction: StackDirection,
-    ) -> ContainerId {
-        let id = spec.id;
-        self.containers.push(ContainerState {
-            spec,
-            direction,
-            lines: Vec::new(),
-            consumed_height: 0.0,
-            line_breaker_cursor: 0,
-            line_index: 0,
+    pub fn ensure_container(&mut self, section: Section, fill: ContainerFill) {
+        self.containers.entry(section).or_insert(fill);
+    }
+
+    /// Add artefact to a container, adjusting its max_lines.
+    pub fn add_artefact(&mut self, section: Section, artefact: Artefact) {
+        if let Some(fill) = self.containers.get_mut(&section) {
+            if artefact.line_span > fill.max_lines {
+                fill.max_lines = artefact.line_span;
+            }
+            fill.artefacts.push(artefact);
+        }
+    }
+
+    /// Push item to its container. Returns Err if the container is full.
+    pub fn push(&mut self, item: &InlineItem) -> Result<(), ()> {
+        let section = item.section;
+        if let Some(fill) = self.containers.get_mut(&section) {
+            fill.push(item.clone())
+        } else {
+            // Container doesn't exist yet — shouldn't happen if properly initialized
+            Err(())
+        }
+    }
+
+    /// Force push item (expanded). Creates container if needed with unlimited lines.
+    pub fn force_push(&mut self, item: &InlineItem, default_config: &ContainerFill) {
+        let section = item.section;
+        let fill = self.containers.entry(section).or_insert_with(|| {
+            ContainerFill::new(
+                usize::MAX,
+                default_config.available_width,
+                default_config.direction,
+                default_config.line_height,
+                default_config.alignment,
+                (0.0, 0.0),
+            )
         });
-        id
+        fill.force_push(item.clone());
     }
 
-    pub fn register_source(
-        &mut self,
-        text: String,
-        items: Vec<InlineItem>,
-        style: Style,
-    ) -> usize {
-        let id = self.sources.len();
-        self.sources.push(ContentSource {
-            id,
-            text,
-            items,
-            style,
-        });
-        id
-    }
-
-    pub fn sources(&self) -> &[ContentSource] {
-        &self.sources
-    }
-
-    pub fn callers(&self) -> &[(usize, usize, String)] {
-        &self.callers
-    }
-
-    fn container_index(&self, id: ContainerId) -> usize {
-        self.containers
-            .iter()
-            .position(|c| c.spec.id == id)
-            .expect("container not found")
-    }
-
-    fn total_consumed(&self) -> f32 {
-        self.containers.iter().map(|c| c.consumed_height).sum()
-    }
-
-    pub fn remaining_column_height(&self) -> f32 {
-        self.column_height - self.total_consumed()
-    }
-
-    pub fn consumed_height(&self, container_id: ContainerId) -> f32 {
-        let idx = self.container_index(container_id);
-        self.containers[idx].consumed_height
-    }
-
-    pub fn remaining_height(&self, container_id: ContainerId) -> f32 {
-        let idx = self.container_index(container_id);
-        let other_consumed: f32 = self
-            .containers
-            .iter()
-            .enumerate()
-            .filter(|(i, _)| *i != idx)
-            .map(|(_, c)| c.consumed_height)
-            .sum();
-        self.column_height - other_consumed - self.containers[idx].consumed_height
-    }
-
-    pub fn set_source_layout(
-        &mut self,
-        indent: (f32, f32),
-        drop_cap: Option<DropCap>,
-        drop_cap_width: f32,
-    ) {
-        self.current_indent = indent;
-        self.current_drop_cap = drop_cap;
-        self.current_drop_cap_width = drop_cap_width;
-    }
-
-    pub fn alloc_line(
-        &mut self,
-        container_id: ContainerId,
-        source_id: usize,
-        renderer: &Renderer,
-    ) -> AllocResult {
-        let idx = self.container_index(container_id);
-        let style = self.sources[source_id].style;
-        let line_height = renderer.line_height(&style);
-
-        // Check if there's space
-        if line_height > self.remaining_height(container_id) {
-            let cursor = self.containers[idx].line_breaker_cursor;
-            if cursor < self.sources[source_id].items.len() {
-                return AllocResult::Full(Overflow {
-                    container_id,
-                    source_id,
-                    item_cursor: cursor,
-                    remaining_items: self.sources[source_id].items[cursor..].to_vec(),
-                    remaining_text: self.sources[source_id].text.clone(),
-                    continuation_style: style,
-                    indent: self.current_indent,
-                    drop_cap: self.current_drop_cap.clone(),
-                    drop_cap_width: self.current_drop_cap_width,
-                });
-            }
-            return AllocResult::Placed;
-        }
-
-        let cursor = self.containers[idx].line_breaker_cursor;
-        if cursor >= self.sources[source_id].items.len() {
-            return AllocResult::Placed;
-        }
-
-        // Break one line
-        let line_index = self.containers[idx].line_index;
-        let indent = self.current_indent;
-        let dc_width = self.current_drop_cap_width;
-        let dc = self.current_drop_cap.clone();
-        let col_width = self.column_width;
-
-        let (broken_line, new_cursor) = {
-            let items_slice = &self.sources[source_id].items[cursor..];
-            let width_fn = Box::new(move |line: usize| {
-                compute_line_dims(line + line_index, col_width, indent, dc_width, &dc)
-            });
-            let mut breaker = LineBreaker::new(items_slice, width_fn);
-            match breaker.next() {
-                Some(mut bl) => {
-                    bl.item_range.start += cursor;
-                    bl.item_range.end += cursor;
-                    (bl, cursor + breaker.cursor())
-                }
-                None => {
-                    // No more content
-                    let items_len = items_slice.len();
-                    return {
-                        self.containers[idx].line_breaker_cursor = cursor + items_len;
-                        AllocResult::Placed
-                    };
-                }
-            }
-        };
-
-        // Scan for callers and check hot
-        for item_idx in broken_line.item_range.clone() {
-            if let ItemKind::Caller { .. } = self.sources[source_id].items[item_idx].kind {
-                let expected_letter = self.state.caller_letter(self.state.caller_counter);
-                let shaped_text =
-                    &self.sources[source_id].text[self.sources[source_id].items[item_idx].range.clone()];
-
-                if shaped_text != expected_letter {
-                    self.is_hot = true;
-                    return AllocResult::Hot;
-                }
-
-                self.callers
-                    .push((item_idx, source_id, expected_letter));
-                self.state.next_caller();
-            }
-        }
-
-        // Compute y position
-        let direction = self.containers[idx].direction;
-        let consumed = self.containers[idx].consumed_height;
-        let y = match direction {
-            StackDirection::TopDown => consumed,
-            StackDirection::BottomUp => self.column_height - consumed - line_height,
-        };
-
-        // Compute x and width for this line
-        let (left_offset, line_width) = compute_line_dims(
-            line_index,
-            self.column_width,
-            self.current_indent,
-            self.current_drop_cap_width,
-            &self.current_drop_cap,
-        );
-
-        let placed = PlacedLine {
-            line: broken_line,
-            y,
-            x: left_offset,
-            width: line_width,
-            source_id,
-        };
-
-        let container = &mut self.containers[idx];
-        container.lines.push(placed);
-        container.consumed_height += line_height;
-        container.line_breaker_cursor = new_cursor;
-        container.line_index += 1;
-
-        AllocResult::Placed
-    }
-
-    pub fn alloc_all(
-        &mut self,
-        container_id: ContainerId,
-        source_id: usize,
-        renderer: &Renderer,
-    ) -> Option<Overflow> {
-        let idx = self.container_index(container_id);
-        self.containers[idx].line_breaker_cursor = 0;
-        self.containers[idx].line_index = 0;
-
-        loop {
-            let idx = self.container_index(container_id);
-            let cursor = self.containers[idx].line_breaker_cursor;
-            if cursor >= self.sources[source_id].items.len() {
-                return None;
-            }
-
-            match self.alloc_line(container_id, source_id, renderer) {
-                AllocResult::Placed => {
-                    let idx = self.container_index(container_id);
-                    let cursor = self.containers[idx].line_breaker_cursor;
-                    if cursor >= self.sources[source_id].items.len() {
-                        return None;
-                    }
-                }
-                AllocResult::Full(overflow) => return Some(overflow),
-                AllocResult::Hot => return None,
-            }
+    /// Truncate a container back to n items.
+    pub fn truncate(&mut self, section: Section, n: usize) {
+        if let Some(fill) = self.containers.get_mut(&section) {
+            fill.truncate(n);
         }
     }
 
-    pub fn alloc_spacing(&mut self, container_id: ContainerId, height: f32) -> bool {
-        if height <= 0.0 {
-            return true;
-        }
-        if height > self.remaining_height(container_id) {
-            return false;
-        }
-        let idx = self.container_index(container_id);
-        self.containers[idx].consumed_height += height;
-        true
+    /// Number of items in a container.
+    pub fn item_count(&self, section: Section) -> usize {
+        self.containers.get(&section).map_or(0, |f| f.item_count())
     }
 
-    pub fn place_artefact(
-        &mut self,
-        _container_id: ContainerId,
-        _artefact: super::artefact::Artefact,
-    ) {
-        // Artefact placement - future implementation
-    }
-
-    pub fn is_hot(&self) -> bool {
-        self.is_hot
-    }
-
-    pub fn clear(&mut self) {
-        for container in &mut self.containers {
-            container.lines.clear();
-            container.consumed_height = 0.0;
-            container.line_breaker_cursor = 0;
-            container.line_index = 0;
-        }
-        self.sources.clear();
-        self.callers.clear();
-        self.is_hot = false;
-    }
-
-    pub fn state_mut(&mut self) -> &mut TemplateState {
-        &mut self.state
-    }
-
-    pub fn state(&self) -> &TemplateState {
-        &self.state
+    /// Total height across all containers.
+    pub fn total_height(&self) -> f32 {
+        self.containers.values().map(|f| f.total_height()).sum()
     }
 
     pub fn mark_hot(&mut self) {
-        self.is_hot = true;
+        self.hot = true;
     }
 
-    pub fn into_filled(self) -> (Vec<FilledContainer>, TemplateState, Vec<ContentSource>) {
-        let filled = self
-            .containers
-            .into_iter()
-            .map(|c| FilledContainer {
-                spec: c.spec,
-                lines: c.lines,
-                consumed_height: c.consumed_height,
-            })
-            .collect();
-        (filled, self.state, self.sources)
+    pub fn is_hot(&self) -> bool {
+        self.hot
     }
 
-    pub fn drain_overflow(&mut self) -> Vec<Overflow> {
-        Vec::new()
+    pub fn is_empty(&self) -> bool {
+        self.containers.values().all(|f| f.is_empty())
     }
 }

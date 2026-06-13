@@ -42,6 +42,15 @@ fn main() {
     let font = "AveriaSerifLibre";
     let font_family = font.as_ptr() as *const c_char;
     let font_family_len = font.len();
+
+    // (rust.Style.NORMAL, TextStyle(fontFamily: 'AveriaSerifLibre', fontSize: 16, height: 1.5, letterSpacing: 0, wordSpacing: 0)),
+    // (rust.Style.HEADER, TextStyle(fontFamily: 'AveriaSerifLibre', fontSize: 24, height: 1.0, letterSpacing: 0, wordSpacing: 0)),
+    // (rust.Style.VERSE, TextStyle(fontFamily: 'AveriaSerifLibre', fontSize: 10, height: 1.0, letterSpacing: 0, wordSpacing: 0)),
+    // (rust.Style.CHAPTER, TextStyle(fontFamily: 'AveriaSerifLibre', fontSize: 48, height: 1.0, letterSpacing: 0, wordSpacing: 0)),
+    // (rust.Style.CALLER, TextStyle(fontFamily: 'AveriaSerifLibre', fontSize: 10, height: 1.0, letterSpacing: 0, wordSpacing: 0)),
+    // (rust.Style.FOOTNOTE, TextStyle(fontFamily: 'AveriaSerifLibre', fontSize: 12, height: 1.5, letterSpacing: 0, wordSpacing: 0)),
+    // (rust.Style.CROSSREF, TextStyle(fontFamily: 'AveriaSerifLibre', fontSize: 12, height: 1.5, letterSpacing: 0, wordSpacing: 0)),
+
     renderer.insert_style(
         Style::Normal,
         TextStyle {
@@ -80,7 +89,7 @@ fn main() {
         TextStyle {
             font_family,
             font_family_len,
-            font_size: 32.0,
+            font_size: 48.0,
             height: 1.0,
             letter_spacing: 0.0,
             word_spacing: 0.0,
@@ -103,7 +112,7 @@ fn main() {
             font_family,
             font_family_len,
             font_size: 12.0,
-            height: 1.2,
+            height: 1.5,
             letter_spacing: 0.0,
             word_spacing: 0.0,
         },
@@ -114,15 +123,15 @@ fn main() {
             font_family,
             font_family_len,
             font_size: 12.0,
-            height: 1.2,
+            height: 1.5,
             letter_spacing: 0.0,
             word_spacing: 0.0,
         },
     );
     let dim = Dimensions {
         width: 344.0,
-        height: 686.0,
-        header_height: 686.0 / 5.0,
+        height: 702.0,
+        header_height: 702.0 / 5.0,
         drop_cap_padding: 20.0,
     };
     let mut painter = Painter::new(&renderer, dim);

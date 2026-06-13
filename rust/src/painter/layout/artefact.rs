@@ -1,14 +1,14 @@
-use rkyv::{Archive, Deserialize, Serialize};
-
-use crate::painter::Rectangle;
+use super::fragment::TextFragment;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(dead_code)]
 pub enum ArtefactAnchor {
     Left,
     Right,
 }
 
 #[derive(Debug, Clone, Copy)]
+#[allow(dead_code)]
 pub struct ArtefactPadding {
     pub top: f32,
     pub bottom: f32,
@@ -17,6 +17,7 @@ pub struct ArtefactPadding {
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct Artefact {
     pub padding: ArtefactPadding,
     pub width: f32,
@@ -24,34 +25,41 @@ pub struct Artefact {
     pub anchor: ArtefactAnchor,
     pub wrap: bool,
     pub line_span: usize,
+    pub fragments: Vec<TextFragment>,
 }
 
+#[allow(dead_code)]
 impl Artefact {
     pub fn new(
-        _padding: ArtefactPadding,
-        _width: f32,
-        _height: f32,
-        _anchor: ArtefactAnchor,
-        _wrap: bool,
+        padding: ArtefactPadding,
+        width: f32,
+        height: f32,
+        anchor: ArtefactAnchor,
+        wrap: bool,
+        line_span: usize,
+        fragments: Vec<TextFragment>,
     ) -> Self {
-        todo!()
+        Self {
+            padding,
+            width,
+            height,
+            anchor,
+            wrap,
+            line_span,
+            fragments,
+        }
     }
 
     pub fn total_width(&self) -> f32 {
-        todo!()
+        self.width + self.padding.left + self.padding.right
     }
 
     pub fn total_height(&self) -> f32 {
-        todo!()
+        self.height + self.padding.top + self.padding.bottom
     }
 
-    pub fn compute_line_span(&mut self, _line_height: f32) {
-        todo!()
+    /// Width reduction applied to lines within the artefact span.
+    pub fn width_reduction(&self) -> f32 {
+        self.total_width()
     }
-}
-
-#[derive(Archive, Serialize, Deserialize, Debug, Clone)]
-pub struct ArtefactFragment {
-    pub artefact_id: usize,
-    pub rect: Rectangle,
 }
