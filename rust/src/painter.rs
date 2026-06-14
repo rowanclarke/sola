@@ -409,31 +409,14 @@ impl Painter {
                 ),
             );
             for (section, artefact) in artefacts.iter() {
-                eprintln!(
-                    "[paint_paragraph] artefact-only: adding {:?} artefact (height={})",
-                    section,
-                    artefact.total_height()
-                );
                 template.add_artefact(*section, artefact.clone());
             }
             if let Some(fill) = template.containers.get_mut(&Section::Body) {
                 fill.is_paragraph_end = true;
             }
-            eprintln!(
-                "[paint_paragraph] artefact-only template height={}",
-                template.total_height()
-            );
             match self.scaffold.push(template) {
-                Ok(()) => {
-                    eprintln!(
-                        "[paint_paragraph]   scaffold accepted artefact template (remaining={})",
-                        self.scaffold.remaining()
-                    );
-                }
+                Ok(()) => {}
                 Err(rejected) => {
-                    eprintln!(
-                        "[paint_paragraph]   scaffold FULL, page break for artefact template"
-                    );
                     let page = self.scaffold.finalize(
                         &self.index_registry,
                         self.pages.len(),
@@ -460,14 +443,6 @@ impl Painter {
             alignment: Alignment::Left,
             indent: (0.0, 0.0),
         };
-
-        eprintln!(
-            "[paint_paragraph] stream has {} items, {} artefacts, alignment={:?}, indent={:?}",
-            stream.len(),
-            artefacts.len(),
-            alignment,
-            indent
-        );
 
         // 3. Walk stream, fill templates, push to scaffold
         let mut cursor = stream_offset;
@@ -499,14 +474,6 @@ impl Painter {
             // Add pending artefacts only to first template
             if template_idx == 0 {
                 for (section, artefact) in artefacts.iter() {
-                    eprintln!(
-                        "[paint_paragraph]   template #{}: adding artefact {:?} to {:?} (line_span={}, {} fragments)",
-                        template_idx,
-                        artefact.fragments[0].text,
-                        section,
-                        artefact.line_span,
-                        artefact.fragments.len()
-                    );
                     template.add_artefact(*section, artefact.clone());
                 }
             }
@@ -514,26 +481,13 @@ impl Painter {
             // Fill the template using next_template algorithm
             let cursor_before = cursor;
             match self.next_template(&mut template, &stream, &mut cursor, &footer_config) {
-                Ok(()) => {
-                    eprintln!(
-                        "[paint_paragraph]   template #{}: filled OK, cursor {} -> {}",
-                        template_idx, cursor_before, cursor
-                    );
-                }
+                Ok(()) => {}
                 Err(rollback_cursor) => {
-                    eprintln!(
-                        "[paint_paragraph]   template #{}: Err, rollback cursor {} -> {}",
-                        template_idx, cursor_before, rollback_cursor
-                    );
                     cursor = rollback_cursor;
                 }
             }
 
             if template.is_empty() {
-                eprintln!(
-                    "[paint_paragraph]   template #{}: empty, breaking",
-                    template_idx
-                );
                 break;
             }
 
@@ -545,28 +499,10 @@ impl Painter {
                 }
             }
 
-            eprintln!(
-                "[paint_paragraph]   template #{}: height={}, containers: {:?}, paragraph_end={}",
-                template_idx,
-                template.total_height(),
-                template.containers.keys().collect::<Vec<_>>(),
-                reached_end
-            );
-
             // Push template to scaffold
             match self.scaffold.push(template) {
-                Ok(()) => {
-                    eprintln!(
-                        "[paint_paragraph]   scaffold accepted template #{} (remaining={})",
-                        template_idx,
-                        self.scaffold.remaining()
-                    );
-                }
+                Ok(()) => {}
                 Err(_rejected) => {
-                    eprintln!(
-                        "[paint_paragraph]   scaffold FULL (remaining={}), page break",
-                        self.scaffold.remaining()
-                    );
                     // Page break: finalize current scaffold
                     let page = self.scaffold.finalize(
                         &self.index_registry,
