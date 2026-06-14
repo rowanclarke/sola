@@ -4,14 +4,14 @@ use super::Alignment;
 use super::Section;
 use super::artefact::{Artefact, ArtefactAnchor};
 use super::container::StackDirection;
-use super::inline::{InlineItem, ItemKind};
+use super::inline::InlineItem;
+use super::line_breaker::LineBreaker;
 
 /// Tracks the fill state of one container within a template.
 #[derive(Debug, Clone)]
 pub struct ContainerFill {
     pub items: Vec<InlineItem>,
     pub num_lines: usize,
-    pub current_line_width: f32,
     pub max_lines: usize,
     pub available_width: f32,
     pub direction: StackDirection,
@@ -33,8 +33,7 @@ impl ContainerFill {
     ) -> Self {
         Self {
             items: Vec::new(),
-            num_lines: 1,
-            current_line_width: 0.0,
+            num_lines: 0,
             max_lines,
             available_width,
             direction,
@@ -46,105 +45,59 @@ impl ContainerFill {
         }
     }
 
-    /// Width available for a given line index, accounting for indent and artefacts.
-    /// Left-anchored artefacts replace (not add to) the indent when larger.
-    fn line_width(&self, line_idx: usize) -> f32 {
-        let indent = if line_idx == 0 {
-            self.indent.0
-        } else {
-            self.indent.1
-        };
-        let left_artefact: f32 = self
-            .artefacts
-            .iter()
-            .filter(|a| line_idx < a.line_span && a.anchor == ArtefactAnchor::Left)
-            .map(|a| a.total_width())
-            .sum();
-        let left_offset = indent.max(left_artefact);
-        let right_artefact: f32 = self
-            .artefacts
-            .iter()
-            .filter(|a| line_idx < a.line_span && a.anchor == ArtefactAnchor::Right)
-            .map(|a| a.total_width())
-            .sum();
-        self.available_width - left_offset - right_artefact
+    /// Count lines by running LineBreaker — the single source of truth.
+    fn count_lines(&self) -> usize {
+        if self.items.is_empty() {
+            return 0;
+        }
+        let indent = self.indent;
+        let available_width = self.available_width;
+        let artefacts = &self.artefacts;
+        let width_fn: Box<dyn Fn(usize) -> (f32, f32)> = Box::new(move |line: usize| {
+            let ind = if line == 0 { indent.0 } else { indent.1 };
+            let left_artefact: f32 = artefacts
+                .iter()
+                .filter(|a| line < a.line_span && a.anchor == ArtefactAnchor::Left)
+                .map(|a| a.total_width())
+                .sum();
+            let left_offset = ind.max(left_artefact);
+            let right_artefact: f32 = artefacts
+                .iter()
+                .filter(|a| line < a.line_span && a.anchor == ArtefactAnchor::Right)
+                .map(|a| a.total_width())
+                .sum();
+            (left_offset, available_width - left_offset - right_artefact)
+        });
+        let mut breaker = LineBreaker::new(&self.items, width_fn);
+        let mut count = 0;
+        while breaker.next().is_some() {
+            count += 1;
+        }
+        count
     }
 
     /// Try to push an item. Returns Err if container is full (max_lines exceeded).
     pub fn push(&mut self, item: InlineItem) -> Result<(), ()> {
-        let width = self.line_width(self.num_lines - 1);
-        match item.kind {
-            ItemKind::Glue => {
-                self.current_line_width += item.width;
-                self.items.push(item);
-                Ok(())
-            }
-            ItemKind::Word => {
-                if self.current_line_width + item.width > width
-                    && self.current_line_width > 0.0
-                {
-                    // Need a new line
-                    if self.num_lines >= self.max_lines {
-                        return Err(());
-                    }
-                    self.num_lines += 1;
-                    self.current_line_width = item.width;
-                    self.items.push(item);
-                    Ok(())
-                } else {
-                    self.current_line_width += item.width;
-                    self.items.push(item);
-                    Ok(())
-                }
-            }
+        self.items.push(item);
+        self.num_lines = self.count_lines();
+        if self.num_lines > self.max_lines {
+            self.items.pop();
+            self.num_lines = self.count_lines();
+            return Err(());
         }
+        Ok(())
     }
 
     /// Force push an item, ignoring max_lines constraint.
     pub fn force_push(&mut self, item: InlineItem) {
-        let width = self.line_width(self.num_lines - 1);
-        match item.kind {
-            ItemKind::Glue => {
-                self.current_line_width += item.width;
-            }
-            ItemKind::Word => {
-                if self.current_line_width + item.width > width
-                    && self.current_line_width > 0.0
-                {
-                    self.num_lines += 1;
-                    self.current_line_width = item.width;
-                } else {
-                    self.current_line_width += item.width;
-                }
-            }
-        }
         self.items.push(item);
+        self.num_lines = self.count_lines();
     }
 
     /// Truncate to n items and recalculate line state.
     pub fn truncate(&mut self, n: usize) {
         self.items.truncate(n);
-        // Recalculate
-        self.num_lines = 1;
-        self.current_line_width = 0.0;
-        for i in 0..self.items.len() {
-            let width = self.line_width(self.num_lines - 1);
-            match self.items[i].kind {
-                ItemKind::Glue => {
-                    self.current_line_width += self.items[i].width;
-                }
-                ItemKind::Word => {
-                    if self.current_line_width + self.items[i].width > width
-                        && self.current_line_width > 0.0
-                    {
-                        self.num_lines += 1;
-                        self.current_line_width = self.items[i].width;
-                    } else {
-                        self.current_line_width += self.items[i].width;
-                    }
-                }
-            }
-        }
+        self.num_lines = self.count_lines();
     }
 
     pub fn item_count(&self) -> usize {
@@ -152,11 +105,7 @@ impl ContainerFill {
     }
 
     pub fn total_height(&self) -> f32 {
-        let text_height = if self.items.is_empty() {
-            0.0
-        } else {
-            self.num_lines as f32 * self.line_height
-        };
+        let text_height = self.num_lines as f32 * self.line_height;
 
         let mut height = text_height;
         for a in &self.artefacts {

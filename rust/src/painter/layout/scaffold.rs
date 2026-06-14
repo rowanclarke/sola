@@ -67,6 +67,7 @@ impl Scaffold {
         let mut y_top = 0.0f32;
         for template in &self.templates {
             for (_, fill) in template.containers.iter().filter(|(_, f)| f.direction == StackDirection::TopDown) {
+                let h = fill.total_height();
                 let frags = self.extract_container(
                     fill, y_top, index_registry, page_index, indices,
                 );
@@ -78,7 +79,7 @@ impl Scaffold {
                         all_fragments.push(placed);
                     }
                 }
-                y_top += fill.total_height();
+                y_top += h;
                 all_fragments.extend(frags);
             }
         }
