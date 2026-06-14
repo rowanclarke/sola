@@ -82,6 +82,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
                     onResultTap: (bookId, page) {
                       readerVm.navigateTo(bookId, page);
                     },
+                    onSettingsTap: () =>
+                        Navigator.pushNamed(context, '/settings'),
                   ),
                   Expanded(child: _buildReaderContent(readerVm, searchVm)),
                   ScrubberWidget(

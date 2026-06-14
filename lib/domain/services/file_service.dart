@@ -64,6 +64,13 @@ class FileService {
     return File(_resolve(filePath)).delete();
   }
 
+  Future<void> deleteDirectory(String path) async {
+    final dir = Directory(_resolve(path));
+    if (await dir.exists()) {
+      await dir.delete(recursive: true);
+    }
+  }
+
   Future<void> extractRemote(
     String url,
     String path, {
