@@ -40,8 +40,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
     super.dispose();
   }
 
+  bool _loadTriggered = false;
+
   void _triggerLoad(double width, double height) {
-    if (_lastWidth != null && _lastHeight != null) return;
+    if (_loadTriggered) return;
+    _loadTriggered = true;
     _lastWidth = width;
     _lastHeight = height;
     WidgetsBinding.instance.addPostFrameCallback((_) async {

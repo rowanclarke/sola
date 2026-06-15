@@ -1,0 +1,45 @@
+\id JHN Test Book
+\ide UTF-8
+\h Test Book
+\toc1 Test Book
+\toc2 Test
+\toc3 Tst
+\mt1 Test Book
+\c 1
+\p
+\v 1 In the beginning was the word,\f + \fr 1:1 \ft First footnote of chapter one.\f* and the word was with God, and the word was God.\f + \fr 1:1 \ft Second footnote on the same verse.\f*
+\v 2 The same was in the beginning with God.
+\v 3 All things were made by him;\f + \fr 1:3 \ft Third footnote in this chapter.\f* and without him was not any thing made that was made.
+\v 4 In him was life; and the life was the light of men.
+\v 5 And the light shineth in darkness; and the darkness comprehended it not.
+\p
+\v 6 There was a man sent from God,\f + \fr 1:6 \ft Fourth footnote, testing stacking.\f* whose name was John.
+\v 7 The same came for a witness, to bear witness of the Light, that all men through him might believe.
+\v 8 He was not that Light, but was sent to bear witness of that Light.
+\v 9 That was the true Light, which lighteth every man that cometh into the world.
+\v 10 He was in the world, and the world was made by him, and the world knew him not.
+\v 11 He came unto his own, and his own received him not.
+\v 12 But as many as received him,\f + \fr 1:12 \ft Fifth footnote should appear on next page if page breaks.\f* to them gave he power to become the sons of God, even to them that believe on his name.
+\v 13 Which were born, not of blood, nor of the will of the flesh, nor of the will of man, but of God.
+\v 14 And the Word was made flesh,\f + \fr 1:14 \ft Sixth footnote testing caller sequence across pages.\f* and dwelt among us, and we beheld his glory, the glory as of the only begotten of the Father, full of grace and truth.
+\c 2
+\p
+\v 1 And the third day there was a marriage in Cana of Galilee;\f + \fr 2:1 \ft First footnote of chapter two. Callers should reset per page.\f* and the mother of Jesus was there.
+\v 2 And both Jesus was called, and his disciples, to the marriage.
+\v 3 And when they wanted wine,\f + \fr 2:3 \ft Second footnote of chapter two.\f* the mother of Jesus saith unto him, They have no wine.
+\v 4 Jesus saith unto her, Woman, what have I to do with thee? mine hour is not yet come.
+\v 5 His mother saith unto the servants, Whatsoever he saith unto you, do it.
+\v 6 And there were set there six waterpots of stone,\f + \fr 2:6 \ft Third footnote of chapter two, for testing multiple per page.\f* after the manner of the purifying of the Jews, containing two or three firkins apiece.
+\v 7 Jesus saith unto them, Fill the waterpots with water. And they filled them up to the brim.
+\v 8 And he saith unto them, Draw out now, and bear unto the governor of the feast. And they bare it.
+\v 9 When the ruler of the feast had tasted the water that was made wine,\f + \fr 2:9 \ft Fourth footnote of chapter two.\f* and knew not whence it was, but the servants which drew the water knew, the governor of the feast called the bridegroom.
+\v 10 And saith unto him, Every man at the beginning doth set forth good wine; and when men have well drunk, then that which is worse: but thou hast kept the good wine until now.
+\c 3
+\p
+\v 1 There was a man of the Pharisees,\f + \fr 3:1 \ft First footnote of chapter three.\f* named Nicodemus, a ruler of the Jews.
+\v 2 The same came to Jesus by night,\f + \fr 3:2 \ft Second footnote of chapter three.\f* and said unto him, Rabbi, we know that thou art a teacher come from God: for no man can do these miracles that thou doest, except God be with him.
+\v 3 Jesus answered and said unto him, Verily, verily, I say unto thee,\f + \fr 3:3 \ft Third footnote of chapter three.\f* Except a man be born again, he cannot see the kingdom of God.
+\v 4 Nicodemus saith unto him, How can a man be born when he is old? can he enter the second time into his mother's womb, and be born?
+\v 5 Jesus answered, Verily, verily, I say unto thee, Except a man be born of water and of the Spirit,\f + \fr 3:5 \ft Fourth footnote of chapter three, testing dense footnotes.\f* he cannot enter into the kingdom of God.
+\v 6 That which is born of the flesh is flesh; and that which is born of the Spirit is spirit.
+\v 7 Marvel not that I said unto thee, Ye must be born again.

@@ -27,6 +27,7 @@ services:
 
       # Android SDK cache (optional)
       - android-cache:/opt/android-sdk
+      - android-home:/root/.android
 
       # Helix config
       - ${HOME}/dotfiles/helix/.config/helix:/root/.config/helix
@@ -45,3 +46,4 @@ volumes:
   cargo-cache:
   rustup-cache:
   android-cache:
+  android-home:
