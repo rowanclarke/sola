@@ -15,7 +15,7 @@ class ReaderViewModel extends ChangeNotifier {
   String? _error;
   double _lastWidth = 0;
   double _lastHeight = 0;
-  Map<String, ({int pageCount, String title})> _bookData = {};
+  Map<String, ({int pageCount, String title, List<String> verseRanges})> _bookData = {};
 
   ReaderViewModel({
     required RendererRepository rendererRepository,
@@ -28,7 +28,7 @@ class ReaderViewModel extends ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isRendering => _isRendering;
   String? get error => _error;
-  Map<String, ({int pageCount, String title})> get bookData => _bookData;
+  Map<String, ({int pageCount, String title, List<String> verseRanges})> get bookData => _bookData;
 
   String get currentBookId =>
       _sessionRepository.currentSession.currentBookId ?? 'GEN';

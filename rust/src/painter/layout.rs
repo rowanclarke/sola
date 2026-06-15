@@ -65,7 +65,12 @@ pub struct TextFragment {
 
 impl TextFragment {
     pub fn new(text: String, rect: Rectangle, style: Style, word_spacing: f32) -> Self {
-        Self { text, rect, style, word_spacing }
+        Self {
+            text,
+            rect,
+            style,
+            word_spacing,
+        }
     }
 }
 
@@ -219,6 +224,33 @@ impl Layout {
 
     pub fn drain_lines(&mut self) {
         self.lines.drain(..);
+    }
+
+    pub fn compute_verse_ranges(&self) -> String {
+        let num_pages = self.pages.len();
+        // Collect (chapter, verse) entries grouped by page
+        let mut page_verses: Vec<Vec<(u16, u16)>> = vec![Vec::new(); num_pages];
+        for (index, &page) in &self.indices {
+            if let (Some(chapter), Some(verse)) = (index.chapter, index.verse) {
+                if page < num_pages {
+                    page_verses[page].push((chapter, verse));
+                }
+            }
+        }
+
+        let mut parts: Vec<String> = Vec::with_capacity(num_pages);
+        for verses in &page_verses {
+            if verses.is_empty() {
+                parts.push(String::new());
+                continue;
+            }
+            let mut sorted = verses.clone();
+            sorted.sort();
+            let (fc, fv) = sorted.first().unwrap();
+            let (lc, lv) = sorted.last().unwrap();
+            parts.push(format!("{}:{}\t{}:{}", fc, fv, lc, lv));
+        }
+        parts.join("\n")
     }
 }
 

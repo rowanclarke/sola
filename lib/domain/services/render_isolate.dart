@@ -21,11 +21,13 @@ class RenderOutput {
   final Uint8List pages;
   final Uint8List indices;
   final Uint8List verses;
+  final Uint8List verseRanges;
 
   RenderOutput({
     required this.pages,
     required this.indices,
     required this.verses,
+    required this.verseRanges,
   });
 }
 
@@ -53,6 +55,7 @@ RenderOutput renderInBackground(RenderInput input) {
     pages: rust.serializePages(painter),
     indices: rust.serializeIndices(painter),
     verses: rust.serializeVerses(painter),
+    verseRanges: rust.serializeVerseRanges(painter),
   );
   print('[Isolate] Render complete');
   return output;

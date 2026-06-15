@@ -261,6 +261,10 @@ impl Painter {
     pub fn get_verses(&self) -> Result<AlignedVec, String> {
         rkyv::to_bytes::<Error>(self.layout.get_verses()).map_err(|e| e.to_string())
     }
+
+    pub fn get_verse_ranges(&self) -> Vec<u8> {
+        self.layout.compute_verse_ranges().into_bytes()
+    }
 }
 
 #[derive(Archive, Serialize, Deserialize, Debug, Hash, PartialEq, Eq, Clone, Copy)]

@@ -404,6 +404,21 @@ pub extern "C" fn serialize_verses(
     mem::forget(verses);
 }
 
+#[unsafe(no_mangle)]
+pub extern "C" fn serialize_verse_ranges(
+    painter: *const c_void,
+    out: *mut *const u8,
+    out_len: *mut usize,
+) {
+    let painter = unsafe { read_ref::<Painter>(painter) };
+    let bytes = painter.get_verse_ranges();
+    unsafe {
+        *out = bytes.as_ptr();
+        *out_len = bytes.len();
+    }
+    mem::forget(bytes);
+}
+
 // ---------------------------------------------------------------------------
 // Android logging
 // ---------------------------------------------------------------------------

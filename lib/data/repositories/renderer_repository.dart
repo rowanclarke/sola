@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
@@ -76,6 +77,7 @@ class RendererRepository {
       await _fileService.writeBytes('$dir/pages', output.pages);
       await _fileService.writeBytes('$dir/indices', output.indices);
       await _fileService.writeBytes('$dir/verses', output.verses);
+      await _fileService.writeBytes('$dir/verse_ranges', output.verseRanges);
       debugPrint('[RendererRepo] Render complete of $bookId, saved to disk');
     } else {
       debugPrint('[RendererRepo] Disk cache hit: $dir');
@@ -116,7 +118,7 @@ class RendererRepository {
     return pages;
   }
 
-  Future<Map<String, ({int pageCount, String title})>> renderAll({
+  Future<Map<String, ({int pageCount, String title, List<String> verseRanges})>> renderAll({
     required String translationId,
     required double width,
     required double height,
@@ -131,8 +133,8 @@ class RendererRepository {
         translationId, book.key, width, height, book.value,
       );
     }
-    // Second pass: read page counts and titles
-    final unsorted = <String, ({int pageCount, String title})>{};
+    // Second pass: read page counts, titles, and verse ranges
+    final unsorted = <String, ({int pageCount, String title, List<String> verseRanges})>{};
     for (final entry in dirs.entries) {
       final pagesBytes = await _fileService.readBytes('${entry.value}/pages');
       final archivedPages = _rendererService.getArchivedPages(pagesBytes);
@@ -141,10 +143,18 @@ class RendererRepository {
       final indicesBytes = await _fileService.readBytes('${entry.value}/indices');
       final title = _rendererService.getBookTitle(indicesBytes);
 
-      unsorted[entry.key] = (pageCount: pageCount, title: title);
+      List<String> verseRanges;
+      if (await _fileService.fileExists('${entry.value}/verse_ranges')) {
+        final vrBytes = await _fileService.readBytes('${entry.value}/verse_ranges');
+        verseRanges = utf8.decode(vrBytes).split('\n');
+      } else {
+        verseRanges = List.filled(pageCount, '');
+      }
+
+      unsorted[entry.key] = (pageCount: pageCount, title: title, verseRanges: verseRanges);
     }
     // Sort into canonical Bible order
-    final result = <String, ({int pageCount, String title})>{};
+    final result = <String, ({int pageCount, String title, List<String> verseRanges})>{};
     for (final id in _canonicalBookOrder) {
       if (unsorted.containsKey(id)) {
         result[id] = unsorted[id]!;

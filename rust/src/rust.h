@@ -69,3 +69,4 @@ void get_index(
   size_t* out_error_len
 );
 void serialize_verses(void* painter, const char** out, size_t* out_len, char** out_error, size_t* out_error_len);
+void serialize_verse_ranges(void* painter, const char** out, size_t* out_len);
