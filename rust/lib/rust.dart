@@ -318,6 +318,18 @@ Uint8List serializeVerses(Pointer<Void> painter) {
   return out.value.asTypedList(outLen.value);
 }
 
+Uint8List serializeVerseRanges(Pointer<Void> painter) {
+  final out = malloc<Pointer<Uint8>>();
+  final outLen = malloc<Size>();
+
+  _bindings.serialize_verse_ranges(
+    painter,
+    out.cast<Pointer<Char>>(),
+    outLen,
+  );
+  return out.value.asTypedList(outLen.value);
+}
+
 Pointer<Void> loadSearchEngine(
   Uint8List model,
   Uint8List tokenizer,

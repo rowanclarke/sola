@@ -15,11 +15,7 @@ class ReaderTopPanel extends StatefulWidget {
   final SearchViewModel? searchViewModel;
   final void Function(String bookId, int page)? onResultTap;
 
-  const ReaderTopPanel({
-    super.key,
-    this.searchViewModel,
-    this.onResultTap,
-  });
+  const ReaderTopPanel({super.key, this.searchViewModel, this.onResultTap});
 
   @override
   ReaderTopPanelState createState() => ReaderTopPanelState();
@@ -180,11 +176,9 @@ class ReaderTopPanelState extends State<ReaderTopPanel>
 
   bool get isFocused => _phase == _Phase.focused;
 
-  bool get _hasResults =>
-      _searchVm != null && _searchVm!.results.isNotEmpty;
+  bool get _hasResults => _searchVm != null && _searchVm!.results.isNotEmpty;
 
-  bool get _hasError =>
-      _searchVm != null && _searchVm!.error != null;
+  bool get _hasError => _searchVm != null && _searchVm!.error != null;
 
   bool get _showResults =>
       _phase == _Phase.focused &&
@@ -211,60 +205,11 @@ class ReaderTopPanelState extends State<ReaderTopPanel>
             height: panelHeight,
             decoration: const BoxDecoration(
               color: _bg,
-              border: Border(
-                bottom: BorderSide(color: _line),
-              ),
+              border: Border(bottom: BorderSide(color: _line)),
             ),
             child: Stack(
               clipBehavior: Clip.none,
               children: [
-                // === Single search icon — present in ALL phases ===
-                Positioned(
-                  left: 0,
-                  top: (panelHeight - 34) / 2,
-                  child: Builder(builder: (context) {
-                    final x = centerX + (focusedX - centerX) * p;
-                    final double pullY;
-                    if (_phase == _Phase.pulling) {
-                      pullY = _pullPx;
-                    } else if (_pullAtFocus > 0 &&
-                        _animController.isAnimating &&
-                        _animTo == 1.0) {
-                      pullY = _pullAtFocus * (1 - pClamped);
-                    } else {
-                      pullY = 0;
-                    }
-                    return Transform.translate(
-                      offset: Offset(x, pullY),
-                      child: GestureDetector(
-                        onTap: () {
-                          if (_phase != _Phase.focused && !_dismissing) {
-                            _focusSearch();
-                          }
-                        },
-                        child: Container(
-                          width: 34,
-                          height: 34,
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: Color.fromRGBO(
-                                  228, 228, 231, 1.0 - pClamped),
-                            ),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Center(
-                            child: Icon(
-                              Icons.search,
-                              size: 16,
-                              color: Color(0xFF52525B),
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  }),
-                ),
-
                 // === Pull-down hint text ===
                 if (_phase == _Phase.pulling && _pullPx > 8)
                   Positioned(
@@ -278,7 +223,6 @@ class ReaderTopPanelState extends State<ReaderTopPanel>
                             : 'PULL TO SEARCH',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontFamily: 'monospace',
                           fontSize: 10,
                           letterSpacing: 1.5,
                           fontWeight: FontWeight.w600,
@@ -309,8 +253,9 @@ class ReaderTopPanelState extends State<ReaderTopPanel>
                                   border: Border.all(color: _line),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 12),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                ),
                                 alignment: Alignment.center,
                                 child: TextField(
                                   controller: _textController,
@@ -320,8 +265,8 @@ class ReaderTopPanelState extends State<ReaderTopPanel>
                                     color: _ink,
                                   ),
                                   decoration: InputDecoration(
-                                    hintText: (_searchVm?.isModelLoading ??
-                                            false)
+                                    hintText:
+                                        (_searchVm?.isModelLoading ?? false)
                                         ? 'Loading search...'
                                         : 'Search verses, books, words...',
                                     hintStyle: const TextStyle(
@@ -385,6 +330,60 @@ class ReaderTopPanelState extends State<ReaderTopPanel>
                     ),
                   ),
                 ),
+
+                // === Single search icon — rendered LAST so it paints on top ===
+                Positioned(
+                  left: 0,
+                  top: (panelHeight - 34) / 2,
+                  child: Builder(
+                    builder: (context) {
+                      final x = centerX + (focusedX - centerX) * p;
+                      final double pullY;
+                      if (_phase == _Phase.pulling) {
+                        pullY = _pullPx;
+                      } else if (_pullAtFocus > 0 &&
+                          _animController.isAnimating &&
+                          _animTo == 1.0) {
+                        pullY = _pullAtFocus * (1 - pClamped);
+                      } else {
+                        pullY = 0;
+                      }
+                      return Transform.translate(
+                        offset: Offset(x, pullY),
+                        child: GestureDetector(
+                          onTap: () {
+                            if (_phase != _Phase.focused && !_dismissing) {
+                              _focusSearch();
+                            }
+                          },
+                          child: Container(
+                            width: 34,
+                            height: 34,
+                            decoration: BoxDecoration(
+                              color: _bg,
+                              border: Border.all(
+                                color: Color.fromRGBO(
+                                  228,
+                                  228,
+                                  231,
+                                  1.0 - pClamped,
+                                ),
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Center(
+                              child: Icon(
+                                Icons.search,
+                                size: 16,
+                                color: Color(0xFF52525B),
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
               ],
             ),
           ),
@@ -423,10 +422,7 @@ class ReaderTopPanelState extends State<ReaderTopPanel>
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Text(
           vm.error!,
-          style: const TextStyle(
-            color: _mid,
-            fontSize: 13,
-          ),
+          style: const TextStyle(color: _mid, fontSize: 13),
         ),
       );
     }
@@ -471,11 +467,7 @@ class ReaderTopPanelState extends State<ReaderTopPanel>
             if (i > 0)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Divider(
-                  height: 0.5,
-                  thickness: 0.5,
-                  color: _line,
-                ),
+                child: Divider(height: 0.5, thickness: 0.5, color: _line),
               ),
             SizedBox(
               height: 44,
@@ -514,11 +506,7 @@ class ReaderTopPanelState extends State<ReaderTopPanel>
                         ),
                       ),
                       const SizedBox(width: 8),
-                      const Icon(
-                        Icons.chevron_right,
-                        size: 14,
-                        color: _line,
-                      ),
+                      const Icon(Icons.chevron_right, size: 14, color: _line),
                     ],
                   ),
                 ),

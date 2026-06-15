@@ -535,6 +535,33 @@ class RustBindings {
         )
       >();
 
+  void serialize_verse_ranges(
+    ffi.Pointer<ffi.Void> painter,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> out,
+    ffi.Pointer<ffi.Size> out_len,
+  ) {
+    return _serialize_verse_ranges(painter, out, out_len);
+  }
+
+  late final _serialize_verse_rangesPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(
+            ffi.Pointer<ffi.Void>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+            ffi.Pointer<ffi.Size>,
+          )
+        >
+      >('serialize_verse_ranges');
+  late final _serialize_verse_ranges = _serialize_verse_rangesPtr
+      .asFunction<
+        void Function(
+          ffi.Pointer<ffi.Void>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          ffi.Pointer<ffi.Size>,
+        )
+      >();
+
   ffi.Pointer<ffi.Void> load_search_engine(
     ffi.Pointer<ffi.Char> model,
     int model_len,

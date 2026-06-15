@@ -2,7 +2,7 @@ import 'dart:ffi';
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/painting.dart' show TextStyle;
+import 'package:flutter/painting.dart' show TextDecoration, TextStyle;
 import 'package:flutter/services.dart';
 import 'package:rust/rust.dart' as rust;
 
@@ -11,6 +11,7 @@ const _defaultStyles = [
   (rust.Style.HEADER, TextStyle(fontFamily: 'AveriaSerifLibre', fontSize: 24, height: 1.0, letterSpacing: 0, wordSpacing: 0)),
   (rust.Style.VERSE, TextStyle(fontFamily: 'AveriaSerifLibre', fontSize: 10, height: 1.0, letterSpacing: 0, wordSpacing: 0)),
   (rust.Style.CHAPTER, TextStyle(fontFamily: 'AveriaSerifLibre', fontSize: 48, height: 1.0, letterSpacing: 0, wordSpacing: 0)),
+  (rust.Style.WORD, TextStyle(fontFamily: 'AveriaSerifLibre', fontSize: 16, height: 1.5, letterSpacing: 0, wordSpacing: 0, decoration: TextDecoration.underline)),
   (rust.Style.CALLER, TextStyle(fontFamily: 'AveriaSerifLibre', fontSize: 10, height: 1.0, letterSpacing: 0, wordSpacing: 0)),
   (rust.Style.FOOTNOTE, TextStyle(fontFamily: 'AveriaSerifLibre', fontSize: 12, height: 1.5, letterSpacing: 0, wordSpacing: 0)),
   (rust.Style.CROSSREF, TextStyle(fontFamily: 'AveriaSerifLibre', fontSize: 12, height: 1.5, letterSpacing: 0, wordSpacing: 0)),

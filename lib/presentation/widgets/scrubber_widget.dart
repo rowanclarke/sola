@@ -11,7 +11,8 @@ import 'package:flutter/scheduler.dart';
 /// Release commits position via [onNavigate].
 class ScrubberWidget extends StatefulWidget {
   final int currentGlobalPage;
-  final Map<String, ({int pageCount, String title})> bookData;
+  final Map<String, ({int pageCount, String title, List<String> verseRanges})>
+  bookData;
   final void Function(String bookId, int localPage) onNavigate;
 
   const ScrubberWidget({
@@ -30,6 +31,14 @@ class _ScrubberWidgetState extends State<ScrubberWidget>
   static const int _visiblePages = 20;
   static const double _stripHeight = 36;
   static const double _activeRaise = 0;
+  static const _labelStyle = TextStyle(
+    fontFamily: 'AveriaSerifLibre',
+    fontSize: 16,
+    letterSpacing: 0,
+    wordSpacing: 0,
+    fontWeight: FontWeight.w700,
+    color: Color(0xFF18181B),
+  );
 
   bool _active = false;
   double _winStart = 0;
@@ -54,6 +63,7 @@ class _ScrubberWidgetState extends State<ScrubberWidget>
   List<int> _pageStarts = [];
   Map<String, int> _idToIndex = {};
   int _totalPages = 0;
+  List<String> _verseRanges = [];
 
   @override
   void initState() {
@@ -76,7 +86,9 @@ class _ScrubberWidgetState extends State<ScrubberWidget>
     }
   }
 
-  void _computeFromBookData(Map<String, ({int pageCount, String title})> map) {
+  void _computeFromBookData(
+    Map<String, ({int pageCount, String title, List<String> verseRanges})> map,
+  ) {
     _bookIds = map.keys.toList();
     _titles = map.values.map((v) => v.title).toList();
     _pageCounts = map.values.map((v) => v.pageCount).toList();
@@ -87,9 +99,11 @@ class _ScrubberWidgetState extends State<ScrubberWidget>
       cumulative += pc;
     }
     _totalPages = cumulative;
-    _idToIndex = {
-      for (int i = 0; i < _bookIds.length; i++) _bookIds[i]: i,
-    };
+    _idToIndex = {for (int i = 0; i < _bookIds.length; i++) _bookIds[i]: i};
+    _verseRanges = [];
+    for (final v in map.values) {
+      _verseRanges.addAll(v.verseRanges);
+    }
   }
 
   ({String id, int localPage}) _globalToBook(int globalIndex) {
@@ -110,9 +124,7 @@ class _ScrubberWidgetState extends State<ScrubberWidget>
   void _centerWindow() {
     if (_totalPages == 0) return;
     final half = _visiblePages ~/ 2;
-    _winStart = (_idx - half)
-        .clamp(0, _totalPages - _visiblePages)
-        .toDouble();
+    _winStart = (_idx - half).clamp(0, _totalPages - _visiblePages).toDouble();
     if (_visiblePages > 1) {
       _thumbRatio = (_idx - _winStart) / (_visiblePages - 1);
     }
@@ -151,8 +163,10 @@ class _ScrubberWidgetState extends State<ScrubberWidget>
 
   void _updateIdx() {
     if (_totalPages == 0) return;
-    _idx = (_winStart + _thumbRatio * (_visiblePages - 1))
-        .clamp(0, _totalPages - 1);
+    _idx = (_winStart + _thumbRatio * (_visiblePages - 1)).clamp(
+      0,
+      _totalPages - 1,
+    );
   }
 
   void _startAutoScroll() {
@@ -188,8 +202,7 @@ class _ScrubberWidgetState extends State<ScrubberWidget>
   }
 
   void _updateFromPointer(double globalX) {
-    final stripBox =
-        _stripKey.currentContext?.findRenderObject() as RenderBox?;
+    final stripBox = _stripKey.currentContext?.findRenderObject() as RenderBox?;
     if (stripBox == null || !stripBox.hasSize) return;
     final stripPos = stripBox.localToGlobal(Offset.zero);
     final stripWidth = stripBox.size.width;
@@ -246,10 +259,17 @@ class _ScrubberWidgetState extends State<ScrubberWidget>
       return const SizedBox(height: 52);
     }
 
-    final info = _globalToBook(_idx.round());
+    final globalPage = _idx.round();
+    final info = _globalToBook(globalPage);
     final idx = _idToIndex[info.id];
     final label = idx != null ? _titles[idx] : info.id;
     final raiseY = _active ? _activeRaise : 0.0;
+    final raw = (globalPage >= 0 && globalPage < _verseRanges.length)
+        ? _verseRanges[globalPage]
+        : '';
+    final hasRange = raw.contains('\t');
+    final verseLeft = hasRange ? raw.split('\t')[0] : raw;
+    final verseRight = hasRange ? raw.split('\t')[1] : '';
 
     // The Listener wraps the entire scrubber so the full bar is the hit area
     return Listener(
@@ -279,9 +299,7 @@ class _ScrubberWidgetState extends State<ScrubberWidget>
       child: Container(
         decoration: const BoxDecoration(
           color: Color(0xFFFAFAFA),
-          border: Border(
-            top: BorderSide(color: Color(0xFFE4E4E7)),
-          ),
+          border: Border(top: BorderSide(color: Color(0xFFE4E4E7))),
         ),
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
         child: SizedBox(
@@ -293,22 +311,36 @@ class _ScrubberWidgetState extends State<ScrubberWidget>
               Positioned(
                 left: 0,
                 right: 0,
-                bottom: _active
-                    ? _stripHeight + raiseY + 16
-                    : 8,
+                bottom: _active ? _stripHeight + raiseY + 16 : 8,
                 child: IgnorePointer(
-                  child: Center(
-                    child: Text(
-                      '$label ${info.localPage + 1}',
-                      style: const TextStyle(
-                        fontFamily: 'monospace',
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF18181B),
-                        letterSpacing: -0.05,
-                      ),
-                    ),
-                  ),
+                  child: verseLeft.isNotEmpty && verseRight.isNotEmpty
+                      ? Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                verseLeft,
+                                style: _labelStyle,
+                                textAlign: TextAlign.left,
+                              ),
+                            ),
+                            Text(label, style: _labelStyle),
+                            Expanded(
+                              child: Text(
+                                verseRight,
+                                style: _labelStyle,
+                                textAlign: TextAlign.right,
+                              ),
+                            ),
+                          ],
+                        )
+                      : Center(
+                          child: Text(
+                            verseLeft.isNotEmpty
+                                ? '$label $verseLeft'
+                                : '$label ${info.localPage + 1}',
+                            style: _labelStyle,
+                          ),
+                        ),
                 ),
               ),
 
@@ -349,8 +381,9 @@ class _ScrubberWidgetState extends State<ScrubberWidget>
   Widget _buildStripContents() {
     if (_totalPages == 0) return const SizedBox.shrink();
 
-    final winEnd =
-        (_winStart + _visiblePages - 1).clamp(0, _totalPages - 1).toInt();
+    final winEnd = (_winStart + _visiblePages - 1)
+        .clamp(0, _totalPages - 1)
+        .toInt();
     final windowBooks = <_WindowBook>[];
 
     for (int p = _winStart.floor(); p <= winEnd; p++) {
@@ -359,13 +392,15 @@ class _ScrubberWidgetState extends State<ScrubberWidget>
       if (windowBooks.isNotEmpty && windowBooks.last.bookId == pi.id) {
         windowBooks.last.end = p;
       } else {
-        windowBooks.add(_WindowBook(
-          bookId: pi.id,
-          title: _titles[idx],
-          bookIndex: idx,
-          start: p,
-          end: p,
-        ));
+        windowBooks.add(
+          _WindowBook(
+            bookId: pi.id,
+            title: _titles[idx],
+            bookIndex: idx,
+            start: p,
+            end: p,
+          ),
+        );
       }
     }
 
@@ -379,62 +414,67 @@ class _ScrubberWidgetState extends State<ScrubberWidget>
           children: [
             // Dividers between books
             for (int i = 0; i < windowBooks.length - 1; i++)
-              Builder(builder: (_) {
-                final bk = windowBooks[i];
-                final dividerLeftR =
-                    (bk.end + 1 - _winStart) / _visiblePages;
-                return Positioned(
-                  left: dividerLeftR * stripWidth,
-                  top: 0,
-                  bottom: 0,
-                  width: 1,
-                  child: ColoredBox(
-                    color: Colors.white.withValues(alpha: 0.18),
-                  ),
-                );
-              }),
+              Builder(
+                builder: (_) {
+                  final bk = windowBooks[i];
+                  final dividerLeftR = (bk.end + 1 - _winStart) / _visiblePages;
+                  return Positioned(
+                    left: dividerLeftR * stripWidth,
+                    top: 0,
+                    bottom: 0,
+                    width: 1,
+                    child: ColoredBox(
+                      color: Colors.white.withValues(alpha: 0.18),
+                    ),
+                  );
+                },
+              ),
 
             // Book title labels
             for (final bk in windowBooks)
-              Builder(builder: (_) {
-                final bookStart = _pageStarts[bk.bookIndex];
-                final bookEnd = bookStart + _pageCounts[bk.bookIndex] - 1;
-                final anchorR = ((bookStart > _winStart
-                                ? bookStart
-                                : _winStart) -
-                            _winStart) /
-                    _visiblePages;
-                final maxR = (bookEnd + 1 - _winStart) / _visiblePages;
-                final isCurrent = bk.bookId == currentBookId;
-                final visWidthR =
-                    (bk.end - bk.start + 1) / _visiblePages;
-                if (visWidthR * 100 <= 6) return const SizedBox.shrink();
-                return Positioned(
-                  left: anchorR * stripWidth + 8,
-                  top: 0,
-                  bottom: 0,
-                  width: ((maxR - anchorR) * stripWidth - 12)
-                      .clamp(0, stripWidth),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      bk.title,
-                      overflow: TextOverflow.clip,
-                      softWrap: false,
-                      style: TextStyle(
-                        fontFamily: 'monospace',
-                        fontSize: 10.5,
-                        fontWeight:
-                            isCurrent ? FontWeight.w700 : FontWeight.w500,
-                        color: Colors.white
-                            .withValues(alpha: isCurrent ? 1.0 : 0.55),
-                        letterSpacing: 0.1,
-                        height: 1.1,
+              Builder(
+                builder: (_) {
+                  final bookStart = _pageStarts[bk.bookIndex];
+                  final bookEnd = bookStart + _pageCounts[bk.bookIndex] - 1;
+                  final anchorR =
+                      ((bookStart > _winStart ? bookStart : _winStart) -
+                          _winStart) /
+                      _visiblePages;
+                  final maxR = (bookEnd + 1 - _winStart) / _visiblePages;
+                  final isCurrent = bk.bookId == currentBookId;
+                  final visWidthR = (bk.end - bk.start + 1) / _visiblePages;
+                  if (visWidthR * 100 <= 6) return const SizedBox.shrink();
+                  return Positioned(
+                    left: anchorR * stripWidth + 8,
+                    top: 0,
+                    bottom: 0,
+                    width: ((maxR - anchorR) * stripWidth - 12).clamp(
+                      0,
+                      stripWidth,
+                    ),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        bk.title,
+                        overflow: TextOverflow.clip,
+                        softWrap: false,
+                        style: TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 10.5,
+                          fontWeight: isCurrent
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                          color: Colors.white.withValues(
+                            alpha: isCurrent ? 1.0 : 0.55,
+                          ),
+                          letterSpacing: 0.1,
+                          height: 1.1,
+                        ),
                       ),
                     ),
-                  ),
-                );
-              }),
+                  );
+                },
+              ),
 
             // Thumb / playhead
             Positioned(

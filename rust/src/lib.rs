@@ -26,6 +26,34 @@ struct LayoutResult {
     verses: Vec<Index>,
 }
 
+impl LayoutResult {
+    fn compute_verse_ranges(&self) -> Vec<u8> {
+        let num_pages = self.pages.len();
+        let mut page_verses: Vec<Vec<(u16, u16)>> = vec![Vec::new(); num_pages];
+        for (index, &page) in &self.indices {
+            if let (Some(chapter), Some(verse)) = (index.chapter, index.verse) {
+                if page < num_pages {
+                    page_verses[page].push((chapter, verse));
+                }
+            }
+        }
+
+        let mut parts: Vec<String> = Vec::with_capacity(num_pages);
+        for verses in &page_verses {
+            if verses.is_empty() {
+                parts.push(String::new());
+                continue;
+            }
+            let mut sorted = verses.clone();
+            sorted.sort();
+            let (fc, fv) = sorted.first().unwrap();
+            let (lc, lv) = sorted.last().unwrap();
+            parts.push(format!("{}:{}\t{}:{}", fc, fv, lc, lv));
+        }
+        parts.join("\n").into_bytes()
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Renderer setup (infallible)
 // ---------------------------------------------------------------------------
@@ -423,6 +451,21 @@ pub extern "C" fn serialize_verses(
     ) else {
         return;
     };
+    unsafe {
+        *out = bytes.as_ptr();
+        *out_len = bytes.len();
+    }
+    mem::forget(bytes);
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn serialize_verse_ranges(
+    layout_result: *const c_void,
+    out: *mut *const u8,
+    out_len: *mut usize,
+) {
+    let result = unsafe { read_ref::<LayoutResult>(layout_result) };
+    let bytes = result.compute_verse_ranges();
     unsafe {
         *out = bytes.as_ptr();
         *out_len = bytes.len();

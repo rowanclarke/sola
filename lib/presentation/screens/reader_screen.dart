@@ -74,22 +74,39 @@ class _ReaderScreenState extends State<ReaderScreen> {
             return GestureDetector(
               onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
               behavior: HitTestBehavior.translucent,
-              child: Column(
+              child: Stack(
+                fit: StackFit.expand,
+                clipBehavior: Clip.none,
                 children: [
-                  ReaderTopPanel(
-                    key: _topPanelKey,
-                    searchViewModel: searchVm,
-                    onResultTap: (bookId, page) {
-                      readerVm.navigateTo(bookId, page);
-                    },
+                  // Base layer: reader content + scrubber below the panel
+                  Column(
+                    children: [
+                      SizedBox(height: ReaderTopPanelState.panelHeight),
+                      Expanded(
+                        child: _buildReaderContent(readerVm, searchVm),
+                      ),
+                      ScrubberWidget(
+                        currentGlobalPage: readerVm.currentGlobalPage,
+                        bookData: readerVm.bookData,
+                        onNavigate: (bookId, localPage) {
+                          readerVm.navigateTo(bookId, localPage);
+                        },
+                      ),
+                    ],
                   ),
-                  Expanded(child: _buildReaderContent(readerVm, searchVm)),
-                  ScrubberWidget(
-                    currentGlobalPage: readerVm.currentGlobalPage,
-                    bookData: readerVm.bookData,
-                    onNavigate: (bookId, localPage) {
-                      readerVm.navigateTo(bookId, localPage);
-                    },
+                  // Top layer: panel paints last so pull-down overflow
+                  // is visible above the reader content.
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: ReaderTopPanel(
+                      key: _topPanelKey,
+                      searchViewModel: searchVm,
+                      onResultTap: (bookId, page) {
+                        readerVm.navigateTo(bookId, page);
+                      },
+                    ),
                   ),
                 ],
               ),
