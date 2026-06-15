@@ -1,16 +1,13 @@
-# sola
+<div align="center">
 
-A new Flutter project.
+![sola](./dist/logo.png)
 
-## Getting Started
+</div>
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+<p>
+  <img src="./dist/app-store/01.png" height="500">
+  <img src="./dist/app-store/02.png" height="500">
+  <img src="./dist/app-store/03.png" height="500">
+  <img src="./dist/app-store/04.png" height="500">
+  <img src="./dist/app-store/05.png" height="500">
+</p>
