@@ -21,6 +21,7 @@ Stay tuned for more quality features.
   <img src="./dist/app-store/03.png" height="500">
   <img src="./dist/app-store/04.png" height="500">
   <img src="./dist/app-store/05.png" height="500">
+  <img src="./dist/app-store/06.png" height="500">
 </p>
 
 ## Goals
