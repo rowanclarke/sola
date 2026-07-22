@@ -1,41 +1,43 @@
 import 'package:flutter/foundation.dart';
+import 'package:sola/core/models/language_tag.dart';
 import 'package:sola/core/models/translation.dart';
 import 'package:sola/data/repositories/library_repository.dart';
 import 'package:sola/domain/services/file_service.dart';
 
-class LanguageSubtag {
-  final String subtag;
-  final String description;
-  final String suppressScript;
-  final String scope;
+class LanguageData {
+  final String autonym;
+  final String englishName;
+  final String defaultScript;
 
-  const LanguageSubtag({
-    required this.subtag,
-    required this.description,
-    this.suppressScript = '',
-    this.scope = '',
+  const LanguageData({
+    required this.autonym,
+    required this.englishName,
+    required this.defaultScript,
   });
 
-  factory LanguageSubtag.fromJson(Map<String, dynamic> json) {
-    return LanguageSubtag(
-      subtag: json['subtag'] as String,
-      description: json['description'] as String,
-      suppressScript: json['suppress_script'] as String? ?? '',
-      scope: json['scope'] as String? ?? '',
+  factory LanguageData.fromJson(Map<String, dynamic> json) {
+    return LanguageData(
+      autonym: json['autonym'] as String,
+      englishName: json['english_name'] as String,
+      defaultScript: json['default_script'] as String? ?? '',
     );
   }
 }
 
 class LanguageInfo {
-  final String bcp47;
+  final String languageCode;
+  final String baseLanguageCode;
   final String description;
   final String nativeName;
+  final String? dialectName;
   final int translationCount;
 
   const LanguageInfo({
-    required this.bcp47,
+    required this.languageCode,
+    required this.baseLanguageCode,
     required this.description,
     required this.nativeName,
+    this.dialectName,
     required this.translationCount,
   });
 }
@@ -44,10 +46,9 @@ class LanguageRepository {
   final FileService _fileService;
   final LibraryRepository _libraryRepository;
 
-  List<LanguageSubtag>? _subtags;
-  Map<String, LanguageSubtag>? _subtagLookup;
+  Map<String, LanguageData>? _languageDataLookup;
   List<LanguageInfo>? _languagesWithTranslations;
-  Map<String, List<Translation>>? _translationsByLanguage;
+  List<Translation>? _allTranslations;
 
   LanguageRepository({
     required FileService fileService,
@@ -56,44 +57,48 @@ class LanguageRepository {
         _libraryRepository = libraryRepository;
 
   Future<void> _ensureLoaded() async {
-    if (_subtags != null && _languagesWithTranslations != null) return;
+    if (_languageDataLookup != null && _languagesWithTranslations != null) return;
 
-    debugPrint('[LanguageRepo] Loading language subtags...');
-    final data = await _fileService.deserializeAsset('assets/language_subtags.json');
-    _subtags = (data as List)
-        .map((e) => LanguageSubtag.fromJson(e as Map<String, dynamic>))
-        .toList();
-    _subtagLookup = {for (final s in _subtags!) s.subtag: s};
-    debugPrint('[LanguageRepo] Loaded ${_subtags!.length} subtags');
+    debugPrint('[LanguageRepo] Loading language data...');
+    final data = await _fileService.deserializeAsset('assets/language_data.json');
+    final map = data as Map<String, dynamic>;
+    _languageDataLookup = map.map(
+      (key, value) => MapEntry(key, LanguageData.fromJson(value as Map<String, dynamic>)),
+    );
+    debugPrint('[LanguageRepo] Loaded ${_languageDataLookup!.length} language entries');
 
-    final translations = await _libraryRepository.getAvailableTranslations();
-    _translationsByLanguage = {};
-    for (final t in translations) {
-      (_translationsByLanguage![t.bcp47] ??= []).add(t);
+    _allTranslations = await _libraryRepository.getAvailableTranslations();
+
+    final translationsByGroup = <String, List<Translation>>{};
+    for (final t in _allTranslations!) {
+      final tag = t.languageTag;
+      final key = tag.region != null ? '${tag.language}-${tag.region}' : tag.language;
+      (translationsByGroup[key] ??= []).add(t);
     }
 
-    _languagesWithTranslations = _translationsByLanguage!.entries.map((entry) {
-      final bcp47 = entry.key;
+    _languagesWithTranslations = translationsByGroup.entries.map((entry) {
+      final groupCode = entry.key;
       final translations = entry.value;
-      final subtag = _subtagLookup![bcp47];
-      final description = subtag?.description ?? translations.first.language;
-      // Use the native language name (lang field from first translation)
-      final nativeName = translations.first.language;
+      final baseLang = translations.first.languageTag.language;
+      final langData = _languageDataLookup![baseLang];
+      final description = langData?.englishName ?? translations.first.langEn;
+      final nativeName = langData?.autonym ?? translations.first.lang;
+
+      final firstTag = translations.first.languageTag;
+      final dialectName = firstTag.displayName(description);
+
       return LanguageInfo(
-        bcp47: bcp47,
+        languageCode: groupCode,
+        baseLanguageCode: baseLang,
         description: description,
         nativeName: nativeName,
+        dialectName: dialectName != description ? dialectName : null,
         translationCount: translations.length,
       );
     }).toList()
       ..sort((a, b) => b.translationCount.compareTo(a.translationCount));
 
     debugPrint('[LanguageRepo] Built ${_languagesWithTranslations!.length} language groups');
-  }
-
-  Future<List<LanguageSubtag>> getAllSubtags() async {
-    await _ensureLoaded();
-    return _subtags!;
   }
 
   Future<List<LanguageInfo>> getLanguagesWithTranslations() async {
@@ -107,45 +112,33 @@ class LanguageRepository {
 
     final q = query.toLowerCase();
 
-    // Search across all subtags (for the full BCP 47 picker)
-    // but prioritize languages that have translations
-    final withTranslations = _languagesWithTranslations!.where((lang) {
+    final results = _languagesWithTranslations!.where((lang) {
       return lang.description.toLowerCase().contains(q) ||
           lang.nativeName.toLowerCase().contains(q) ||
-          lang.bcp47.toLowerCase().contains(q);
+          lang.languageCode.toLowerCase().contains(q) ||
+          (lang.dialectName?.toLowerCase().contains(q) ?? false);
     }).toList();
 
-    if (withTranslations.isNotEmpty) return withTranslations;
-
-    // Fall back to searching all subtags
-    final allMatches = _subtags!.where((s) {
-      return s.description.toLowerCase().contains(q) ||
-          s.subtag.toLowerCase().contains(q);
-    }).map((s) => LanguageInfo(
-          bcp47: s.subtag,
-          description: s.description,
-          nativeName: s.description,
-          translationCount: 0,
-        )).toList();
-
-    return allMatches;
+    return results;
   }
 
-  Future<List<Translation>> getTranslationsForLanguage(String bcp47) async {
+  Future<List<Translation>> findTranslations(LanguageTag tag) async {
     await _ensureLoaded();
-    return _translationsByLanguage?[bcp47] ?? [];
+    return _allTranslations!.where((t) => tag.matches(t.languageTag)).toList();
   }
 
-  Future<LanguageInfo?> getLanguageInfo(String bcp47) async {
+  Future<LanguageInfo?> getLanguageInfo(String languageCode) async {
     await _ensureLoaded();
     return _languagesWithTranslations?.firstWhere(
-      (l) => l.bcp47 == bcp47,
+      (l) => l.languageCode == languageCode,
       orElse: () {
-        final subtag = _subtagLookup?[bcp47];
+        final baseLang = LanguageTag.parse(languageCode).language;
+        final langData = _languageDataLookup?[baseLang];
         return LanguageInfo(
-          bcp47: bcp47,
-          description: subtag?.description ?? bcp47,
-          nativeName: subtag?.description ?? bcp47,
+          languageCode: languageCode,
+          baseLanguageCode: baseLang,
+          description: langData?.englishName ?? languageCode,
+          nativeName: langData?.autonym ?? languageCode,
           translationCount: 0,
         );
       },

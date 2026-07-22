@@ -1,0 +1,6187 @@
+{
+  "aaa": {
+    "autonym": "Ghotuo",
+    "english_name": "Ghotuo",
+    "default_script": "Latn"
+  },
+  "aai": {
+    "autonym": "Arifama-Miniafia",
+    "english_name": "Arifama-Miniafia",
+    "default_script": "Latn"
+  },
+  "aak": {
+    "autonym": "Ankave",
+    "english_name": "Ankave",
+    "default_script": "Latn"
+  },
+  "aau": {
+    "autonym": "Abau",
+    "english_name": "Abau",
+    "default_script": "Latn"
+  },
+  "aaz": {
+    "autonym": "Amarasi",
+    "english_name": "Amarasi",
+    "default_script": "Latn"
+  },
+  "abc": {
+    "autonym": "Ambala Ayta",
+    "english_name": "Ambala Ayta",
+    "default_script": "Latn"
+  },
+  "abp": {
+    "autonym": "Abellen Ayta",
+    "english_name": "Abellen Ayta",
+    "default_script": "Latn"
+  },
+  "abt": {
+    "autonym": "Ambulas",
+    "english_name": "Ambulas",
+    "default_script": "Latn"
+  },
+  "abx": {
+    "autonym": "Inabaknon",
+    "english_name": "Inabaknon",
+    "default_script": "Latn"
+  },
+  "aby": {
+    "autonym": "Aneme Wake",
+    "english_name": "Aneme Wake",
+    "default_script": "Latn"
+  },
+  "aca": {
+    "autonym": "Achagua",
+    "english_name": "Achagua",
+    "default_script": "Latn"
+  },
+  "acd": {
+    "autonym": "Gikyode",
+    "english_name": "Gikyode",
+    "default_script": "Latn"
+  },
+  "acf": {
+    "autonym": "Saint Lucian Creole French",
+    "english_name": "Saint Lucian Creole French",
+    "default_script": "Latn"
+  },
+  "acr": {
+    "autonym": "Achi",
+    "english_name": "Achi",
+    "default_script": "Latn"
+  },
+  "acu": {
+    "autonym": "Achuar-Shiwiar",
+    "english_name": "Achuar-Shiwiar",
+    "default_script": "Latn"
+  },
+  "adj": {
+    "autonym": "Adioukrou",
+    "english_name": "Adioukrou",
+    "default_script": "Latn"
+  },
+  "adt": {
+    "autonym": "Adnyamathanha",
+    "english_name": "Adnyamathanha",
+    "default_script": "Latn"
+  },
+  "adz": {
+    "autonym": "Adzera",
+    "english_name": "Adzera",
+    "default_script": "Latn"
+  },
+  "aeb": {
+    "autonym": "Tunisian Arabic",
+    "english_name": "Tunisian Arabic",
+    "default_script": "Arab"
+  },
+  "aer": {
+    "autonym": "Eastern Arrernte",
+    "english_name": "Eastern Arrernte",
+    "default_script": "Latn"
+  },
+  "aey": {
+    "autonym": "Amele",
+    "english_name": "Amele",
+    "default_script": "Latn"
+  },
+  "agd": {
+    "autonym": "Agarabi",
+    "english_name": "Agarabi",
+    "default_script": "Latn"
+  },
+  "agg": {
+    "autonym": "Angor",
+    "english_name": "Angor",
+    "default_script": "Latn"
+  },
+  "agm": {
+    "autonym": "Angaataha",
+    "english_name": "Angaataha",
+    "default_script": "Latn"
+  },
+  "agn": {
+    "autonym": "Agutaynen",
+    "english_name": "Agutaynen",
+    "default_script": "Latn"
+  },
+  "agr": {
+    "autonym": "Aguaruna",
+    "english_name": "Aguaruna",
+    "default_script": "Latn"
+  },
+  "agt": {
+    "autonym": "Central Cagayan Agta",
+    "english_name": "Central Cagayan Agta",
+    "default_script": "Latn"
+  },
+  "agu": {
+    "autonym": "Aguacateco",
+    "english_name": "Aguacateco",
+    "default_script": "Latn"
+  },
+  "ahr": {
+    "autonym": "Ahirani",
+    "english_name": "Ahirani",
+    "default_script": "Latn"
+  },
+  "aia": {
+    "autonym": "Arosi",
+    "english_name": "Arosi",
+    "default_script": "Latn"
+  },
+  "aii": {
+    "autonym": "Assyrian Neo-Aramaic",
+    "english_name": "Assyrian Neo-Aramaic",
+    "default_script": "Latn"
+  },
+  "ake": {
+    "autonym": "Akawaio",
+    "english_name": "Akawaio",
+    "default_script": "Latn"
+  },
+  "akh": {
+    "autonym": "Angal Heneng",
+    "english_name": "Angal Heneng",
+    "default_script": "Latn"
+  },
+  "akp": {
+    "autonym": "Siwu",
+    "english_name": "Siwu",
+    "default_script": "Latn"
+  },
+  "alh": {
+    "autonym": "Alawa",
+    "english_name": "Alawa",
+    "default_script": "Latn"
+  },
+  "alp": {
+    "autonym": "Alune",
+    "english_name": "Alune",
+    "default_script": "Latn"
+  },
+  "alq": {
+    "autonym": "Algonquin",
+    "english_name": "Algonquin",
+    "default_script": "Latn"
+  },
+  "alw": {
+    "autonym": "Alaba-K’abeena",
+    "english_name": "Alaba-K’abeena",
+    "default_script": "Latn"
+  },
+  "aly": {
+    "autonym": "Alyawarr",
+    "english_name": "Alyawarr",
+    "default_script": "Latn"
+  },
+  "ame": {
+    "autonym": "Yanesha'",
+    "english_name": "Yanesha'",
+    "default_script": "Latn"
+  },
+  "amf": {
+    "autonym": "Hamer-Banna",
+    "english_name": "Hamer-Banna",
+    "default_script": "Latn"
+  },
+  "amh": {
+    "autonym": "አማርኛ",
+    "english_name": "Amharic",
+    "default_script": "Ethi"
+  },
+  "amk": {
+    "autonym": "Ambai",
+    "english_name": "Ambai",
+    "default_script": "Latn"
+  },
+  "amm": {
+    "autonym": "Ama (Papua New Guinea)",
+    "english_name": "Ama (Papua New Guinea)",
+    "default_script": "Latn"
+  },
+  "amn": {
+    "autonym": "Amanab",
+    "english_name": "Amanab",
+    "default_script": "Latn"
+  },
+  "amo": {
+    "autonym": "Amo",
+    "english_name": "Amo",
+    "default_script": "Latn"
+  },
+  "amp": {
+    "autonym": "Alamblak",
+    "english_name": "Alamblak",
+    "default_script": "Latn"
+  },
+  "amr": {
+    "autonym": "Amarakaeri",
+    "english_name": "Amarakaeri",
+    "default_script": "Latn"
+  },
+  "amu": {
+    "autonym": "Guerrero Amuzgo",
+    "english_name": "Guerrero Amuzgo",
+    "default_script": "Latn"
+  },
+  "amx": {
+    "autonym": "Anmatyerre",
+    "english_name": "Anmatyerre",
+    "default_script": "Latn"
+  },
+  "anh": {
+    "autonym": "Nend",
+    "english_name": "Nend",
+    "default_script": "Latn"
+  },
+  "anv": {
+    "autonym": "Denya",
+    "english_name": "Denya",
+    "default_script": "Latn"
+  },
+  "any": {
+    "autonym": "Anyin",
+    "english_name": "Anyin",
+    "default_script": "Latn"
+  },
+  "aoi": {
+    "autonym": "Anindilyakwa",
+    "english_name": "Anindilyakwa",
+    "default_script": "Latn"
+  },
+  "aoj": {
+    "autonym": "Mufian",
+    "english_name": "Mufian",
+    "default_script": "Latn"
+  },
+  "aom": {
+    "autonym": "Ömie",
+    "english_name": "Ömie",
+    "default_script": "Latn"
+  },
+  "aon": {
+    "autonym": "Bumbita Arapesh",
+    "english_name": "Bumbita Arapesh",
+    "default_script": "Latn"
+  },
+  "apb": {
+    "autonym": "Sa'a",
+    "english_name": "Sa'a",
+    "default_script": "Latn"
+  },
+  "ape": {
+    "autonym": "Bukiyip",
+    "english_name": "Bukiyip",
+    "default_script": "Latn"
+  },
+  "apn": {
+    "autonym": "Apinayé",
+    "english_name": "Apinayé",
+    "default_script": "Latn"
+  },
+  "app": {
+    "autonym": "Apma",
+    "english_name": "Apma",
+    "default_script": "Latn"
+  },
+  "apr": {
+    "autonym": "Arop-Lokep",
+    "english_name": "Arop-Lokep",
+    "default_script": "Latn"
+  },
+  "apu": {
+    "autonym": "Apurinã",
+    "english_name": "Apurinã",
+    "default_script": "Latn"
+  },
+  "apw": {
+    "autonym": "Western Apache",
+    "english_name": "Western Apache",
+    "default_script": "Latn"
+  },
+  "apy": {
+    "autonym": "Apalaí",
+    "english_name": "Apalaí",
+    "default_script": "Latn"
+  },
+  "apz": {
+    "autonym": "Safeyoka",
+    "english_name": "Safeyoka",
+    "default_script": "Latn"
+  },
+  "aqk": {
+    "autonym": "Aninka",
+    "english_name": "Aninka",
+    "default_script": "Latn"
+  },
+  "arb": {
+    "autonym": "العربية",
+    "english_name": "Standard Arabic",
+    "default_script": "Arab"
+  },
+  "are": {
+    "autonym": "Western Arrarnta",
+    "english_name": "Western Arrarnta",
+    "default_script": "Latn"
+  },
+  "arl": {
+    "autonym": "Arabela",
+    "english_name": "Arabela",
+    "default_script": "Latn"
+  },
+  "arn": {
+    "autonym": "Mapudungun",
+    "english_name": "Mapuche",
+    "default_script": "Latn"
+  },
+  "arp": {
+    "autonym": "Arapaho",
+    "english_name": "Arapaho",
+    "default_script": "Latn"
+  },
+  "arq": {
+    "autonym": "Algerian Arabic",
+    "english_name": "Algerian Arabic",
+    "default_script": "Arab"
+  },
+  "asg": {
+    "autonym": "Cishingini",
+    "english_name": "Cishingini",
+    "default_script": "Latn"
+  },
+  "asj": {
+    "autonym": "Sari",
+    "english_name": "Sari",
+    "default_script": "Latn"
+  },
+  "asm": {
+    "autonym": "অসমীয়া",
+    "english_name": "Assamese",
+    "default_script": "Beng"
+  },
+  "aso": {
+    "autonym": "Dano",
+    "english_name": "Dano",
+    "default_script": "Latn"
+  },
+  "ata": {
+    "autonym": "Pele-Ata",
+    "english_name": "Pele-Ata",
+    "default_script": "Latn"
+  },
+  "atb": {
+    "autonym": "Zaiwa",
+    "english_name": "Zaiwa",
+    "default_script": "Latn"
+  },
+  "atd": {
+    "autonym": "Ata Manobo",
+    "english_name": "Ata Manobo",
+    "default_script": "Latn"
+  },
+  "atg": {
+    "autonym": "Ivbie North-Okpela-Arhe",
+    "english_name": "Ivbie North-Okpela-Arhe",
+    "default_script": "Latn"
+  },
+  "att": {
+    "autonym": "Pamplona Atta",
+    "english_name": "Pamplona Atta",
+    "default_script": "Latn"
+  },
+  "auc": {
+    "autonym": "Waorani",
+    "english_name": "Waorani",
+    "default_script": "Latn"
+  },
+  "aui": {
+    "autonym": "Anuki",
+    "english_name": "Anuki",
+    "default_script": "Latn"
+  },
+  "auu": {
+    "autonym": "Auye",
+    "english_name": "Auye",
+    "default_script": "Latn"
+  },
+  "auy": {
+    "autonym": "Awiyaana",
+    "english_name": "Awiyaana",
+    "default_script": "Latn"
+  },
+  "avt": {
+    "autonym": "Au",
+    "english_name": "Au",
+    "default_script": "Latn"
+  },
+  "avu": {
+    "autonym": "Avokaya",
+    "english_name": "Avokaya",
+    "default_script": "Latn"
+  },
+  "awb": {
+    "autonym": "Awa (Papua New Guinea)",
+    "english_name": "Awa (Papua New Guinea)",
+    "default_script": "Latn"
+  },
+  "awk": {
+    "autonym": "Awabakal",
+    "english_name": "Awabakal",
+    "default_script": "Latn"
+  },
+  "awx": {
+    "autonym": "Awara",
+    "english_name": "Awara",
+    "default_script": "Latn"
+  },
+  "ayz": {
+    "autonym": "Mai Brat",
+    "english_name": "Mai Brat",
+    "default_script": "Latn"
+  },
+  "azb": {
+    "autonym": "South Azerbaijani",
+    "english_name": "South Azerbaijani",
+    "default_script": "Latn"
+  },
+  "azg": {
+    "autonym": "San Pedro Amuzgos Amuzgo",
+    "english_name": "San Pedro Amuzgos Amuzgo",
+    "default_script": "Latn"
+  },
+  "azz": {
+    "autonym": "Highland Puebla Nahuatl",
+    "english_name": "Highland Puebla Nahuatl",
+    "default_script": "Latn"
+  },
+  "bao": {
+    "autonym": "Waimaha",
+    "english_name": "Waimaha",
+    "default_script": "Latn"
+  },
+  "bba": {
+    "autonym": "Baatonum",
+    "english_name": "Baatonum",
+    "default_script": "Latn"
+  },
+  "bbb": {
+    "autonym": "Barai",
+    "english_name": "Barai",
+    "default_script": "Latn"
+  },
+  "bbd": {
+    "autonym": "Bau",
+    "english_name": "Bau",
+    "default_script": "Latn"
+  },
+  "bbr": {
+    "autonym": "Girawa",
+    "english_name": "Girawa",
+    "default_script": "Latn"
+  },
+  "bcc": {
+    "autonym": "بلۆچی",
+    "english_name": "Southern Balochi",
+    "default_script": "Arab"
+  },
+  "bch": {
+    "autonym": "Bariai",
+    "english_name": "Bariai",
+    "default_script": "Latn"
+  },
+  "bco": {
+    "autonym": "Kaluli",
+    "english_name": "Kaluli",
+    "default_script": "Latn"
+  },
+  "bcw": {
+    "autonym": "Bana",
+    "english_name": "Bana",
+    "default_script": "Latn"
+  },
+  "bdd": {
+    "autonym": "Bunama",
+    "english_name": "Bunama",
+    "default_script": "Latn"
+  },
+  "bdh": {
+    "autonym": "Baka (South Sudan)",
+    "english_name": "Baka (South Sudan)",
+    "default_script": "Latn"
+  },
+  "bds": {
+    "autonym": "Burunge",
+    "english_name": "Burunge",
+    "default_script": "Latn"
+  },
+  "bdv": {
+    "autonym": "Bodo Parja",
+    "english_name": "Bodo Parja",
+    "default_script": "Latn"
+  },
+  "bea": {
+    "autonym": "Beaver",
+    "english_name": "Beaver",
+    "default_script": "Latn"
+  },
+  "bef": {
+    "autonym": "Benabena",
+    "english_name": "Benabena",
+    "default_script": "Latn"
+  },
+  "bel": {
+    "autonym": "беларуская",
+    "english_name": "Belarusian",
+    "default_script": "Cyrl"
+  },
+  "ben": {
+    "autonym": "বাংলা",
+    "english_name": "Bangla",
+    "default_script": "Beng"
+  },
+  "beo": {
+    "autonym": "Beami",
+    "english_name": "Beami",
+    "default_script": "Latn"
+  },
+  "beu": {
+    "autonym": "Blagar",
+    "english_name": "Blagar",
+    "default_script": "Latn"
+  },
+  "bex": {
+    "autonym": "Jur Modo",
+    "english_name": "Jur Modo",
+    "default_script": "Latn"
+  },
+  "bfd": {
+    "autonym": "Bafut",
+    "english_name": "Bafut",
+    "default_script": "Latn"
+  },
+  "bfz": {
+    "autonym": "Mahasu Pahari",
+    "english_name": "Mahasu Pahari",
+    "default_script": "Latn"
+  },
+  "bgc": {
+    "autonym": "हरियाणवी",
+    "english_name": "Haryanvi",
+    "default_script": "Deva"
+  },
+  "bgg": {
+    "autonym": "Bugun",
+    "english_name": "Bugun",
+    "default_script": "Latn"
+  },
+  "bgs": {
+    "autonym": "Tagabawa",
+    "english_name": "Tagabawa",
+    "default_script": "Latn"
+  },
+  "bgt": {
+    "autonym": "Bughotu",
+    "english_name": "Bughotu",
+    "default_script": "Latn"
+  },
+  "bhd": {
+    "autonym": "Bhadrawahi",
+    "english_name": "Bhadrawahi",
+    "default_script": "Latn"
+  },
+  "bhg": {
+    "autonym": "Binandere",
+    "english_name": "Binandere",
+    "default_script": "Latn"
+  },
+  "bhi": {
+    "autonym": "Bhilali",
+    "english_name": "Bhilali",
+    "default_script": "Deva"
+  },
+  "bhl": {
+    "autonym": "Bimin",
+    "english_name": "Bimin",
+    "default_script": "Latn"
+  },
+  "bht": {
+    "autonym": "Bhattiyali",
+    "english_name": "Bhattiyali",
+    "default_script": "Latn"
+  },
+  "bhu": {
+    "autonym": "Bhunjia",
+    "english_name": "Bhunjia",
+    "default_script": "Latn"
+  },
+  "bib": {
+    "autonym": "Bissa",
+    "english_name": "Bissa",
+    "default_script": "Latn"
+  },
+  "big": {
+    "autonym": "Biangai",
+    "english_name": "Biangai",
+    "default_script": "Latn"
+  },
+  "bim": {
+    "autonym": "Bimoba",
+    "english_name": "Bimoba",
+    "default_script": "Latn"
+  },
+  "biv": {
+    "autonym": "Southern Birifor",
+    "english_name": "Southern Birifor",
+    "default_script": "Latn"
+  },
+  "bjk": {
+    "autonym": "Barok",
+    "english_name": "Barok",
+    "default_script": "Latn"
+  },
+  "bjn": {
+    "autonym": "Banjar",
+    "english_name": "Banjar",
+    "default_script": "Latn"
+  },
+  "bjp": {
+    "autonym": "Fanamaket",
+    "english_name": "Fanamaket",
+    "default_script": "Latn"
+  },
+  "bjr": {
+    "autonym": "Binumarien",
+    "english_name": "Binumarien",
+    "default_script": "Latn"
+  },
+  "bjv": {
+    "autonym": "Bedjond",
+    "english_name": "Bedjond",
+    "default_script": "Latn"
+  },
+  "bjz": {
+    "autonym": "Baruga",
+    "english_name": "Baruga",
+    "default_script": "Latn"
+  },
+  "bkd": {
+    "autonym": "Binukid",
+    "english_name": "Binukid",
+    "default_script": "Latn"
+  },
+  "bki": {
+    "autonym": "Baki",
+    "english_name": "Baki",
+    "default_script": "Latn"
+  },
+  "bkq": {
+    "autonym": "Bakairí",
+    "english_name": "Bakairí",
+    "default_script": "Latn"
+  },
+  "bkw": {
+    "autonym": "Bekwel",
+    "english_name": "Bekwel",
+    "default_script": "Latn"
+  },
+  "bkx": {
+    "autonym": "Baikeno",
+    "english_name": "Baikeno",
+    "default_script": "Latn"
+  },
+  "bla": {
+    "autonym": "Siksiká",
+    "english_name": "Siksiká",
+    "default_script": "Latn"
+  },
+  "blr": {
+    "autonym": "Blang",
+    "english_name": "Blang",
+    "default_script": "Latn"
+  },
+  "blt": {
+    "autonym": "ꪼꪕꪒꪾ",
+    "english_name": "Tai Dam",
+    "default_script": "Tavt"
+  },
+  "blw": {
+    "autonym": "Balangao",
+    "english_name": "Balangao",
+    "default_script": "Latn"
+  },
+  "blx": {
+    "autonym": "Mag-Indi Ayta",
+    "english_name": "Mag-Indi Ayta",
+    "default_script": "Latn"
+  },
+  "blz": {
+    "autonym": "Balantak",
+    "english_name": "Balantak",
+    "default_script": "Latn"
+  },
+  "bmh": {
+    "autonym": "Kein",
+    "english_name": "Kein",
+    "default_script": "Latn"
+  },
+  "bmk": {
+    "autonym": "Ghayavi",
+    "english_name": "Ghayavi",
+    "default_script": "Latn"
+  },
+  "bmo": {
+    "autonym": "Bambalang",
+    "english_name": "Bambalang",
+    "default_script": "Latn"
+  },
+  "bmr": {
+    "autonym": "Muinane",
+    "english_name": "Muinane",
+    "default_script": "Latn"
+  },
+  "bmu": {
+    "autonym": "Somba-Siawari",
+    "english_name": "Somba-Siawari",
+    "default_script": "Latn"
+  },
+  "bno": {
+    "autonym": "Bantoanon",
+    "english_name": "Bantoanon",
+    "default_script": "Latn"
+  },
+  "bnp": {
+    "autonym": "Bola",
+    "english_name": "Bola",
+    "default_script": "Latn"
+  },
+  "boa": {
+    "autonym": "Bora",
+    "english_name": "Bora",
+    "default_script": "Latn"
+  },
+  "bod": {
+    "autonym": "བོད་སྐད་",
+    "english_name": "Tibetan",
+    "default_script": "Tibt"
+  },
+  "boj": {
+    "autonym": "Anjam",
+    "english_name": "Anjam",
+    "default_script": "Latn"
+  },
+  "bon": {
+    "autonym": "Bine",
+    "english_name": "Bine",
+    "default_script": "Latn"
+  },
+  "bor": {
+    "autonym": "Borôro",
+    "english_name": "Borôro",
+    "default_script": "Latn"
+  },
+  "bou": {
+    "autonym": "Bondei",
+    "english_name": "Bondei",
+    "default_script": "Latn"
+  },
+  "bov": {
+    "autonym": "Tuwuli",
+    "english_name": "Tuwuli",
+    "default_script": "Latn"
+  },
+  "box": {
+    "autonym": "Buamu",
+    "english_name": "Buamu",
+    "default_script": "Latn"
+  },
+  "bpr": {
+    "autonym": "Koronadal Blaan",
+    "english_name": "Koronadal Blaan",
+    "default_script": "Latn"
+  },
+  "bps": {
+    "autonym": "Sarangani Blaan",
+    "english_name": "Sarangani Blaan",
+    "default_script": "Latn"
+  },
+  "bpx": {
+    "autonym": "Palya Bareli",
+    "english_name": "Palya Bareli",
+    "default_script": "Latn"
+  },
+  "bqc": {
+    "autonym": "Boko (Benin)",
+    "english_name": "Boko (Benin)",
+    "default_script": "Latn"
+  },
+  "bqj": {
+    "autonym": "Bandial",
+    "english_name": "Bandial",
+    "default_script": "Latn"
+  },
+  "bqp": {
+    "autonym": "Busa",
+    "english_name": "Busa",
+    "default_script": "Latn"
+  },
+  "brb": {
+    "autonym": "Lave",
+    "english_name": "Lave",
+    "default_script": "Latn"
+  },
+  "bre": {
+    "autonym": "brezhoneg",
+    "english_name": "Breton",
+    "default_script": "Latn"
+  },
+  "bru": {
+    "autonym": "Eastern Bru",
+    "english_name": "Eastern Bru",
+    "default_script": "Latn"
+  },
+  "bsc": {
+    "autonym": "Bassari",
+    "english_name": "Bassari",
+    "default_script": "Latn"
+  },
+  "bsj": {
+    "autonym": "Bangwinji",
+    "english_name": "Bangwinji",
+    "default_script": "Latn"
+  },
+  "bsn": {
+    "autonym": "Barasana-Eduria",
+    "english_name": "Barasana-Eduria",
+    "default_script": "Latn"
+  },
+  "bsp": {
+    "autonym": "Baga Sitemu",
+    "english_name": "Baga Sitemu",
+    "default_script": "Latn"
+  },
+  "bss": {
+    "autonym": "Akoose",
+    "english_name": "Akoose",
+    "default_script": "Latn"
+  },
+  "bsw": {
+    "autonym": "Baiso",
+    "english_name": "Baiso",
+    "default_script": "Latn"
+  },
+  "buj": {
+    "autonym": "Basa-Gurmana",
+    "english_name": "Basa-Gurmana",
+    "default_script": "Latn"
+  },
+  "buk": {
+    "autonym": "Bugawac",
+    "english_name": "Bugawac",
+    "default_script": "Latn"
+  },
+  "bus": {
+    "autonym": "Bokobaru",
+    "english_name": "Bokobaru",
+    "default_script": "Latn"
+  },
+  "bvd": {
+    "autonym": "Baeggu",
+    "english_name": "Baeggu",
+    "default_script": "Latn"
+  },
+  "bvr": {
+    "autonym": "Burarra",
+    "english_name": "Burarra",
+    "default_script": "Latn"
+  },
+  "bvw": {
+    "autonym": "Boga",
+    "english_name": "Boga",
+    "default_script": "Latn"
+  },
+  "bwc": {
+    "autonym": "Bwile",
+    "english_name": "Bwile",
+    "default_script": "Latn"
+  },
+  "bwo": {
+    "autonym": "Boro (Ethiopia)",
+    "english_name": "Boro (Ethiopia)",
+    "default_script": "Latn"
+  },
+  "bwu": {
+    "autonym": "Buli (Ghana)",
+    "english_name": "Buli (Ghana)",
+    "default_script": "Latn"
+  },
+  "bxh": {
+    "autonym": "Buhutu",
+    "english_name": "Buhutu",
+    "default_script": "Latn"
+  },
+  "byr": {
+    "autonym": "Baruya",
+    "english_name": "Baruya",
+    "default_script": "Latn"
+  },
+  "byx": {
+    "autonym": "Qaqet",
+    "english_name": "Qaqet",
+    "default_script": "Latn"
+  },
+  "bzd": {
+    "autonym": "Bribri",
+    "english_name": "Bribri",
+    "default_script": "Latn"
+  },
+  "bzh": {
+    "autonym": "Mapos Buang",
+    "english_name": "Mapos Buang",
+    "default_script": "Latn"
+  },
+  "bzi": {
+    "autonym": "Bisu",
+    "english_name": "Bisu",
+    "default_script": "Latn"
+  },
+  "bzj": {
+    "autonym": "Belize Kriol English",
+    "english_name": "Belize Kriol English",
+    "default_script": "Latn"
+  },
+  "caa": {
+    "autonym": "Chortí",
+    "english_name": "Chortí",
+    "default_script": "Latn"
+  },
+  "cab": {
+    "autonym": "Garifuna",
+    "english_name": "Garifuna",
+    "default_script": "Latn"
+  },
+  "cac": {
+    "autonym": "Chuj",
+    "english_name": "Chuj",
+    "default_script": "Latn"
+  },
+  "caf": {
+    "autonym": "Southern Carrier",
+    "english_name": "Southern Carrier",
+    "default_script": "Latn"
+  },
+  "cak": {
+    "autonym": "Kaqchikel",
+    "english_name": "Kaqchikel",
+    "default_script": "Latn"
+  },
+  "cam": {
+    "autonym": "Cemuhî",
+    "english_name": "Cemuhî",
+    "default_script": "Latn"
+  },
+  "cao": {
+    "autonym": "Chácobo",
+    "english_name": "Chácobo",
+    "default_script": "Latn"
+  },
+  "cap": {
+    "autonym": "Chipaya",
+    "english_name": "Chipaya",
+    "default_script": "Latn"
+  },
+  "car": {
+    "autonym": "Carib",
+    "english_name": "Carib",
+    "default_script": "Latn"
+  },
+  "cav": {
+    "autonym": "Cavineña",
+    "english_name": "Cavineña",
+    "default_script": "Latn"
+  },
+  "cax": {
+    "autonym": "Chiquitano",
+    "english_name": "Chiquitano",
+    "default_script": "Latn"
+  },
+  "cbc": {
+    "autonym": "Carapana",
+    "english_name": "Carapana",
+    "default_script": "Latn"
+  },
+  "cbi": {
+    "autonym": "Chachi",
+    "english_name": "Chachi",
+    "default_script": "Latn"
+  },
+  "cbk": {
+    "autonym": "Chavacano",
+    "english_name": "Chavacano",
+    "default_script": "Latn"
+  },
+  "cbr": {
+    "autonym": "Cashibo-Cacataibo",
+    "english_name": "Cashibo-Cacataibo",
+    "default_script": "Latn"
+  },
+  "cbs": {
+    "autonym": "Cashinahua",
+    "english_name": "Cashinahua",
+    "default_script": "Latn"
+  },
+  "cbt": {
+    "autonym": "Chayahuita",
+    "english_name": "Chayahuita",
+    "default_script": "Latn"
+  },
+  "cbu": {
+    "autonym": "Candoshi-Shapra",
+    "english_name": "Candoshi-Shapra",
+    "default_script": "Latn"
+  },
+  "cbv": {
+    "autonym": "Cacua",
+    "english_name": "Cacua",
+    "default_script": "Latn"
+  },
+  "cco": {
+    "autonym": "Comaltepec Chinantec",
+    "english_name": "Comaltepec Chinantec",
+    "default_script": "Latn"
+  },
+  "cdz": {
+    "autonym": "Koda",
+    "english_name": "Koda",
+    "default_script": "Latn"
+  },
+  "ceb": {
+    "autonym": "Cebuano",
+    "english_name": "Cebuano",
+    "default_script": "Latn"
+  },
+  "cek": {
+    "autonym": "Eastern Khumi Chin",
+    "english_name": "Eastern Khumi Chin",
+    "default_script": "Latn"
+  },
+  "ces": {
+    "autonym": "čeština",
+    "english_name": "Czech",
+    "default_script": "Latn"
+  },
+  "cfm": {
+    "autonym": "Falam Chin",
+    "english_name": "Falam Chin",
+    "default_script": "Latn"
+  },
+  "cgc": {
+    "autonym": "Kagayanen",
+    "english_name": "Kagayanen",
+    "default_script": "Latn"
+  },
+  "cha": {
+    "autonym": "Chamorro",
+    "english_name": "Chamorro",
+    "default_script": "Latn"
+  },
+  "chd": {
+    "autonym": "Highland Oaxaca Chontal",
+    "english_name": "Highland Oaxaca Chontal",
+    "default_script": "Latn"
+  },
+  "chf": {
+    "autonym": "Tabasco Chontal",
+    "english_name": "Tabasco Chontal",
+    "default_script": "Latn"
+  },
+  "chk": {
+    "autonym": "Chuukese",
+    "english_name": "Chuukese",
+    "default_script": "Latn"
+  },
+  "chq": {
+    "autonym": "Quiotepec Chinantec",
+    "english_name": "Quiotepec Chinantec",
+    "default_script": "Latn"
+  },
+  "chz": {
+    "autonym": "Ozumacín Chinantec",
+    "english_name": "Ozumacín Chinantec",
+    "default_script": "Latn"
+  },
+  "cje": {
+    "autonym": "Chru",
+    "english_name": "Chru",
+    "default_script": "Latn"
+  },
+  "cjo": {
+    "autonym": "Ashéninka Pajonal",
+    "english_name": "Ashéninka Pajonal",
+    "default_script": "Latn"
+  },
+  "cjv": {
+    "autonym": "Chuave",
+    "english_name": "Chuave",
+    "default_script": "Latn"
+  },
+  "ckb": {
+    "autonym": "کوردیی ناوەندی",
+    "english_name": "Central Kurdish",
+    "default_script": "Arab"
+  },
+  "cko": {
+    "autonym": "Anufo",
+    "english_name": "Anufo",
+    "default_script": "Latn"
+  },
+  "cle": {
+    "autonym": "Lealao Chinantec",
+    "english_name": "Lealao Chinantec",
+    "default_script": "Latn"
+  },
+  "clu": {
+    "autonym": "Caluyanun",
+    "english_name": "Caluyanun",
+    "default_script": "Latn"
+  },
+  "cme": {
+    "autonym": "Cerma",
+    "english_name": "Cerma",
+    "default_script": "Latn"
+  },
+  "cmn": {
+    "autonym": "中文",
+    "english_name": "Mandarin Chinese",
+    "default_script": "Hans"
+  },
+  "cmo": {
+    "autonym": "Central Mnong",
+    "english_name": "Central Mnong",
+    "default_script": "Latn"
+  },
+  "cni": {
+    "autonym": "Asháninka",
+    "english_name": "Asháninka",
+    "default_script": "Latn"
+  },
+  "cnl": {
+    "autonym": "Lalana Chinantec",
+    "english_name": "Lalana Chinantec",
+    "default_script": "Latn"
+  },
+  "cnt": {
+    "autonym": "Tepetotutla Chinantec",
+    "english_name": "Tepetotutla Chinantec",
+    "default_script": "Latn"
+  },
+  "coe": {
+    "autonym": "Koreguaje",
+    "english_name": "Koreguaje",
+    "default_script": "Latn"
+  },
+  "cof": {
+    "autonym": "Colorado",
+    "english_name": "Colorado",
+    "default_script": "Latn"
+  },
+  "cok": {
+    "autonym": "Santa Teresa Cora",
+    "english_name": "Santa Teresa Cora",
+    "default_script": "Latn"
+  },
+  "con": {
+    "autonym": "Cofán",
+    "english_name": "Cofán",
+    "default_script": "Latn"
+  },
+  "cop": {
+    "autonym": "Coptic",
+    "english_name": "Coptic",
+    "default_script": "Copt"
+  },
+  "cot": {
+    "autonym": "Caquinte",
+    "english_name": "Caquinte",
+    "default_script": "Latn"
+  },
+  "cou": {
+    "autonym": "Wamey",
+    "english_name": "Wamey",
+    "default_script": "Latn"
+  },
+  "cpa": {
+    "autonym": "Palantla Chinantec",
+    "english_name": "Palantla Chinantec",
+    "default_script": "Latn"
+  },
+  "cpb": {
+    "autonym": "Ucayali-Yurúa Ashéninka",
+    "english_name": "Ucayali-Yurúa Ashéninka",
+    "default_script": "Latn"
+  },
+  "cpc": {
+    "autonym": "Ajyíninka Apurucayali",
+    "english_name": "Ajyíninka Apurucayali",
+    "default_script": "Latn"
+  },
+  "cpu": {
+    "autonym": "Pichis Ashéninka",
+    "english_name": "Pichis Ashéninka",
+    "default_script": "Latn"
+  },
+  "cpy": {
+    "autonym": "South Ucayali Ashéninka",
+    "english_name": "South Ucayali Ashéninka",
+    "default_script": "Latn"
+  },
+  "crj": {
+    "autonym": "Southern East Cree",
+    "english_name": "Southern East Cree",
+    "default_script": "Cans"
+  },
+  "crl": {
+    "autonym": "Northern East Cree",
+    "english_name": "Northern East Cree",
+    "default_script": "Cans"
+  },
+  "crn": {
+    "autonym": "El Nayar Cora",
+    "english_name": "El Nayar Cora",
+    "default_script": "Latn"
+  },
+  "crx": {
+    "autonym": "Carrier",
+    "english_name": "Carrier",
+    "default_script": "Latn"
+  },
+  "cso": {
+    "autonym": "Sochiapam Chinantec",
+    "english_name": "Sochiapam Chinantec",
+    "default_script": "Latn"
+  },
+  "csy": {
+    "autonym": "Siyin Chin",
+    "english_name": "Siyin Chin",
+    "default_script": "Latn"
+  },
+  "cta": {
+    "autonym": "Tataltepec Chatino",
+    "english_name": "Tataltepec Chatino",
+    "default_script": "Latn"
+  },
+  "cth": {
+    "autonym": "Thaiphum Chin",
+    "english_name": "Thaiphum Chin",
+    "default_script": "Latn"
+  },
+  "ctp": {
+    "autonym": "Western Highland Chatino",
+    "english_name": "Western Highland Chatino",
+    "default_script": "Latn"
+  },
+  "ctu": {
+    "autonym": "Chol",
+    "english_name": "Chol",
+    "default_script": "Latn"
+  },
+  "cub": {
+    "autonym": "Cubeo",
+    "english_name": "Cubeo",
+    "default_script": "Latn"
+  },
+  "cuc": {
+    "autonym": "Usila Chinantec",
+    "english_name": "Usila Chinantec",
+    "default_script": "Latn"
+  },
+  "cug": {
+    "autonym": "Chungmboko",
+    "english_name": "Chungmboko",
+    "default_script": "Latn"
+  },
+  "cui": {
+    "autonym": "Cuiba",
+    "english_name": "Cuiba",
+    "default_script": "Latn"
+  },
+  "cuk": {
+    "autonym": "San Blas Kuna",
+    "english_name": "San Blas Kuna",
+    "default_script": "Latn"
+  },
+  "cul": {
+    "autonym": "Culina",
+    "english_name": "Culina",
+    "default_script": "Latn"
+  },
+  "cut": {
+    "autonym": "Teutila Cuicatec",
+    "english_name": "Teutila Cuicatec",
+    "default_script": "Latn"
+  },
+  "cux": {
+    "autonym": "Tepeuxila Cuicatec",
+    "english_name": "Tepeuxila Cuicatec",
+    "default_script": "Latn"
+  },
+  "cwe": {
+    "autonym": "Kwere",
+    "english_name": "Kwere",
+    "default_script": "Latn"
+  },
+  "cya": {
+    "autonym": "Nopala Chatino",
+    "english_name": "Nopala Chatino",
+    "default_script": "Latn"
+  },
+  "daa": {
+    "autonym": "Dangaléat",
+    "english_name": "Dangaléat",
+    "default_script": "Latn"
+  },
+  "dad": {
+    "autonym": "Marik",
+    "english_name": "Marik",
+    "default_script": "Latn"
+  },
+  "daf": {
+    "autonym": "Dan",
+    "english_name": "Dan",
+    "default_script": "Latn"
+  },
+  "dah": {
+    "autonym": "Gwahatike",
+    "english_name": "Gwahatike",
+    "default_script": "Latn"
+  },
+  "dan": {
+    "autonym": "dansk",
+    "english_name": "Danish",
+    "default_script": "Latn"
+  },
+  "dao": {
+    "autonym": "Daai Chin",
+    "english_name": "Daai Chin",
+    "default_script": "Latn"
+  },
+  "ded": {
+    "autonym": "Dedua",
+    "english_name": "Dedua",
+    "default_script": "Latn"
+  },
+  "des": {
+    "autonym": "Desano",
+    "english_name": "Desano",
+    "default_script": "Latn"
+  },
+  "deu": {
+    "autonym": "Deutsch",
+    "english_name": "German",
+    "default_script": "Latn"
+  },
+  "dgc": {
+    "autonym": "Casiguran Dumagat Agta",
+    "english_name": "Casiguran Dumagat Agta",
+    "default_script": "Latn"
+  },
+  "dgr": {
+    "autonym": "Dogrib",
+    "english_name": "Dogrib",
+    "default_script": "Latn"
+  },
+  "dgz": {
+    "autonym": "Daga",
+    "english_name": "Daga",
+    "default_script": "Latn"
+  },
+  "dhg": {
+    "autonym": "Dhangu-Djangu",
+    "english_name": "Dhangu-Djangu",
+    "default_script": "Latn"
+  },
+  "dhn": {
+    "autonym": "Dhanki",
+    "english_name": "Dhanki",
+    "default_script": "Latn"
+  },
+  "dif": {
+    "autonym": "Dieri",
+    "english_name": "Dieri",
+    "default_script": "Latn"
+  },
+  "dig": {
+    "autonym": "Digo",
+    "english_name": "Digo",
+    "default_script": "Latn"
+  },
+  "dik": {
+    "autonym": "Dinka",
+    "english_name": "Southwestern Dinka",
+    "default_script": "Latn"
+  },
+  "div": {
+    "autonym": "Divehi",
+    "english_name": "Divehi",
+    "default_script": "Thaa"
+  },
+  "dji": {
+    "autonym": "Djinang",
+    "english_name": "Djinang",
+    "default_script": "Latn"
+  },
+  "djj": {
+    "autonym": "Djeebbana",
+    "english_name": "Djeebbana",
+    "default_script": "Latn"
+  },
+  "djk": {
+    "autonym": "Eastern Maroon Creole",
+    "english_name": "Eastern Maroon Creole",
+    "default_script": "Latn"
+  },
+  "djr": {
+    "autonym": "Djambarrpuyngu",
+    "english_name": "Djambarrpuyngu",
+    "default_script": "Latn"
+  },
+  "dne": {
+    "autonym": "Ndendeule",
+    "english_name": "Ndendeule",
+    "default_script": "Latn"
+  },
+  "dnj": {
+    "autonym": "Dan",
+    "english_name": "Dan",
+    "default_script": "Latn"
+  },
+  "dnv": {
+    "autonym": "Danu",
+    "english_name": "Danu",
+    "default_script": "Latn"
+  },
+  "dob": {
+    "autonym": "Dobu",
+    "english_name": "Dobu",
+    "default_script": "Latn"
+  },
+  "dop": {
+    "autonym": "Lukpa",
+    "english_name": "Lukpa",
+    "default_script": "Latn"
+  },
+  "dov": {
+    "autonym": "Dombe",
+    "english_name": "Dombe",
+    "default_script": "Latn"
+  },
+  "dso": {
+    "autonym": "Desiya",
+    "english_name": "Desiya",
+    "default_script": "Latn"
+  },
+  "dud": {
+    "autonym": "ut-Hun",
+    "english_name": "ut-Hun",
+    "default_script": "Latn"
+  },
+  "due": {
+    "autonym": "Umiray Dumaget Agta",
+    "english_name": "Umiray Dumaget Agta",
+    "default_script": "Latn"
+  },
+  "duo": {
+    "autonym": "Dupaninan Agta",
+    "english_name": "Dupaninan Agta",
+    "default_script": "Latn"
+  },
+  "dwr": {
+    "autonym": "Dawro",
+    "english_name": "Dawro",
+    "default_script": "Latn"
+  },
+  "dwu": {
+    "autonym": "Dhuwal",
+    "english_name": "Dhuwal",
+    "default_script": "Latn"
+  },
+  "dww": {
+    "autonym": "Dawawa",
+    "english_name": "Dawawa",
+    "default_script": "Latn"
+  },
+  "dwy": {
+    "autonym": "Dhuwaya",
+    "english_name": "Dhuwaya",
+    "default_script": "Latn"
+  },
+  "dyi": {
+    "autonym": "Djimini Senoufo",
+    "english_name": "Djimini Senoufo",
+    "default_script": "Latn"
+  },
+  "dyu": {
+    "autonym": "Dyula",
+    "english_name": "Dyula",
+    "default_script": "Latn"
+  },
+  "ebk": {
+    "autonym": "Eastern Bontok",
+    "english_name": "Eastern Bontok",
+    "default_script": "Latn"
+  },
+  "eka": {
+    "autonym": "Ekajuk",
+    "english_name": "Ekajuk",
+    "default_script": "Latn"
+  },
+  "ekk": {
+    "autonym": "eesti",
+    "english_name": "Standard Estonian",
+    "default_script": "Latn"
+  },
+  "eko": {
+    "autonym": "Koti",
+    "english_name": "Koti",
+    "default_script": "Latn"
+  },
+  "emi": {
+    "autonym": "Mussau-Emira",
+    "english_name": "Mussau-Emira",
+    "default_script": "Latn"
+  },
+  "emp": {
+    "autonym": "Northern Emberá",
+    "english_name": "Northern Emberá",
+    "default_script": "Latn"
+  },
+  "ena": {
+    "autonym": "Apali",
+    "english_name": "Apali",
+    "default_script": "Latn"
+  },
+  "eng": {
+    "autonym": "English",
+    "english_name": "English",
+    "default_script": "Latn"
+  },
+  "enq": {
+    "autonym": "Enga",
+    "english_name": "Enga",
+    "default_script": "Latn"
+  },
+  "epo": {
+    "autonym": "Esperanto",
+    "english_name": "Esperanto",
+    "default_script": "Latn"
+  },
+  "eri": {
+    "autonym": "Ogea",
+    "english_name": "Ogea",
+    "default_script": "Latn"
+  },
+  "ese": {
+    "autonym": "Ese Ejja",
+    "english_name": "Ese Ejja",
+    "default_script": "Latn"
+  },
+  "esg": {
+    "autonym": "Aheri Gondi",
+    "english_name": "Aheri Gondi",
+    "default_script": "Gonm"
+  },
+  "esk": {
+    "autonym": "Inupiaq",
+    "english_name": "Northwest Alaska Inupiatun",
+    "default_script": "Latn"
+  },
+  "etr": {
+    "autonym": "Edolo",
+    "english_name": "Edolo",
+    "default_script": "Latn"
+  },
+  "ewe": {
+    "autonym": "eʋegbe",
+    "english_name": "Ewe",
+    "default_script": "Latn"
+  },
+  "faa": {
+    "autonym": "Fasu",
+    "english_name": "Fasu",
+    "default_script": "Latn"
+  },
+  "fad": {
+    "autonym": "Wagi",
+    "english_name": "Wagi",
+    "default_script": "Latn"
+  },
+  "fag": {
+    "autonym": "Finongan",
+    "english_name": "Finongan",
+    "default_script": "Latn"
+  },
+  "fai": {
+    "autonym": "Faiwol",
+    "english_name": "Faiwol",
+    "default_script": "Latn"
+  },
+  "far": {
+    "autonym": "Fataleka",
+    "english_name": "Fataleka",
+    "default_script": "Latn"
+  },
+  "ffm": {
+    "autonym": "Maasina Fulfulde",
+    "english_name": "Maasina Fulfulde",
+    "default_script": "Latn"
+  },
+  "fin": {
+    "autonym": "suomi",
+    "english_name": "Finnish",
+    "default_script": "Latn"
+  },
+  "flr": {
+    "autonym": "Fuliiru",
+    "english_name": "Fuliiru",
+    "default_script": "Latn"
+  },
+  "for": {
+    "autonym": "Fore",
+    "english_name": "Fore",
+    "default_script": "Latn"
+  },
+  "fra": {
+    "autonym": "français",
+    "english_name": "French",
+    "default_script": "Latn"
+  },
+  "frd": {
+    "autonym": "Fordata",
+    "english_name": "Fordata",
+    "default_script": "Latn"
+  },
+  "fue": {
+    "autonym": "Borgu Fulfulde",
+    "english_name": "Borgu Fulfulde",
+    "default_script": "Latn"
+  },
+  "fuf": {
+    "autonym": "Pular",
+    "english_name": "Pular",
+    "default_script": "Latn"
+  },
+  "fuh": {
+    "autonym": "Western Niger Fulfulde",
+    "english_name": "Western Niger Fulfulde",
+    "default_script": "Latn"
+  },
+  "fuv": {
+    "autonym": "Nigerian Fulfulde",
+    "english_name": "Nigerian Fulfulde",
+    "default_script": "Latn"
+  },
+  "gah": {
+    "autonym": "Alekano",
+    "english_name": "Alekano",
+    "default_script": "Latn"
+  },
+  "gai": {
+    "autonym": "Borei",
+    "english_name": "Borei",
+    "default_script": "Latn"
+  },
+  "gam": {
+    "autonym": "Kandawo",
+    "english_name": "Kandawo",
+    "default_script": "Latn"
+  },
+  "gaq": {
+    "autonym": "Gata'",
+    "english_name": "Gata'",
+    "default_script": "Latn"
+  },
+  "gaw": {
+    "autonym": "Nobonob",
+    "english_name": "Nobonob",
+    "default_script": "Latn"
+  },
+  "gax": {
+    "autonym": "Borana-Arsi-Guji Oromo",
+    "english_name": "Borana-Arsi-Guji Oromo",
+    "default_script": "Latn"
+  },
+  "gaz": {
+    "autonym": "Oromoo",
+    "english_name": "West Central Oromo",
+    "default_script": "Latn"
+  },
+  "gbl": {
+    "autonym": "Gamit",
+    "english_name": "Gamit",
+    "default_script": "Latn"
+  },
+  "gde": {
+    "autonym": "Gude",
+    "english_name": "Gude",
+    "default_script": "Latn"
+  },
+  "gdf": {
+    "autonym": "Guduf-Gava",
+    "english_name": "Guduf-Gava",
+    "default_script": "Latn"
+  },
+  "gdg": {
+    "autonym": "Ga'dang",
+    "english_name": "Ga'dang",
+    "default_script": "Latn"
+  },
+  "gdn": {
+    "autonym": "Umanakaina",
+    "english_name": "Umanakaina",
+    "default_script": "Latn"
+  },
+  "gdr": {
+    "autonym": "Wipi",
+    "english_name": "Wipi",
+    "default_script": "Latn"
+  },
+  "geb": {
+    "autonym": "Kire",
+    "english_name": "Kire",
+    "default_script": "Latn"
+  },
+  "gel": {
+    "autonym": "ut-Ma'in",
+    "english_name": "ut-Ma'in",
+    "default_script": "Latn"
+  },
+  "gfk": {
+    "autonym": "Patpatar",
+    "english_name": "Patpatar",
+    "default_script": "Latn"
+  },
+  "gge": {
+    "autonym": "Gurr-goni",
+    "english_name": "Gurr-goni",
+    "default_script": "Latn"
+  },
+  "ghn": {
+    "autonym": "Ghanongga",
+    "english_name": "Ghanongga",
+    "default_script": "Latn"
+  },
+  "ghs": {
+    "autonym": "Guhu-Samane",
+    "english_name": "Guhu-Samane",
+    "default_script": "Latn"
+  },
+  "gia": {
+    "autonym": "Kija",
+    "english_name": "Kija",
+    "default_script": "Latn"
+  },
+  "glk": {
+    "autonym": "Gilaki",
+    "english_name": "Gilaki",
+    "default_script": "Arab"
+  },
+  "glw": {
+    "autonym": "Glavda",
+    "english_name": "Glavda",
+    "default_script": "Latn"
+  },
+  "gmv": {
+    "autonym": "Gamo",
+    "english_name": "Gamo",
+    "default_script": "Ethi"
+  },
+  "gng": {
+    "autonym": "Ngangam",
+    "english_name": "Ngangam",
+    "default_script": "Latn"
+  },
+  "gnn": {
+    "autonym": "Gumatj",
+    "english_name": "Gumatj",
+    "default_script": "Latn"
+  },
+  "gnw": {
+    "autonym": "Western Bolivian Guaraní",
+    "english_name": "Western Bolivian Guaraní",
+    "default_script": "Latn"
+  },
+  "gof": {
+    "autonym": "Gofa",
+    "english_name": "Gofa",
+    "default_script": "Ethi"
+  },
+  "goj": {
+    "autonym": "Gowlan",
+    "english_name": "Gowlan",
+    "default_script": "Latn"
+  },
+  "gok": {
+    "autonym": "Gowli",
+    "english_name": "Gowli",
+    "default_script": "Latn"
+  },
+  "gqa": {
+    "autonym": "Ga'anda",
+    "english_name": "Ga'anda",
+    "default_script": "Latn"
+  },
+  "gqr": {
+    "autonym": "Gor",
+    "english_name": "Gor",
+    "default_script": "Latn"
+  },
+  "grc": {
+    "autonym": "Ancient Greek",
+    "english_name": "Ancient Greek",
+    "default_script": "Cprt"
+  },
+  "gri": {
+    "autonym": "Ghari",
+    "english_name": "Ghari",
+    "default_script": "Latn"
+  },
+  "gub": {
+    "autonym": "Guajajára",
+    "english_name": "Guajajára",
+    "default_script": "Latn"
+  },
+  "guc": {
+    "autonym": "Wayuu",
+    "english_name": "Wayuu",
+    "default_script": "Latn"
+  },
+  "gue": {
+    "autonym": "Gurindji",
+    "english_name": "Gurindji",
+    "default_script": "Latn"
+  },
+  "guf": {
+    "autonym": "Gupapuyngu",
+    "english_name": "Gupapuyngu",
+    "default_script": "Latn"
+  },
+  "guh": {
+    "autonym": "Guahibo",
+    "english_name": "Guahibo",
+    "default_script": "Latn"
+  },
+  "gui": {
+    "autonym": "Eastern Bolivian Guaraní",
+    "english_name": "Eastern Bolivian Guaraní",
+    "default_script": "Latn"
+  },
+  "guj": {
+    "autonym": "ગુજરાતી",
+    "english_name": "Gujarati",
+    "default_script": "Gujr"
+  },
+  "gul": {
+    "autonym": "Sea Island Creole English",
+    "english_name": "Sea Island Creole English",
+    "default_script": "Latn"
+  },
+  "gum": {
+    "autonym": "Guambiano",
+    "english_name": "Guambiano",
+    "default_script": "Latn"
+  },
+  "gun": {
+    "autonym": "Mbyá Guaraní",
+    "english_name": "Mbyá Guaraní",
+    "default_script": "Latn"
+  },
+  "guo": {
+    "autonym": "Guayabero",
+    "english_name": "Guayabero",
+    "default_script": "Latn"
+  },
+  "gup": {
+    "autonym": "Gunwinggu",
+    "english_name": "Gunwinggu",
+    "default_script": "Latn"
+  },
+  "gux": {
+    "autonym": "Gourmanchéma",
+    "english_name": "Gourmanchéma",
+    "default_script": "Latn"
+  },
+  "gvc": {
+    "autonym": "Guanano",
+    "english_name": "Guanano",
+    "default_script": "Latn"
+  },
+  "gvf": {
+    "autonym": "Golin",
+    "english_name": "Golin",
+    "default_script": "Latn"
+  },
+  "gvn": {
+    "autonym": "Kuku-Yalanji",
+    "english_name": "Kuku-Yalanji",
+    "default_script": "Latn"
+  },
+  "gvr": {
+    "autonym": "Gurung",
+    "english_name": "Gurung",
+    "default_script": "Deva"
+  },
+  "gvs": {
+    "autonym": "Gumawana",
+    "english_name": "Gumawana",
+    "default_script": "Latn"
+  },
+  "gwi": {
+    "autonym": "Gwichʼin",
+    "english_name": "Gwichʼin",
+    "default_script": "Latn"
+  },
+  "gwr": {
+    "autonym": "Gwere",
+    "english_name": "Gwere",
+    "default_script": "Latn"
+  },
+  "gyl": {
+    "autonym": "Gayil",
+    "english_name": "Gayil",
+    "default_script": "Latn"
+  },
+  "gym": {
+    "autonym": "Ngäbere",
+    "english_name": "Ngäbere",
+    "default_script": "Latn"
+  },
+  "gyr": {
+    "autonym": "Guarayu",
+    "english_name": "Guarayu",
+    "default_script": "Latn"
+  },
+  "gyz": {
+    "autonym": "Geji",
+    "english_name": "Geji",
+    "default_script": "Latn"
+  },
+  "hat": {
+    "autonym": "Kreyòl Ayisyen",
+    "english_name": "Haitian Creole",
+    "default_script": "Latn"
+  },
+  "hau": {
+    "autonym": "Hausa",
+    "english_name": "Hausa",
+    "default_script": "Latn"
+  },
+  "hav": {
+    "autonym": "Havu",
+    "english_name": "Havu",
+    "default_script": "Latn"
+  },
+  "haw": {
+    "autonym": "ʻŌlelo Hawaiʻi",
+    "english_name": "Hawaiian",
+    "default_script": "Latn"
+  },
+  "hbo": {
+    "autonym": "Ancient Hebrew",
+    "english_name": "Ancient Hebrew",
+    "default_script": "Latn"
+  },
+  "hch": {
+    "autonym": "Huichol",
+    "english_name": "Huichol",
+    "default_script": "Latn"
+  },
+  "heb": {
+    "autonym": "עברית",
+    "english_name": "Hebrew",
+    "default_script": "Hebr"
+  },
+  "heg": {
+    "autonym": "Helong",
+    "english_name": "Helong",
+    "default_script": "Latn"
+  },
+  "hil": {
+    "autonym": "Ilonggo",
+    "english_name": "Hiligaynon",
+    "default_script": "Latn"
+  },
+  "hin": {
+    "autonym": "हिन्दी",
+    "english_name": "Hindi",
+    "default_script": "Deva"
+  },
+  "hix": {
+    "autonym": "Hixkaryána",
+    "english_name": "Hixkaryána",
+    "default_script": "Latn"
+  },
+  "hla": {
+    "autonym": "Halia",
+    "english_name": "Halia",
+    "default_script": "Latn"
+  },
+  "hlb": {
+    "autonym": "Halbi",
+    "english_name": "Halbi",
+    "default_script": "Latn"
+  },
+  "hlt": {
+    "autonym": "Matu Chin",
+    "english_name": "Matu Chin",
+    "default_script": "Latn"
+  },
+  "hmo": {
+    "autonym": "Hiri Motu",
+    "english_name": "Hiri Motu",
+    "default_script": "Latn"
+  },
+  "hne": {
+    "autonym": "Chhattisgarhi",
+    "english_name": "Chhattisgarhi",
+    "default_script": "Deva"
+  },
+  "hns": {
+    "autonym": "Caribbean Hindustani",
+    "english_name": "Caribbean Hindustani",
+    "default_script": "Latn"
+  },
+  "hop": {
+    "autonym": "Hopi",
+    "english_name": "Hopi",
+    "default_script": "Latn"
+  },
+  "hot": {
+    "autonym": "Hote",
+    "english_name": "Hote",
+    "default_script": "Latn"
+  },
+  "hoy": {
+    "autonym": "Holiya",
+    "english_name": "Holiya",
+    "default_script": "Latn"
+  },
+  "hre": {
+    "autonym": "Hre",
+    "english_name": "Hre",
+    "default_script": "Latn"
+  },
+  "hru": {
+    "autonym": "Hruso",
+    "english_name": "Hruso",
+    "default_script": "Latn"
+  },
+  "hrv": {
+    "autonym": "hrvatski",
+    "english_name": "Croatian",
+    "default_script": "Latn"
+  },
+  "hrw": {
+    "autonym": "Warwar Feni",
+    "english_name": "Warwar Feni",
+    "default_script": "Latn"
+  },
+  "hto": {
+    "autonym": "Minica Huitoto",
+    "english_name": "Minica Huitoto",
+    "default_script": "Latn"
+  },
+  "hub": {
+    "autonym": "Huambisa",
+    "english_name": "Huambisa",
+    "default_script": "Latn"
+  },
+  "hui": {
+    "autonym": "Huli",
+    "english_name": "Huli",
+    "default_script": "Latn"
+  },
+  "hun": {
+    "autonym": "magyar",
+    "english_name": "Hungarian",
+    "default_script": "Latn"
+  },
+  "hus": {
+    "autonym": "Huastec",
+    "english_name": "Huastec",
+    "default_script": "Latn"
+  },
+  "huu": {
+    "autonym": "Murui Huitoto",
+    "english_name": "Murui Huitoto",
+    "default_script": "Latn"
+  },
+  "huv": {
+    "autonym": "San Mateo Del Mar Huave",
+    "english_name": "San Mateo Del Mar Huave",
+    "default_script": "Latn"
+  },
+  "hvn": {
+    "autonym": "Sabu",
+    "english_name": "Sabu",
+    "default_script": "Latn"
+  },
+  "hwc": {
+    "autonym": "Hawai'i Creole English",
+    "english_name": "Hawai'i Creole English",
+    "default_script": "Latn"
+  },
+  "hwo": {
+    "autonym": "Hwana",
+    "english_name": "Hwana",
+    "default_script": "Latn"
+  },
+  "ian": {
+    "autonym": "Iatmul",
+    "english_name": "Iatmul",
+    "default_script": "Latn"
+  },
+  "ibd": {
+    "autonym": "Iwaidja",
+    "english_name": "Iwaidja",
+    "default_script": "Latn"
+  },
+  "ibl": {
+    "autonym": "Ibaloi",
+    "english_name": "Ibaloi",
+    "default_script": "Latn"
+  },
+  "ibo": {
+    "autonym": "Igbo",
+    "english_name": "Igbo",
+    "default_script": "Latn"
+  },
+  "idc": {
+    "autonym": "Idon",
+    "english_name": "Idon",
+    "default_script": "Latn"
+  },
+  "ifa": {
+    "autonym": "Amganad Ifugao",
+    "english_name": "Amganad Ifugao",
+    "default_script": "Latn"
+  },
+  "ifb": {
+    "autonym": "Batad Ifugao",
+    "english_name": "Batad Ifugao",
+    "default_script": "Latn"
+  },
+  "ifk": {
+    "autonym": "Tuwali Ifugao",
+    "english_name": "Tuwali Ifugao",
+    "default_script": "Latn"
+  },
+  "ifu": {
+    "autonym": "Mayoyao Ifugao",
+    "english_name": "Mayoyao Ifugao",
+    "default_script": "Latn"
+  },
+  "ify": {
+    "autonym": "Keley-I Kallahan",
+    "english_name": "Keley-I Kallahan",
+    "default_script": "Latn"
+  },
+  "ign": {
+    "autonym": "Ignaciano",
+    "english_name": "Ignaciano",
+    "default_script": "Latn"
+  },
+  "ikk": {
+    "autonym": "Ika",
+    "english_name": "Ika",
+    "default_script": "Latn"
+  },
+  "ikw": {
+    "autonym": "Ikwere",
+    "english_name": "Ikwere",
+    "default_script": "Latn"
+  },
+  "ikz": {
+    "autonym": "Ikizu",
+    "english_name": "Ikizu",
+    "default_script": "Latn"
+  },
+  "ilo": {
+    "autonym": "Ilokano",
+    "english_name": "Iloko",
+    "default_script": "Latn"
+  },
+  "imo": {
+    "autonym": "Imbongu",
+    "english_name": "Imbongu",
+    "default_script": "Latn"
+  },
+  "inb": {
+    "autonym": "Inga",
+    "english_name": "Inga",
+    "default_script": "Latn"
+  },
+  "ind": {
+    "autonym": "bahasa Indonesia",
+    "english_name": "Indonesian",
+    "default_script": "Latn"
+  },
+  "ino": {
+    "autonym": "Inoke-Yate",
+    "english_name": "Inoke-Yate",
+    "default_script": "Latn"
+  },
+  "iou": {
+    "autonym": "Tuma-Irumu",
+    "english_name": "Tuma-Irumu",
+    "default_script": "Latn"
+  },
+  "ipi": {
+    "autonym": "Ipili",
+    "english_name": "Ipili",
+    "default_script": "Latn"
+  },
+  "iqw": {
+    "autonym": "Ikwo",
+    "english_name": "Ikwo",
+    "default_script": "Latn"
+  },
+  "isd": {
+    "autonym": "Isnag",
+    "english_name": "Isnag",
+    "default_script": "Latn"
+  },
+  "isl": {
+    "autonym": "íslenska",
+    "english_name": "Icelandic",
+    "default_script": "Latn"
+  },
+  "isn": {
+    "autonym": "Isanzu",
+    "english_name": "Isanzu",
+    "default_script": "Latn"
+  },
+  "ita": {
+    "autonym": "italiano",
+    "english_name": "Italian",
+    "default_script": "Latn"
+  },
+  "ivb": {
+    "autonym": "Ibatan",
+    "english_name": "Ibatan",
+    "default_script": "Latn"
+  },
+  "ivv": {
+    "autonym": "Ivatan",
+    "english_name": "Ivatan",
+    "default_script": "Latn"
+  },
+  "iws": {
+    "autonym": "Sepik Iwam",
+    "english_name": "Sepik Iwam",
+    "default_script": "Latn"
+  },
+  "ixl": {
+    "autonym": "Ixil",
+    "english_name": "Ixil",
+    "default_script": "Latn"
+  },
+  "iyx": {
+    "autonym": "Yaka (Congo)",
+    "english_name": "Yaka (Congo)",
+    "default_script": "Latn"
+  },
+  "izz": {
+    "autonym": "Izii",
+    "english_name": "Izii",
+    "default_script": "Latn"
+  },
+  "jaa": {
+    "autonym": "Jamamadí",
+    "english_name": "Jamamadí",
+    "default_script": "Latn"
+  },
+  "jac": {
+    "autonym": "Popti'",
+    "english_name": "Popti'",
+    "default_script": "Latn"
+  },
+  "jae": {
+    "autonym": "Yabem",
+    "english_name": "Yabem",
+    "default_script": "Latn"
+  },
+  "jao": {
+    "autonym": "Yanyuwa",
+    "english_name": "Yanyuwa",
+    "default_script": "Latn"
+  },
+  "jay": {
+    "autonym": "Yan-nhangu",
+    "english_name": "Yan-nhangu",
+    "default_script": "Latn"
+  },
+  "jib": {
+    "autonym": "Jibu",
+    "english_name": "Jibu",
+    "default_script": "Latn"
+  },
+  "jic": {
+    "autonym": "Tol",
+    "english_name": "Tol",
+    "default_script": "Latn"
+  },
+  "jid": {
+    "autonym": "Bu (Kaduna State)",
+    "english_name": "Bu (Kaduna State)",
+    "default_script": "Latn"
+  },
+  "jiv": {
+    "autonym": "Shuar",
+    "english_name": "Shuar",
+    "default_script": "Latn"
+  },
+  "jni": {
+    "autonym": "Janji",
+    "english_name": "Janji",
+    "default_script": "Latn"
+  },
+  "jnj": {
+    "autonym": "Yemsa",
+    "english_name": "Yemsa",
+    "default_script": "Latn"
+  },
+  "jpn": {
+    "autonym": "日本語",
+    "english_name": "Japanese",
+    "default_script": "Jpan"
+  },
+  "jum": {
+    "autonym": "Jumjum",
+    "english_name": "Jumjum",
+    "default_script": "Latn"
+  },
+  "juy": {
+    "autonym": "Juray",
+    "english_name": "Juray",
+    "default_script": "Latn"
+  },
+  "jvn": {
+    "autonym": "Caribbean Javanese",
+    "english_name": "Caribbean Javanese",
+    "default_script": "Latn"
+  },
+  "kan": {
+    "autonym": "ಕನ್ನಡ",
+    "english_name": "Kannada",
+    "default_script": "Knda"
+  },
+  "kaq": {
+    "autonym": "Capanahua",
+    "english_name": "Capanahua",
+    "default_script": "Latn"
+  },
+  "kbc": {
+    "autonym": "Kadiwéu",
+    "english_name": "Kadiwéu",
+    "default_script": "Latn"
+  },
+  "kbh": {
+    "autonym": "Camsá",
+    "english_name": "Camsá",
+    "default_script": "Latn"
+  },
+  "kbm": {
+    "autonym": "Iwal",
+    "english_name": "Iwal",
+    "default_script": "Latn"
+  },
+  "kbo": {
+    "autonym": "Keliko",
+    "english_name": "Keliko",
+    "default_script": "Latn"
+  },
+  "kbq": {
+    "autonym": "Kamano",
+    "english_name": "Kamano",
+    "default_script": "Latn"
+  },
+  "kby": {
+    "autonym": "Manga Kanuri",
+    "english_name": "Manga Kanuri",
+    "default_script": "Arab"
+  },
+  "kca": {
+    "autonym": "Khanty",
+    "english_name": "Khanty",
+    "default_script": "Latn"
+  },
+  "kdc": {
+    "autonym": "Kutu",
+    "english_name": "Kutu",
+    "default_script": "Latn"
+  },
+  "kde": {
+    "autonym": "Chimakonde",
+    "english_name": "Makonde",
+    "default_script": "Latn"
+  },
+  "kdh": {
+    "autonym": "Tem",
+    "english_name": "Tem",
+    "default_script": "Latn"
+  },
+  "kdl": {
+    "autonym": "Tsikimba",
+    "english_name": "Tsikimba",
+    "default_script": "Latn"
+  },
+  "kek": {
+    "autonym": "Kekchí",
+    "english_name": "Kekchí",
+    "default_script": "Latn"
+  },
+  "ken": {
+    "autonym": "Kɛnyaŋ",
+    "english_name": "Kenyang",
+    "default_script": "Latn"
+  },
+  "kew": {
+    "autonym": "West Kewa",
+    "english_name": "West Kewa",
+    "default_script": "Latn"
+  },
+  "key": {
+    "autonym": "Kupia",
+    "english_name": "Kupia",
+    "default_script": "Latn"
+  },
+  "kfc": {
+    "autonym": "Konda-Dora",
+    "english_name": "Konda-Dora",
+    "default_script": "Latn"
+  },
+  "kff": {
+    "autonym": "Koya",
+    "english_name": "Koya",
+    "default_script": "Latn"
+  },
+  "kfw": {
+    "autonym": "Kharam Naga",
+    "english_name": "Kharam Naga",
+    "default_script": "Latn"
+  },
+  "kgf": {
+    "autonym": "Kube",
+    "english_name": "Kube",
+    "default_script": "Latn"
+  },
+  "kgk": {
+    "autonym": "Kaiwá",
+    "english_name": "Kaiwá",
+    "default_script": "Latn"
+  },
+  "kgp": {
+    "autonym": "kanhgág",
+    "english_name": "Kaingang",
+    "default_script": "Latn"
+  },
+  "khj": {
+    "autonym": "Kuturmi",
+    "english_name": "Kuturmi",
+    "default_script": "Latn"
+  },
+  "khm": {
+    "autonym": "ខ្មែរ",
+    "english_name": "Khmer",
+    "default_script": "Khmr"
+  },
+  "khs": {
+    "autonym": "Kasua",
+    "english_name": "Kasua",
+    "default_script": "Latn"
+  },
+  "khz": {
+    "autonym": "Keapara",
+    "english_name": "Keapara",
+    "default_script": "Latn"
+  },
+  "kij": {
+    "autonym": "Kilivila",
+    "english_name": "Kilivila",
+    "default_script": "Latn"
+  },
+  "kik": {
+    "autonym": "Gikuyu",
+    "english_name": "Kikuyu",
+    "default_script": "Latn"
+  },
+  "kiw": {
+    "autonym": "Northeast Kiwai",
+    "english_name": "Northeast Kiwai",
+    "default_script": "Latn"
+  },
+  "kiz": {
+    "autonym": "Kisi",
+    "english_name": "Kisi",
+    "default_script": "Latn"
+  },
+  "kje": {
+    "autonym": "Kisar",
+    "english_name": "Kisar",
+    "default_script": "Latn"
+  },
+  "kjl": {
+    "autonym": "Western Parbate Kham",
+    "english_name": "Western Parbate Kham",
+    "default_script": "Latn"
+  },
+  "kjn": {
+    "autonym": "Kunjen",
+    "english_name": "Kunjen",
+    "default_script": "Latn"
+  },
+  "kjs": {
+    "autonym": "East Kewa",
+    "english_name": "East Kewa",
+    "default_script": "Latn"
+  },
+  "kkc": {
+    "autonym": "Odoodee",
+    "english_name": "Odoodee",
+    "default_script": "Latn"
+  },
+  "kkj": {
+    "autonym": "kakɔ",
+    "english_name": "Kako",
+    "default_script": "Latn"
+  },
+  "kkl": {
+    "autonym": "Kosarek Yale",
+    "english_name": "Kosarek Yale",
+    "default_script": "Latn"
+  },
+  "kky": {
+    "autonym": "Guugu Yimidhirr",
+    "english_name": "Guugu Yimidhirr",
+    "default_script": "Latn"
+  },
+  "kld": {
+    "autonym": "Gamilaraay",
+    "english_name": "Gamilaraay",
+    "default_script": "Latn"
+  },
+  "klg": {
+    "autonym": "Tagakaulo",
+    "english_name": "Tagakaulo",
+    "default_script": "Latn"
+  },
+  "klt": {
+    "autonym": "Nukna",
+    "english_name": "Nukna",
+    "default_script": "Latn"
+  },
+  "klv": {
+    "autonym": "Maskelynes",
+    "english_name": "Maskelynes",
+    "default_script": "Latn"
+  },
+  "kma": {
+    "autonym": "Konni",
+    "english_name": "Konni",
+    "default_script": "Latn"
+  },
+  "kmg": {
+    "autonym": "Kâte",
+    "english_name": "Kâte",
+    "default_script": "Latn"
+  },
+  "kmh": {
+    "autonym": "Kalam",
+    "english_name": "Kalam",
+    "default_script": "Latn"
+  },
+  "kmk": {
+    "autonym": "Limos Kalinga",
+    "english_name": "Limos Kalinga",
+    "default_script": "Latn"
+  },
+  "kmo": {
+    "autonym": "Kwoma",
+    "english_name": "Kwoma",
+    "default_script": "Latn"
+  },
+  "kms": {
+    "autonym": "Kamasau",
+    "english_name": "Kamasau",
+    "default_script": "Latn"
+  },
+  "kmu": {
+    "autonym": "Kanite",
+    "english_name": "Kanite",
+    "default_script": "Latn"
+  },
+  "kne": {
+    "autonym": "Kankanaey",
+    "english_name": "Kankanaey",
+    "default_script": "Latn"
+  },
+  "knf": {
+    "autonym": "Mankanya",
+    "english_name": "Mankanya",
+    "default_script": "Latn"
+  },
+  "knj": {
+    "autonym": "Western Kanjobal",
+    "english_name": "Western Kanjobal",
+    "default_script": "Latn"
+  },
+  "knv": {
+    "autonym": "Tabo",
+    "english_name": "Tabo",
+    "default_script": "Latn"
+  },
+  "kog": {
+    "autonym": "Cogui",
+    "english_name": "Cogui",
+    "default_script": "Latn"
+  },
+  "kor": {
+    "autonym": "한국어",
+    "english_name": "Korean",
+    "default_script": "Kore"
+  },
+  "kos": {
+    "autonym": "Kosraean",
+    "english_name": "Kosraean",
+    "default_script": "Latn"
+  },
+  "kpf": {
+    "autonym": "Komba",
+    "english_name": "Komba",
+    "default_script": "Latn"
+  },
+  "kpg": {
+    "autonym": "Kapingamarangi",
+    "english_name": "Kapingamarangi",
+    "default_script": "Latn"
+  },
+  "kpj": {
+    "autonym": "Karajá",
+    "english_name": "Karajá",
+    "default_script": "Latn"
+  },
+  "kpr": {
+    "autonym": "Korafe-Yegha",
+    "english_name": "Korafe-Yegha",
+    "default_script": "Latn"
+  },
+  "kpw": {
+    "autonym": "Kobon",
+    "english_name": "Kobon",
+    "default_script": "Latn"
+  },
+  "kpx": {
+    "autonym": "Mountain Koiali",
+    "english_name": "Mountain Koiali",
+    "default_script": "Latn"
+  },
+  "kqa": {
+    "autonym": "Mum",
+    "english_name": "Mum",
+    "default_script": "Latn"
+  },
+  "kqc": {
+    "autonym": "Doromu-Koki",
+    "english_name": "Doromu-Koki",
+    "default_script": "Latn"
+  },
+  "kqe": {
+    "autonym": "Kalagan",
+    "english_name": "Kalagan",
+    "default_script": "Latn"
+  },
+  "kqf": {
+    "autonym": "Kakabai",
+    "english_name": "Kakabai",
+    "default_script": "Latn"
+  },
+  "kql": {
+    "autonym": "Kyenele",
+    "english_name": "Kyenele",
+    "default_script": "Latn"
+  },
+  "kqp": {
+    "autonym": "Kimré",
+    "english_name": "Kimré",
+    "default_script": "Latn"
+  },
+  "kqw": {
+    "autonym": "Kandas",
+    "english_name": "Kandas",
+    "default_script": "Latn"
+  },
+  "krh": {
+    "autonym": "Kurama",
+    "english_name": "Kurama",
+    "default_script": "Latn"
+  },
+  "krj": {
+    "autonym": "Kinaray-a",
+    "english_name": "Kinaray-a",
+    "default_script": "Latn"
+  },
+  "krx": {
+    "autonym": "Karon",
+    "english_name": "Karon",
+    "default_script": "Latn"
+  },
+  "ksc": {
+    "autonym": "Southern Kalinga",
+    "english_name": "Southern Kalinga",
+    "default_script": "Latn"
+  },
+  "ksd": {
+    "autonym": "Kuanua",
+    "english_name": "Kuanua",
+    "default_script": "Latn"
+  },
+  "ksj": {
+    "autonym": "Uare",
+    "english_name": "Uare",
+    "default_script": "Latn"
+  },
+  "ksp": {
+    "autonym": "Kaba",
+    "english_name": "Kaba",
+    "default_script": "Latn"
+  },
+  "ksr": {
+    "autonym": "Borong",
+    "english_name": "Borong",
+    "default_script": "Latn"
+  },
+  "ktj": {
+    "autonym": "Plapo Krumen",
+    "english_name": "Plapo Krumen",
+    "default_script": "Latn"
+  },
+  "ktm": {
+    "autonym": "Kurti",
+    "english_name": "Kurti",
+    "default_script": "Latn"
+  },
+  "kto": {
+    "autonym": "Kuot",
+    "english_name": "Kuot",
+    "default_script": "Latn"
+  },
+  "kud": {
+    "autonym": "'Auhelawa",
+    "english_name": "'Auhelawa",
+    "default_script": "Latn"
+  },
+  "kue": {
+    "autonym": "Kuman (Papua New Guinea)",
+    "english_name": "Kuman (Papua New Guinea)",
+    "default_script": "Latn"
+  },
+  "kup": {
+    "autonym": "Kunimaipa",
+    "english_name": "Kunimaipa",
+    "default_script": "Latn"
+  },
+  "kux": {
+    "autonym": "Kukatja",
+    "english_name": "Kukatja",
+    "default_script": "Latn"
+  },
+  "kvg": {
+    "autonym": "Kuni-Boazi",
+    "english_name": "Kuni-Boazi",
+    "default_script": "Latn"
+  },
+  "kvn": {
+    "autonym": "Border Kuna",
+    "english_name": "Border Kuna",
+    "default_script": "Latn"
+  },
+  "kwd": {
+    "autonym": "Kwaio",
+    "english_name": "Kwaio",
+    "default_script": "Latn"
+  },
+  "kwf": {
+    "autonym": "Kwara'ae",
+    "english_name": "Kwara'ae",
+    "default_script": "Latn"
+  },
+  "kwi": {
+    "autonym": "Awa-Cuaiquer",
+    "english_name": "Awa-Cuaiquer",
+    "default_script": "Latn"
+  },
+  "kwj": {
+    "autonym": "Kwanga",
+    "english_name": "Kwanga",
+    "default_script": "Latn"
+  },
+  "kxf": {
+    "autonym": "Manumanaw Karen",
+    "english_name": "Manumanaw Karen",
+    "default_script": "Latn"
+  },
+  "kxv": {
+    "autonym": "kuvi",
+    "english_name": "Kuvi",
+    "default_script": "Latn"
+  },
+  "kxw": {
+    "autonym": "Konai",
+    "english_name": "Konai",
+    "default_script": "Latn"
+  },
+  "kyb": {
+    "autonym": "Butbut Kalinga",
+    "english_name": "Butbut Kalinga",
+    "default_script": "Latn"
+  },
+  "kyc": {
+    "autonym": "Kyaka",
+    "english_name": "Kyaka",
+    "default_script": "Latn"
+  },
+  "kyf": {
+    "autonym": "Kouya",
+    "english_name": "Kouya",
+    "default_script": "Latn"
+  },
+  "kyg": {
+    "autonym": "Keyagana",
+    "english_name": "Keyagana",
+    "default_script": "Latn"
+  },
+  "kyq": {
+    "autonym": "Kenga",
+    "english_name": "Kenga",
+    "default_script": "Latn"
+  },
+  "kyu": {
+    "autonym": "Western Kayah",
+    "english_name": "Western Kayah",
+    "default_script": "Latn"
+  },
+  "kyz": {
+    "autonym": "Kayabí",
+    "english_name": "Kayabí",
+    "default_script": "Latn"
+  },
+  "kze": {
+    "autonym": "Kosena",
+    "english_name": "Kosena",
+    "default_script": "Latn"
+  },
+  "lac": {
+    "autonym": "Lacandon",
+    "english_name": "Lacandon",
+    "default_script": "Latn"
+  },
+  "lag": {
+    "autonym": "Kɨlaangi",
+    "english_name": "Langi",
+    "default_script": "Latn"
+  },
+  "lat": {
+    "autonym": "Lingua latina",
+    "english_name": "Latin",
+    "default_script": "Latn"
+  },
+  "lbb": {
+    "autonym": "Label",
+    "english_name": "Label",
+    "default_script": "Latn"
+  },
+  "lbj": {
+    "autonym": "Ladakhi",
+    "english_name": "Ladakhi",
+    "default_script": "Latn"
+  },
+  "lbk": {
+    "autonym": "Bontok",
+    "english_name": "Central Bontok",
+    "default_script": "Latn"
+  },
+  "lbm": {
+    "autonym": "Lodhi",
+    "english_name": "Lodhi",
+    "default_script": "Latn"
+  },
+  "lbv": {
+    "autonym": "Lavatbura-Lamusong",
+    "english_name": "Lavatbura-Lamusong",
+    "default_script": "Latn"
+  },
+  "lcm": {
+    "autonym": "Tungag",
+    "english_name": "Tungag",
+    "default_script": "Latn"
+  },
+  "lcp": {
+    "autonym": "Western Lawa",
+    "english_name": "Western Lawa",
+    "default_script": "Thai"
+  },
+  "ldb": {
+    "autonym": "Dũya",
+    "english_name": "Dũya",
+    "default_script": "Latn"
+  },
+  "leu": {
+    "autonym": "Kara (Papua New Guinea)",
+    "english_name": "Kara (Papua New Guinea)",
+    "default_script": "Latn"
+  },
+  "lex": {
+    "autonym": "Luang",
+    "english_name": "Luang",
+    "default_script": "Latn"
+  },
+  "lga": {
+    "autonym": "Lungga",
+    "english_name": "Lungga",
+    "default_script": "Latn"
+  },
+  "lgl": {
+    "autonym": "Wala",
+    "english_name": "Wala",
+    "default_script": "Latn"
+  },
+  "lhi": {
+    "autonym": "Lahu Shi",
+    "english_name": "Lahu Shi",
+    "default_script": "Latn"
+  },
+  "lid": {
+    "autonym": "Nyindrou",
+    "english_name": "Nyindrou",
+    "default_script": "Latn"
+  },
+  "lif": {
+    "autonym": "Limbu",
+    "english_name": "Limbu",
+    "default_script": "Deva"
+  },
+  "lik": {
+    "autonym": "Lika",
+    "english_name": "Lika",
+    "default_script": "Latn"
+  },
+  "lin": {
+    "autonym": "lingála",
+    "english_name": "Lingala",
+    "default_script": "Latn"
+  },
+  "lip": {
+    "autonym": "Sekpele",
+    "english_name": "Sekpele",
+    "default_script": "Latn"
+  },
+  "lit": {
+    "autonym": "lietuvių",
+    "english_name": "Lithuanian",
+    "default_script": "Latn"
+  },
+  "llg": {
+    "autonym": "Lole",
+    "english_name": "Lole",
+    "default_script": "Latn"
+  },
+  "llu": {
+    "autonym": "Lau",
+    "english_name": "Lau",
+    "default_script": "Latn"
+  },
+  "lmd": {
+    "autonym": "Lumun",
+    "english_name": "Lumun",
+    "default_script": "Latn"
+  },
+  "lng": {
+    "autonym": "Langobardic",
+    "english_name": "Langobardic",
+    "default_script": "Latn"
+  },
+  "log": {
+    "autonym": "Logo",
+    "english_name": "Logo",
+    "default_script": "Latn"
+  },
+  "loq": {
+    "autonym": "Lobala",
+    "english_name": "Lobala",
+    "default_script": "Latn"
+  },
+  "lro": {
+    "autonym": "Laro",
+    "english_name": "Laro",
+    "default_script": "Latn"
+  },
+  "lth": {
+    "autonym": "Thur",
+    "english_name": "Thur",
+    "default_script": "Latn"
+  },
+  "luc": {
+    "autonym": "Aringa",
+    "english_name": "Aringa",
+    "default_script": "Latn"
+  },
+  "lug": {
+    "autonym": "Luganda",
+    "english_name": "Ganda",
+    "default_script": "Latn"
+  },
+  "luo": {
+    "autonym": "Dholuo",
+    "english_name": "Luo (Kenya and Tanzania)",
+    "default_script": "Latn"
+  },
+  "lwo": {
+    "autonym": "Luwo",
+    "english_name": "Luwo",
+    "default_script": "Latn"
+  },
+  "lww": {
+    "autonym": "Lewo",
+    "english_name": "Lewo",
+    "default_script": "Latn"
+  },
+  "lyn": {
+    "autonym": "Luyana",
+    "english_name": "Luyana",
+    "default_script": "Latn"
+  },
+  "maa": {
+    "autonym": "San Jerónimo Tecóatl Mazatec",
+    "english_name": "San Jerónimo Tecóatl Mazatec",
+    "default_script": "Latn"
+  },
+  "mai": {
+    "autonym": "मैथिली",
+    "english_name": "Maithili",
+    "default_script": "Deva"
+  },
+  "maj": {
+    "autonym": "Jalapa De Díaz Mazatec",
+    "english_name": "Jalapa De Díaz Mazatec",
+    "default_script": "Latn"
+  },
+  "mal": {
+    "autonym": "മലയാളം",
+    "english_name": "Malayalam",
+    "default_script": "Mlym"
+  },
+  "mam": {
+    "autonym": "Mam",
+    "english_name": "Mam",
+    "default_script": "Latn"
+  },
+  "maq": {
+    "autonym": "Chiquihuitlán Mazatec",
+    "english_name": "Chiquihuitlán Mazatec",
+    "default_script": "Latn"
+  },
+  "mar": {
+    "autonym": "मराठी",
+    "english_name": "Marathi",
+    "default_script": "Deva"
+  },
+  "mau": {
+    "autonym": "Huautla Mazatec",
+    "english_name": "Huautla Mazatec",
+    "default_script": "Latn"
+  },
+  "mav": {
+    "autonym": "Sateré-Mawé",
+    "english_name": "Sateré-Mawé",
+    "default_script": "Latn"
+  },
+  "maz": {
+    "autonym": "Central Mazahua",
+    "english_name": "Central Mazahua",
+    "default_script": "Latn"
+  },
+  "mbb": {
+    "autonym": "Western Bukidnon Manobo",
+    "english_name": "Western Bukidnon Manobo",
+    "default_script": "Latn"
+  },
+  "mbc": {
+    "autonym": "Macushi",
+    "english_name": "Macushi",
+    "default_script": "Latn"
+  },
+  "mbd": {
+    "autonym": "Dibabawon Manobo",
+    "english_name": "Dibabawon Manobo",
+    "default_script": "Latn"
+  },
+  "mbh": {
+    "autonym": "Mangseng",
+    "english_name": "Mangseng",
+    "default_script": "Latn"
+  },
+  "mbi": {
+    "autonym": "Ilianen Manobo",
+    "english_name": "Ilianen Manobo",
+    "default_script": "Latn"
+  },
+  "mbj": {
+    "autonym": "Nadëb",
+    "english_name": "Nadëb",
+    "default_script": "Latn"
+  },
+  "mbl": {
+    "autonym": "Maxakalí",
+    "english_name": "Maxakalí",
+    "default_script": "Latn"
+  },
+  "mbs": {
+    "autonym": "Sarangani Manobo",
+    "english_name": "Sarangani Manobo",
+    "default_script": "Latn"
+  },
+  "mbt": {
+    "autonym": "Matigsalug Manobo",
+    "english_name": "Matigsalug Manobo",
+    "default_script": "Latn"
+  },
+  "mbu": {
+    "autonym": "Mbula-Bwazza",
+    "english_name": "Mbula-Bwazza",
+    "default_script": "Latn"
+  },
+  "mca": {
+    "autonym": "Maca",
+    "english_name": "Maca",
+    "default_script": "Latn"
+  },
+  "mcb": {
+    "autonym": "Machiguenga",
+    "english_name": "Machiguenga",
+    "default_script": "Latn"
+  },
+  "mcd": {
+    "autonym": "Sharanahua",
+    "english_name": "Sharanahua",
+    "default_script": "Latn"
+  },
+  "mcf": {
+    "autonym": "Matsés",
+    "english_name": "Matsés",
+    "default_script": "Latn"
+  },
+  "mco": {
+    "autonym": "Coatlán Mixe",
+    "english_name": "Coatlán Mixe",
+    "default_script": "Latn"
+  },
+  "mcp": {
+    "autonym": "Makaa",
+    "english_name": "Makaa",
+    "default_script": "Latn"
+  },
+  "mcq": {
+    "autonym": "Ese",
+    "english_name": "Ese",
+    "default_script": "Latn"
+  },
+  "mcr": {
+    "autonym": "Menya",
+    "english_name": "Menya",
+    "default_script": "Latn"
+  },
+  "mcu": {
+    "autonym": "Cameroon Mambila",
+    "english_name": "Cameroon Mambila",
+    "default_script": "Latn"
+  },
+  "mdm": {
+    "autonym": "Mayogo",
+    "english_name": "Mayogo",
+    "default_script": "Latn"
+  },
+  "mdy": {
+    "autonym": "Male (Ethiopia)",
+    "english_name": "Male (Ethiopia)",
+    "default_script": "Latn"
+  },
+  "med": {
+    "autonym": "Melpa",
+    "english_name": "Melpa",
+    "default_script": "Latn"
+  },
+  "mee": {
+    "autonym": "Mengen",
+    "english_name": "Mengen",
+    "default_script": "Latn"
+  },
+  "mek": {
+    "autonym": "Mekeo",
+    "english_name": "Mekeo",
+    "default_script": "Latn"
+  },
+  "meq": {
+    "autonym": "Merey",
+    "english_name": "Merey",
+    "default_script": "Latn"
+  },
+  "met": {
+    "autonym": "Mato",
+    "english_name": "Mato",
+    "default_script": "Latn"
+  },
+  "meu": {
+    "autonym": "Motu",
+    "english_name": "Motu",
+    "default_script": "Latn"
+  },
+  "mey": {
+    "autonym": "Hassaniyya",
+    "english_name": "Hassaniyya",
+    "default_script": "Latn"
+  },
+  "mfh": {
+    "autonym": "Matal",
+    "english_name": "Matal",
+    "default_script": "Latn"
+  },
+  "mfi": {
+    "autonym": "Wandala",
+    "english_name": "Wandala",
+    "default_script": "Latn"
+  },
+  "mfm": {
+    "autonym": "Marghi South",
+    "english_name": "Marghi South",
+    "default_script": "Latn"
+  },
+  "mfo": {
+    "autonym": "Mbe",
+    "english_name": "Mbe",
+    "default_script": "Latn"
+  },
+  "mfx": {
+    "autonym": "Melo",
+    "english_name": "Melo",
+    "default_script": "Latn"
+  },
+  "mfy": {
+    "autonym": "Mayo",
+    "english_name": "Mayo",
+    "default_script": "Latn"
+  },
+  "mgc": {
+    "autonym": "Morokodo",
+    "english_name": "Morokodo",
+    "default_script": "Latn"
+  },
+  "mge": {
+    "autonym": "Mango",
+    "english_name": "Mango",
+    "default_script": "Latn"
+  },
+  "mgh": {
+    "autonym": "Makua",
+    "english_name": "Makhuwa-Meetto",
+    "default_script": "Latn"
+  },
+  "mgj": {
+    "autonym": "Abureni",
+    "english_name": "Abureni",
+    "default_script": "Latn"
+  },
+  "mgq": {
+    "autonym": "Malila",
+    "english_name": "Malila",
+    "default_script": "Latn"
+  },
+  "mgv": {
+    "autonym": "Matengo",
+    "english_name": "Matengo",
+    "default_script": "Latn"
+  },
+  "mgw": {
+    "autonym": "Matumbi",
+    "english_name": "Matumbi",
+    "default_script": "Latn"
+  },
+  "mhl": {
+    "autonym": "Mauwake",
+    "english_name": "Mauwake",
+    "default_script": "Latn"
+  },
+  "mib": {
+    "autonym": "Atatláhuca Mixtec",
+    "english_name": "Atatláhuca Mixtec",
+    "default_script": "Latn"
+  },
+  "mic": {
+    "autonym": "Lʼnuiʼsuti",
+    "english_name": "Mi'kmaw",
+    "default_script": "Latn"
+  },
+  "mie": {
+    "autonym": "Ocotepec Mixtec",
+    "english_name": "Ocotepec Mixtec",
+    "default_script": "Latn"
+  },
+  "mif": {
+    "autonym": "Mofu-Gudur",
+    "english_name": "Mofu-Gudur",
+    "default_script": "Latn"
+  },
+  "mig": {
+    "autonym": "San Miguel El Grande Mixtec",
+    "english_name": "San Miguel El Grande Mixtec",
+    "default_script": "Latn"
+  },
+  "mih": {
+    "autonym": "Chayuco Mixtec",
+    "english_name": "Chayuco Mixtec",
+    "default_script": "Latn"
+  },
+  "mil": {
+    "autonym": "Peñoles Mixtec",
+    "english_name": "Peñoles Mixtec",
+    "default_script": "Latn"
+  },
+  "mim": {
+    "autonym": "Alacatlatzala Mixtec",
+    "english_name": "Alacatlatzala Mixtec",
+    "default_script": "Latn"
+  },
+  "mio": {
+    "autonym": "Pinotepa Nacional Mixtec",
+    "english_name": "Pinotepa Nacional Mixtec",
+    "default_script": "Latn"
+  },
+  "mir": {
+    "autonym": "Isthmus Mixe",
+    "english_name": "Isthmus Mixe",
+    "default_script": "Latn"
+  },
+  "mit": {
+    "autonym": "Southern Puebla Mixtec",
+    "english_name": "Southern Puebla Mixtec",
+    "default_script": "Latn"
+  },
+  "miy": {
+    "autonym": "Ayutla Mixtec",
+    "english_name": "Ayutla Mixtec",
+    "default_script": "Latn"
+  },
+  "miz": {
+    "autonym": "Coatzospan Mixtec",
+    "english_name": "Coatzospan Mixtec",
+    "default_script": "Latn"
+  },
+  "mjc": {
+    "autonym": "San Juan Colorado Mixtec",
+    "english_name": "San Juan Colorado Mixtec",
+    "default_script": "Latn"
+  },
+  "mkj": {
+    "autonym": "Mokilese",
+    "english_name": "Mokilese",
+    "default_script": "Latn"
+  },
+  "mkl": {
+    "autonym": "Mokole",
+    "english_name": "Mokole",
+    "default_script": "Latn"
+  },
+  "mkn": {
+    "autonym": "Kupang Malay",
+    "english_name": "Kupang Malay",
+    "default_script": "Latn"
+  },
+  "mks": {
+    "autonym": "Silacayoapan Mixtec",
+    "english_name": "Silacayoapan Mixtec",
+    "default_script": "Latn"
+  },
+  "mkw": {
+    "autonym": "Kituba (Congo)",
+    "english_name": "Kituba (Congo)",
+    "default_script": "Latn"
+  },
+  "mle": {
+    "autonym": "Manambu",
+    "english_name": "Manambu",
+    "default_script": "Latn"
+  },
+  "mlh": {
+    "autonym": "Mape",
+    "english_name": "Mape",
+    "default_script": "Latn"
+  },
+  "mlp": {
+    "autonym": "Bargam",
+    "english_name": "Bargam",
+    "default_script": "Latn"
+  },
+  "mmn": {
+    "autonym": "Mamanwa",
+    "english_name": "Mamanwa",
+    "default_script": "Latn"
+  },
+  "mmo": {
+    "autonym": "Mangga Buang",
+    "english_name": "Mangga Buang",
+    "default_script": "Latn"
+  },
+  "mmx": {
+    "autonym": "Madak",
+    "english_name": "Madak",
+    "default_script": "Latn"
+  },
+  "mna": {
+    "autonym": "Mbula",
+    "english_name": "Mbula",
+    "default_script": "Latn"
+  },
+  "mnh": {
+    "autonym": "Mono (Democratic Republic of Congo)",
+    "english_name": "Mono (Democratic Republic of Congo)",
+    "default_script": "Latn"
+  },
+  "mni": {
+    "autonym": "মৈতৈলোন্",
+    "english_name": "Manipuri",
+    "default_script": "Beng"
+  },
+  "mnv": {
+    "autonym": "Rennell-Bellona",
+    "english_name": "Rennell-Bellona",
+    "default_script": "Latn"
+  },
+  "moa": {
+    "autonym": "Mwan",
+    "english_name": "Mwan",
+    "default_script": "Latn"
+  },
+  "mop": {
+    "autonym": "Mopán Maya",
+    "english_name": "Mopán Maya",
+    "default_script": "Latn"
+  },
+  "mox": {
+    "autonym": "Molima",
+    "english_name": "Molima",
+    "default_script": "Latn"
+  },
+  "moz": {
+    "autonym": "Mukulu",
+    "english_name": "Mukulu",
+    "default_script": "Latn"
+  },
+  "mpa": {
+    "autonym": "Mpoto",
+    "english_name": "Mpoto",
+    "default_script": "Latn"
+  },
+  "mph": {
+    "autonym": "Maung",
+    "english_name": "Maung",
+    "default_script": "Latn"
+  },
+  "mpj": {
+    "autonym": "Martu Wangka",
+    "english_name": "Martu Wangka",
+    "default_script": "Latn"
+  },
+  "mpm": {
+    "autonym": "Yosondúa Mixtec",
+    "english_name": "Yosondúa Mixtec",
+    "default_script": "Latn"
+  },
+  "mpp": {
+    "autonym": "Migabac",
+    "english_name": "Migabac",
+    "default_script": "Latn"
+  },
+  "mps": {
+    "autonym": "Dadibi",
+    "english_name": "Dadibi",
+    "default_script": "Latn"
+  },
+  "mpt": {
+    "autonym": "Mian",
+    "english_name": "Mian",
+    "default_script": "Latn"
+  },
+  "mpx": {
+    "autonym": "Misima-Panaeati",
+    "english_name": "Misima-Panaeati",
+    "default_script": "Latn"
+  },
+  "mqb": {
+    "autonym": "Mbuko",
+    "english_name": "Mbuko",
+    "default_script": "Latn"
+  },
+  "mqj": {
+    "autonym": "Mamasa",
+    "english_name": "Mamasa",
+    "default_script": "Latn"
+  },
+  "mrr": {
+    "autonym": "Maria (India)",
+    "english_name": "Maria (India)",
+    "default_script": "Latn"
+  },
+  "msb": {
+    "autonym": "Masbatenyo",
+    "english_name": "Masbatenyo",
+    "default_script": "Latn"
+  },
+  "msc": {
+    "autonym": "Sankaran Maninka",
+    "english_name": "Sankaran Maninka",
+    "default_script": "Latn"
+  },
+  "msk": {
+    "autonym": "Mansaka",
+    "english_name": "Mansaka",
+    "default_script": "Latn"
+  },
+  "msm": {
+    "autonym": "Agusan Manobo",
+    "english_name": "Agusan Manobo",
+    "default_script": "Latn"
+  },
+  "msy": {
+    "autonym": "Aruamu",
+    "english_name": "Aruamu",
+    "default_script": "Latn"
+  },
+  "mta": {
+    "autonym": "Cotabato Manobo",
+    "english_name": "Cotabato Manobo",
+    "default_script": "Latn"
+  },
+  "mti": {
+    "autonym": "Maiwa (Papua New Guinea)",
+    "english_name": "Maiwa (Papua New Guinea)",
+    "default_script": "Latn"
+  },
+  "mto": {
+    "autonym": "Totontepec Mixe",
+    "english_name": "Totontepec Mixe",
+    "default_script": "Latn"
+  },
+  "muh": {
+    "autonym": "Mündü",
+    "english_name": "Mündü",
+    "default_script": "Latn"
+  },
+  "mur": {
+    "autonym": "Murle",
+    "english_name": "Murle",
+    "default_script": "Latn"
+  },
+  "mux": {
+    "autonym": "Bo-Ung",
+    "english_name": "Bo-Ung",
+    "default_script": "Latn"
+  },
+  "muy": {
+    "autonym": "Muyang",
+    "english_name": "Muyang",
+    "default_script": "Latn"
+  },
+  "mva": {
+    "autonym": "Manam",
+    "english_name": "Manam",
+    "default_script": "Latn"
+  },
+  "mvn": {
+    "autonym": "Minaveha",
+    "english_name": "Minaveha",
+    "default_script": "Latn"
+  },
+  "mwc": {
+    "autonym": "Are",
+    "english_name": "Are",
+    "default_script": "Latn"
+  },
+  "mwe": {
+    "autonym": "Mwera (Chimwera)",
+    "english_name": "Mwera (Chimwera)",
+    "default_script": "Latn"
+  },
+  "mwf": {
+    "autonym": "Murrinh-Patha",
+    "english_name": "Murrinh-Patha",
+    "default_script": "Latn"
+  },
+  "mwp": {
+    "autonym": "Kala Lagaw Ya",
+    "english_name": "Kala Lagaw Ya",
+    "default_script": "Latn"
+  },
+  "mxb": {
+    "autonym": "Tezoatlán Mixtec",
+    "english_name": "Tezoatlán Mixtec",
+    "default_script": "Latn"
+  },
+  "mxm": {
+    "autonym": "Meramera",
+    "english_name": "Meramera",
+    "default_script": "Latn"
+  },
+  "mxp": {
+    "autonym": "Tlahuitoltepec Mixe",
+    "english_name": "Tlahuitoltepec Mixe",
+    "default_script": "Latn"
+  },
+  "mxq": {
+    "autonym": "Juquila Mixe",
+    "english_name": "Juquila Mixe",
+    "default_script": "Latn"
+  },
+  "mxt": {
+    "autonym": "Jamiltepec Mixtec",
+    "english_name": "Jamiltepec Mixtec",
+    "default_script": "Latn"
+  },
+  "mxv": {
+    "autonym": "Metlatónoc Mixtec",
+    "english_name": "Metlatónoc Mixtec",
+    "default_script": "Latn"
+  },
+  "mya": {
+    "autonym": "မြန်မာ",
+    "english_name": "Burmese",
+    "default_script": "Mymr"
+  },
+  "myk": {
+    "autonym": "Mamara Senoufo",
+    "english_name": "Mamara Senoufo",
+    "default_script": "Latn"
+  },
+  "myu": {
+    "autonym": "Mundurukú",
+    "english_name": "Mundurukú",
+    "default_script": "Latn"
+  },
+  "myw": {
+    "autonym": "Muyuw",
+    "english_name": "Muyuw",
+    "default_script": "Latn"
+  },
+  "myy": {
+    "autonym": "Macuna",
+    "english_name": "Macuna",
+    "default_script": "Latn"
+  },
+  "mza": {
+    "autonym": "Santa María Zacatepec Mixtec",
+    "english_name": "Santa María Zacatepec Mixtec",
+    "default_script": "Latn"
+  },
+  "mzq": {
+    "autonym": "Mori Atas",
+    "english_name": "Mori Atas",
+    "default_script": "Latn"
+  },
+  "mzz": {
+    "autonym": "Maiadomu",
+    "english_name": "Maiadomu",
+    "default_script": "Latn"
+  },
+  "nab": {
+    "autonym": "Southern Nambikuára",
+    "english_name": "Southern Nambikuára",
+    "default_script": "Latn"
+  },
+  "naf": {
+    "autonym": "Nabak",
+    "english_name": "Nabak",
+    "default_script": "Latn"
+  },
+  "nag": {
+    "autonym": "Naga Pidgin",
+    "english_name": "Naga Pidgin",
+    "default_script": "Latn"
+  },
+  "nak": {
+    "autonym": "Nakanai",
+    "english_name": "Nakanai",
+    "default_script": "Latn"
+  },
+  "nal": {
+    "autonym": "Nalik",
+    "english_name": "Nalik",
+    "default_script": "Latn"
+  },
+  "nas": {
+    "autonym": "Naasioi",
+    "english_name": "Naasioi",
+    "default_script": "Latn"
+  },
+  "naw": {
+    "autonym": "Nawuri",
+    "english_name": "Nawuri",
+    "default_script": "Latn"
+  },
+  "nay": {
+    "autonym": "Ngarrindjeri",
+    "english_name": "Ngarrindjeri",
+    "default_script": "Latn"
+  },
+  "nbq": {
+    "autonym": "Nggem",
+    "english_name": "Nggem",
+    "default_script": "Latn"
+  },
+  "nca": {
+    "autonym": "Iyo",
+    "english_name": "Iyo",
+    "default_script": "Latn"
+  },
+  "nce": {
+    "autonym": "Yale",
+    "english_name": "Yale",
+    "default_script": "Latn"
+  },
+  "ncf": {
+    "autonym": "Notsi",
+    "english_name": "Notsi",
+    "default_script": "Latn"
+  },
+  "nch": {
+    "autonym": "Central Huasteca Nahuatl",
+    "english_name": "Central Huasteca Nahuatl",
+    "default_script": "Latn"
+  },
+  "ncj": {
+    "autonym": "Northern Puebla Nahuatl",
+    "english_name": "Northern Puebla Nahuatl",
+    "default_script": "Latn"
+  },
+  "nck": {
+    "autonym": "Na-kara",
+    "english_name": "Na-kara",
+    "default_script": "Latn"
+  },
+  "ncl": {
+    "autonym": "Michoacán Nahuatl",
+    "english_name": "Michoacán Nahuatl",
+    "default_script": "Latn"
+  },
+  "ncq": {
+    "autonym": "Northern Katang",
+    "english_name": "Northern Katang",
+    "default_script": "Latn"
+  },
+  "ncr": {
+    "autonym": "Ncane",
+    "english_name": "Ncane",
+    "default_script": "Latn"
+  },
+  "ncu": {
+    "autonym": "Chumburung",
+    "english_name": "Chumburung",
+    "default_script": "Latn"
+  },
+  "nde": {
+    "autonym": "isiNdebele",
+    "english_name": "North Ndebele",
+    "default_script": "Latn"
+  },
+  "ndg": {
+    "autonym": "Ndengereko",
+    "english_name": "Ndengereko",
+    "default_script": "Latn"
+  },
+  "ndh": {
+    "autonym": "Ndali",
+    "english_name": "Ndali",
+    "default_script": "Latn"
+  },
+  "ndj": {
+    "autonym": "Ndamba",
+    "english_name": "Ndamba",
+    "default_script": "Latn"
+  },
+  "ndv": {
+    "autonym": "Ndut",
+    "english_name": "Ndut",
+    "default_script": "Latn"
+  },
+  "ndz": {
+    "autonym": "Ndogo",
+    "english_name": "Ndogo",
+    "default_script": "Latn"
+  },
+  "new": {
+    "autonym": "Newari",
+    "english_name": "Newari",
+    "default_script": "Deva"
+  },
+  "nfa": {
+    "autonym": "Dhao",
+    "english_name": "Dhao",
+    "default_script": "Latn"
+  },
+  "ngp": {
+    "autonym": "Ngulu",
+    "english_name": "Ngulu",
+    "default_script": "Latn"
+  },
+  "ngu": {
+    "autonym": "Guerrero Nahuatl",
+    "english_name": "Guerrero Nahuatl",
+    "default_script": "Latn"
+  },
+  "nhe": {
+    "autonym": "Eastern Huasteca Nahuatl",
+    "english_name": "Eastern Huasteca Nahuatl",
+    "default_script": "Latn"
+  },
+  "nhg": {
+    "autonym": "Tetelcingo Nahuatl",
+    "english_name": "Tetelcingo Nahuatl",
+    "default_script": "Latn"
+  },
+  "nhi": {
+    "autonym": "Zacatlán-Ahuacatlán-Tepetzintla Nahuatl",
+    "english_name": "Zacatlán-Ahuacatlán-Tepetzintla Nahuatl",
+    "default_script": "Latn"
+  },
+  "nho": {
+    "autonym": "Takuu",
+    "english_name": "Takuu",
+    "default_script": "Latn"
+  },
+  "nhr": {
+    "autonym": "Naro",
+    "english_name": "Naro",
+    "default_script": "Latn"
+  },
+  "nhu": {
+    "autonym": "Noone",
+    "english_name": "Noone",
+    "default_script": "Latn"
+  },
+  "nhw": {
+    "autonym": "Western Huasteca Nahuatl",
+    "english_name": "Western Huasteca Nahuatl",
+    "default_script": "Latn"
+  },
+  "nhx": {
+    "autonym": "Isthmus-Mecayapan Nahuatl",
+    "english_name": "Isthmus-Mecayapan Nahuatl",
+    "default_script": "Latn"
+  },
+  "nhy": {
+    "autonym": "Northern Oaxaca Nahuatl",
+    "english_name": "Northern Oaxaca Nahuatl",
+    "default_script": "Latn"
+  },
+  "nif": {
+    "autonym": "Nek",
+    "english_name": "Nek",
+    "default_script": "Latn"
+  },
+  "nii": {
+    "autonym": "Nii",
+    "english_name": "Nii",
+    "default_script": "Latn"
+  },
+  "nin": {
+    "autonym": "Ninzo",
+    "english_name": "Ninzo",
+    "default_script": "Latn"
+  },
+  "nit": {
+    "autonym": "Southeastern Kolami",
+    "english_name": "Southeastern Kolami",
+    "default_script": "Latn"
+  },
+  "niy": {
+    "autonym": "Ngiti",
+    "english_name": "Ngiti",
+    "default_script": "Latn"
+  },
+  "njd": {
+    "autonym": "Ndonde Hamba",
+    "english_name": "Ndonde Hamba",
+    "default_script": "Latn"
+  },
+  "nkn": {
+    "autonym": "Nkangala",
+    "english_name": "Nkangala",
+    "default_script": "Latn"
+  },
+  "nko": {
+    "autonym": "Nkonya",
+    "english_name": "Nkonya",
+    "default_script": "Latn"
+  },
+  "nkr": {
+    "autonym": "Nukuoro",
+    "english_name": "Nukuoro",
+    "default_script": "Latn"
+  },
+  "nld": {
+    "autonym": "Nederlands",
+    "english_name": "Dutch",
+    "default_script": "Latn"
+  },
+  "nlg": {
+    "autonym": "Gela",
+    "english_name": "Gela",
+    "default_script": "Latn"
+  },
+  "nlx": {
+    "autonym": "Nahali",
+    "english_name": "Nahali",
+    "default_script": "Latn"
+  },
+  "nmw": {
+    "autonym": "Nimoa",
+    "english_name": "Nimoa",
+    "default_script": "Latn"
+  },
+  "nna": {
+    "autonym": "Nyangumarta",
+    "english_name": "Nyangumarta",
+    "default_script": "Latn"
+  },
+  "nnq": {
+    "autonym": "Ngindo",
+    "english_name": "Ngindo",
+    "default_script": "Latn"
+  },
+  "nnw": {
+    "autonym": "Southern Nuni",
+    "english_name": "Southern Nuni",
+    "default_script": "Latn"
+  },
+  "noa": {
+    "autonym": "Woun Meu",
+    "english_name": "Woun Meu",
+    "default_script": "Latn"
+  },
+  "nob": {
+    "autonym": "norsk bokmål",
+    "english_name": "Norwegian Bokmål",
+    "default_script": "Latn"
+  },
+  "nod": {
+    "autonym": "Northern Thai",
+    "english_name": "Northern Thai",
+    "default_script": "Lana"
+  },
+  "nop": {
+    "autonym": "Numanggang",
+    "english_name": "Numanggang",
+    "default_script": "Latn"
+  },
+  "not": {
+    "autonym": "Nomatsiguenga",
+    "english_name": "Nomatsiguenga",
+    "default_script": "Latn"
+  },
+  "nou": {
+    "autonym": "Ewage-Notu",
+    "english_name": "Ewage-Notu",
+    "default_script": "Latn"
+  },
+  "npi": {
+    "autonym": "नेपाली",
+    "english_name": "Nepali (individual language)",
+    "default_script": "Deva"
+  },
+  "npl": {
+    "autonym": "Southeastern Puebla Nahuatl",
+    "english_name": "Southeastern Puebla Nahuatl",
+    "default_script": "Latn"
+  },
+  "nrz": {
+    "autonym": "Lala",
+    "english_name": "Lala",
+    "default_script": "Latn"
+  },
+  "nsn": {
+    "autonym": "Nehan",
+    "english_name": "Nehan",
+    "default_script": "Latn"
+  },
+  "nss": {
+    "autonym": "Nali",
+    "english_name": "Nali",
+    "default_script": "Latn"
+  },
+  "nsu": {
+    "autonym": "Sierra Negra Nahuatl",
+    "english_name": "Sierra Negra Nahuatl",
+    "default_script": "Latn"
+  },
+  "ntj": {
+    "autonym": "Ngaanyatjarra",
+    "english_name": "Ngaanyatjarra",
+    "default_script": "Latn"
+  },
+  "ntp": {
+    "autonym": "Northern Tepehuan",
+    "english_name": "Northern Tepehuan",
+    "default_script": "Latn"
+  },
+  "ntr": {
+    "autonym": "Delo",
+    "english_name": "Delo",
+    "default_script": "Latn"
+  },
+  "ntu": {
+    "autonym": "Natügu",
+    "english_name": "Natügu",
+    "default_script": "Latn"
+  },
+  "nuj": {
+    "autonym": "Nyole",
+    "english_name": "Nyole",
+    "default_script": "Latn"
+  },
+  "num": {
+    "autonym": "Niuafo'ou",
+    "english_name": "Niuafo'ou",
+    "default_script": "Latn"
+  },
+  "nuq": {
+    "autonym": "Nukumanu",
+    "english_name": "Nukumanu",
+    "default_script": "Latn"
+  },
+  "nuy": {
+    "autonym": "Nunggubuyu",
+    "english_name": "Nunggubuyu",
+    "default_script": "Latn"
+  },
+  "nvm": {
+    "autonym": "Namiae",
+    "english_name": "Namiae",
+    "default_script": "Latn"
+  },
+  "nwb": {
+    "autonym": "Nyabwa",
+    "english_name": "Nyabwa",
+    "default_script": "Latn"
+  },
+  "nwi": {
+    "autonym": "Southwest Tanna",
+    "english_name": "Southwest Tanna",
+    "default_script": "Latn"
+  },
+  "nww": {
+    "autonym": "Unknown language [nww]",
+    "english_name": "Unknown language [nww]",
+    "default_script": "Latn"
+  },
+  "nxl": {
+    "autonym": "South Nuaulu",
+    "english_name": "South Nuaulu",
+    "default_script": "Latn"
+  },
+  "nya": {
+    "autonym": "Nyanja",
+    "english_name": "Nyanja",
+    "default_script": "Latn"
+  },
+  "nyf": {
+    "autonym": "Giryama",
+    "english_name": "Giryama",
+    "default_script": "Latn"
+  },
+  "nys": {
+    "autonym": "Nyungar",
+    "english_name": "Nyungar",
+    "default_script": "Latn"
+  },
+  "nyu": {
+    "autonym": "Nyungwe",
+    "english_name": "Nyungwe",
+    "default_script": "Latn"
+  },
+  "nyy": {
+    "autonym": "Nyakyusa-Ngonde",
+    "english_name": "Nyakyusa-Ngonde",
+    "default_script": "Latn"
+  },
+  "obo": {
+    "autonym": "Obo Manobo",
+    "english_name": "Obo Manobo",
+    "default_script": "Latn"
+  },
+  "okv": {
+    "autonym": "Orokaiva",
+    "english_name": "Orokaiva",
+    "default_script": "Latn"
+  },
+  "omb": {
+    "autonym": "East Ambae",
+    "english_name": "East Ambae",
+    "default_script": "Latn"
+  },
+  "omw": {
+    "autonym": "South Tairora",
+    "english_name": "South Tairora",
+    "default_script": "Latn"
+  },
+  "ong": {
+    "autonym": "Olo",
+    "english_name": "Olo",
+    "default_script": "Latn"
+  },
+  "ons": {
+    "autonym": "Ono",
+    "english_name": "Ono",
+    "default_script": "Latn"
+  },
+  "ood": {
+    "autonym": "Tohono O'odham",
+    "english_name": "Tohono O'odham",
+    "default_script": "Latn"
+  },
+  "opm": {
+    "autonym": "Oksapmin",
+    "english_name": "Oksapmin",
+    "default_script": "Latn"
+  },
+  "ory": {
+    "autonym": "ଓଡ଼ିଆ",
+    "english_name": "Odia (individual language)",
+    "default_script": "Orya"
+  },
+  "ote": {
+    "autonym": "Mezquital Otomi",
+    "english_name": "Mezquital Otomi",
+    "default_script": "Latn"
+  },
+  "otm": {
+    "autonym": "Eastern Highland Otomi",
+    "english_name": "Eastern Highland Otomi",
+    "default_script": "Latn"
+  },
+  "otn": {
+    "autonym": "Tenango Otomi",
+    "english_name": "Tenango Otomi",
+    "default_script": "Latn"
+  },
+  "otq": {
+    "autonym": "Querétaro Otomi",
+    "english_name": "Querétaro Otomi",
+    "default_script": "Latn"
+  },
+  "ots": {
+    "autonym": "Estado de México Otomi",
+    "english_name": "Estado de México Otomi",
+    "default_script": "Latn"
+  },
+  "oyd": {
+    "autonym": "Oyda",
+    "english_name": "Oyda",
+    "default_script": "Latn"
+  },
+  "pab": {
+    "autonym": "Parecís",
+    "english_name": "Parecís",
+    "default_script": "Latn"
+  },
+  "pac": {
+    "autonym": "Pacoh",
+    "english_name": "Pacoh",
+    "default_script": "Latn"
+  },
+  "pad": {
+    "autonym": "Paumarí",
+    "english_name": "Paumarí",
+    "default_script": "Latn"
+  },
+  "pah": {
+    "autonym": "Tenharim",
+    "english_name": "Tenharim",
+    "default_script": "Latn"
+  },
+  "pan": {
+    "autonym": "ਪੰਜਾਬੀ",
+    "english_name": "Punjabi",
+    "default_script": "Guru"
+  },
+  "pao": {
+    "autonym": "Northern Paiute",
+    "english_name": "Northern Paiute",
+    "default_script": "Latn"
+  },
+  "pbb": {
+    "autonym": "Páez",
+    "english_name": "Páez",
+    "default_script": "Latn"
+  },
+  "pcm": {
+    "autonym": "Naijíriá Píjin",
+    "english_name": "Nigerian Pidgin",
+    "default_script": "Latn"
+  },
+  "pdc": {
+    "autonym": "Pennsylvania German",
+    "english_name": "Pennsylvania German",
+    "default_script": "Latn"
+  },
+  "pdo": {
+    "autonym": "Padoe",
+    "english_name": "Padoe",
+    "default_script": "Latn"
+  },
+  "peg": {
+    "autonym": "Pengo",
+    "english_name": "Pengo",
+    "default_script": "Latn"
+  },
+  "pes": {
+    "autonym": "فارسی",
+    "english_name": "Iranian Persian",
+    "default_script": "Arab"
+  },
+  "pga": {
+    "autonym": "Sudanese Creole Arabic",
+    "english_name": "Sudanese Creole Arabic",
+    "default_script": "Latn"
+  },
+  "pib": {
+    "autonym": "Yine",
+    "english_name": "Yine",
+    "default_script": "Latn"
+  },
+  "pio": {
+    "autonym": "Piapoco",
+    "english_name": "Piapoco",
+    "default_script": "Latn"
+  },
+  "pir": {
+    "autonym": "Piratapuyo",
+    "english_name": "Piratapuyo",
+    "default_script": "Latn"
+  },
+  "piu": {
+    "autonym": "Pintupi-Luritja",
+    "english_name": "Pintupi-Luritja",
+    "default_script": "Latn"
+  },
+  "pjt": {
+    "autonym": "Pitjantjatjara",
+    "english_name": "Pitjantjatjara",
+    "default_script": "Latn"
+  },
+  "plj": {
+    "autonym": "Polci",
+    "english_name": "Polci",
+    "default_script": "Latn"
+  },
+  "pll": {
+    "autonym": "Shwe Palaung",
+    "english_name": "Shwe Palaung",
+    "default_script": "Latn"
+  },
+  "pls": {
+    "autonym": "San Marcos Tlacoyalco Popoloca",
+    "english_name": "San Marcos Tlacoyalco Popoloca",
+    "default_script": "Latn"
+  },
+  "plu": {
+    "autonym": "Palikúr",
+    "english_name": "Palikúr",
+    "default_script": "Latn"
+  },
+  "plw": {
+    "autonym": "Brooke's Point Palawano",
+    "english_name": "Brooke's Point Palawano",
+    "default_script": "Latn"
+  },
+  "pma": {
+    "autonym": "Paama",
+    "english_name": "Paama",
+    "default_script": "Latn"
+  },
+  "pmy": {
+    "autonym": "Papuan Malay",
+    "english_name": "Papuan Malay",
+    "default_script": "Latn"
+  },
+  "poe": {
+    "autonym": "San Juan Atzingo Popoloca",
+    "english_name": "San Juan Atzingo Popoloca",
+    "default_script": "Latn"
+  },
+  "poh": {
+    "autonym": "Poqomchi'",
+    "english_name": "Poqomchi'",
+    "default_script": "Latn"
+  },
+  "poi": {
+    "autonym": "Highland Popoluca",
+    "english_name": "Highland Popoluca",
+    "default_script": "Latn"
+  },
+  "pol": {
+    "autonym": "polski",
+    "english_name": "Polish",
+    "default_script": "Latn"
+  },
+  "pon": {
+    "autonym": "Pohnpeian",
+    "english_name": "Pohnpeian",
+    "default_script": "Latn"
+  },
+  "por": {
+    "autonym": "português",
+    "english_name": "Portuguese",
+    "default_script": "Latn"
+  },
+  "poy": {
+    "autonym": "Pogolo",
+    "english_name": "Pogolo",
+    "default_script": "Latn"
+  },
+  "ppo": {
+    "autonym": "Folopa",
+    "english_name": "Folopa",
+    "default_script": "Latn"
+  },
+  "pps": {
+    "autonym": "San Luís Temalacayuca Popoloca",
+    "english_name": "San Luís Temalacayuca Popoloca",
+    "default_script": "Latn"
+  },
+  "prf": {
+    "autonym": "Paranan",
+    "english_name": "Paranan",
+    "default_script": "Latn"
+  },
+  "pri": {
+    "autonym": "Paicî",
+    "english_name": "Paicî",
+    "default_script": "Latn"
+  },
+  "prq": {
+    "autonym": "Ashéninka Perené",
+    "english_name": "Ashéninka Perené",
+    "default_script": "Latn"
+  },
+  "ptp": {
+    "autonym": "Patep",
+    "english_name": "Patep",
+    "default_script": "Latn"
+  },
+  "ptu": {
+    "autonym": "Bambam",
+    "english_name": "Bambam",
+    "default_script": "Latn"
+  },
+  "pub": {
+    "autonym": "Purum",
+    "english_name": "Purum",
+    "default_script": "Latn"
+  },
+  "puu": {
+    "autonym": "Punu",
+    "english_name": "Punu",
+    "default_script": "Latn"
+  },
+  "pwg": {
+    "autonym": "Gapapaiwa",
+    "english_name": "Gapapaiwa",
+    "default_script": "Latn"
+  },
+  "pwr": {
+    "autonym": "Powari",
+    "english_name": "Powari",
+    "default_script": "Latn"
+  },
+  "qub": {
+    "autonym": "Huallaga Huánuco Quechua",
+    "english_name": "Huallaga Huánuco Quechua",
+    "default_script": "Latn"
+  },
+  "quc": {
+    "autonym": "Kʼicheʼ",
+    "english_name": "Kʼicheʼ",
+    "default_script": "Latn"
+  },
+  "quf": {
+    "autonym": "Lambayeque Quechua",
+    "english_name": "Lambayeque Quechua",
+    "default_script": "Latn"
+  },
+  "quh": {
+    "autonym": "South Bolivian Quechua",
+    "english_name": "South Bolivian Quechua",
+    "default_script": "Latn"
+  },
+  "qul": {
+    "autonym": "North Bolivian Quechua",
+    "english_name": "North Bolivian Quechua",
+    "default_script": "Latn"
+  },
+  "qup": {
+    "autonym": "Southern Pastaza Quechua",
+    "english_name": "Southern Pastaza Quechua",
+    "default_script": "Latn"
+  },
+  "qva": {
+    "autonym": "Ambo-Pasco Quechua",
+    "english_name": "Ambo-Pasco Quechua",
+    "default_script": "Latn"
+  },
+  "qvc": {
+    "autonym": "Cajamarca Quechua",
+    "english_name": "Cajamarca Quechua",
+    "default_script": "Latn"
+  },
+  "qve": {
+    "autonym": "Eastern Apurímac Quechua",
+    "english_name": "Eastern Apurímac Quechua",
+    "default_script": "Latn"
+  },
+  "qvh": {
+    "autonym": "Huamalíes-Dos de Mayo Huánuco Quechua",
+    "english_name": "Huamalíes-Dos de Mayo Huánuco Quechua",
+    "default_script": "Latn"
+  },
+  "qvm": {
+    "autonym": "Margos-Yarowilca-Lauricocha Quechua",
+    "english_name": "Margos-Yarowilca-Lauricocha Quechua",
+    "default_script": "Latn"
+  },
+  "qvn": {
+    "autonym": "North Junín Quechua",
+    "english_name": "North Junín Quechua",
+    "default_script": "Latn"
+  },
+  "qvo": {
+    "autonym": "Napo Lowland Quechua",
+    "english_name": "Napo Lowland Quechua",
+    "default_script": "Latn"
+  },
+  "qvs": {
+    "autonym": "San Martín Quechua",
+    "english_name": "San Martín Quechua",
+    "default_script": "Latn"
+  },
+  "qvw": {
+    "autonym": "Huaylla Wanca Quechua",
+    "english_name": "Huaylla Wanca Quechua",
+    "default_script": "Latn"
+  },
+  "qvz": {
+    "autonym": "Northern Pastaza Quichua",
+    "english_name": "Northern Pastaza Quichua",
+    "default_script": "Latn"
+  },
+  "qwh": {
+    "autonym": "Huaylas Ancash Quechua",
+    "english_name": "Huaylas Ancash Quechua",
+    "default_script": "Latn"
+  },
+  "qxh": {
+    "autonym": "Panao Huánuco Quechua",
+    "english_name": "Panao Huánuco Quechua",
+    "default_script": "Latn"
+  },
+  "qxl": {
+    "autonym": "Salasaca Highland Quichua",
+    "english_name": "Salasaca Highland Quichua",
+    "default_script": "Latn"
+  },
+  "qxn": {
+    "autonym": "Northern Conchucos Ancash Quechua",
+    "english_name": "Northern Conchucos Ancash Quechua",
+    "default_script": "Latn"
+  },
+  "qxo": {
+    "autonym": "Southern Conchucos Ancash Quechua",
+    "english_name": "Southern Conchucos Ancash Quechua",
+    "default_script": "Latn"
+  },
+  "rai": {
+    "autonym": "Ramoaaina",
+    "english_name": "Ramoaaina",
+    "default_script": "Latn"
+  },
+  "ram": {
+    "autonym": "Canela",
+    "english_name": "Canela",
+    "default_script": "Latn"
+  },
+  "reg": {
+    "autonym": "Kara (Tanzania)",
+    "english_name": "Kara (Tanzania)",
+    "default_script": "Latn"
+  },
+  "rei": {
+    "autonym": "Reli",
+    "english_name": "Reli",
+    "default_script": "Latn"
+  },
+  "rgu": {
+    "autonym": "Ringgou",
+    "english_name": "Ringgou",
+    "default_script": "Latn"
+  },
+  "rhg": {
+    "autonym": "𐴌𐴗𐴥𐴝𐴙𐴚𐴒𐴙𐴝",
+    "english_name": "Rohingya",
+    "default_script": "Rohg"
+  },
+  "rif": {
+    "autonym": "Tarifit",
+    "english_name": "Riffian",
+    "default_script": "Tfng"
+  },
+  "rkb": {
+    "autonym": "Rikbaktsa",
+    "english_name": "Rikbaktsa",
+    "default_script": "Latn"
+  },
+  "rki": {
+    "autonym": "Rakhine",
+    "english_name": "Rakhine",
+    "default_script": "Latn"
+  },
+  "rmb": {
+    "autonym": "Rembarrnga",
+    "english_name": "Rembarrnga",
+    "default_script": "Latn"
+  },
+  "rmc": {
+    "autonym": "Carpathian Romani",
+    "english_name": "Carpathian Romani",
+    "default_script": "Latn"
+  },
+  "rmn": {
+    "autonym": "Balkan Romani",
+    "english_name": "Balkan Romani",
+    "default_script": "Latn"
+  },
+  "rmy": {
+    "autonym": "Romany",
+    "english_name": "Vlax Romani",
+    "default_script": "Latn"
+  },
+  "rol": {
+    "autonym": "Romblomanon",
+    "english_name": "Romblomanon",
+    "default_script": "Latn"
+  },
+  "ron": {
+    "autonym": "română",
+    "english_name": "Romanian",
+    "default_script": "Latn"
+  },
+  "roo": {
+    "autonym": "Rotokas",
+    "english_name": "Rotokas",
+    "default_script": "Latn"
+  },
+  "rop": {
+    "autonym": "Kriol",
+    "english_name": "Kriol",
+    "default_script": "Latn"
+  },
+  "row": {
+    "autonym": "Dela-Oenale",
+    "english_name": "Dela-Oenale",
+    "default_script": "Latn"
+  },
+  "rro": {
+    "autonym": "Waima",
+    "english_name": "Waima",
+    "default_script": "Latn"
+  },
+  "rub": {
+    "autonym": "Gungu",
+    "english_name": "Gungu",
+    "default_script": "Latn"
+  },
+  "ruf": {
+    "autonym": "Luguru",
+    "english_name": "Luguru",
+    "default_script": "Latn"
+  },
+  "rug": {
+    "autonym": "Roviana",
+    "english_name": "Roviana",
+    "default_script": "Latn"
+  },
+  "rup": {
+    "autonym": "armãneashti",
+    "english_name": "Aromanian",
+    "default_script": "Latn"
+  },
+  "rus": {
+    "autonym": "русский",
+    "english_name": "Russian",
+    "default_script": "Cyrl"
+  },
+  "rwo": {
+    "autonym": "Rawa",
+    "english_name": "Rawa",
+    "default_script": "Latn"
+  },
+  "sab": {
+    "autonym": "Buglere",
+    "english_name": "Buglere",
+    "default_script": "Latn"
+  },
+  "san": {
+    "autonym": "संस्कृत भाषा",
+    "english_name": "Sanskrit",
+    "default_script": "Deva"
+  },
+  "sav": {
+    "autonym": "Saafi-Saafi",
+    "english_name": "Saafi-Saafi",
+    "default_script": "Latn"
+  },
+  "sbe": {
+    "autonym": "Saliba",
+    "english_name": "Saliba",
+    "default_script": "Latn"
+  },
+  "sbk": {
+    "autonym": "Safwa",
+    "english_name": "Safwa",
+    "default_script": "Latn"
+  },
+  "sbl": {
+    "autonym": "Botolan Sambal",
+    "english_name": "Botolan Sambal",
+    "default_script": "Latn"
+  },
+  "sbs": {
+    "autonym": "Subiya",
+    "english_name": "Subiya",
+    "default_script": "Latn"
+  },
+  "sby": {
+    "autonym": "Soli",
+    "english_name": "Soli",
+    "default_script": "Latn"
+  },
+  "sce": {
+    "autonym": "Dongxiang",
+    "english_name": "Dongxiang",
+    "default_script": "Latn"
+  },
+  "sch": {
+    "autonym": "Sakachep",
+    "english_name": "Sakachep",
+    "default_script": "Latn"
+  },
+  "seh": {
+    "autonym": "sena",
+    "english_name": "Sena",
+    "default_script": "Latn"
+  },
+  "ses": {
+    "autonym": "Koyraboro senni",
+    "english_name": "Koyraboro Senni",
+    "default_script": "Latn"
+  },
+  "set": {
+    "autonym": "Sentani",
+    "english_name": "Sentani",
+    "default_script": "Latn"
+  },
+  "sey": {
+    "autonym": "Secoya",
+    "english_name": "Secoya",
+    "default_script": "Latn"
+  },
+  "sgb": {
+    "autonym": "Mag-antsi Ayta",
+    "english_name": "Mag-antsi Ayta",
+    "default_script": "Latn"
+  },
+  "sgz": {
+    "autonym": "Sursurunga",
+    "english_name": "Sursurunga",
+    "default_script": "Latn"
+  },
+  "shj": {
+    "autonym": "Shatt",
+    "english_name": "Shatt",
+    "default_script": "Latn"
+  },
+  "shp": {
+    "autonym": "Shipibo-Conibo",
+    "english_name": "Shipibo-Conibo",
+    "default_script": "Latn"
+  },
+  "shr": {
+    "autonym": "Shi",
+    "english_name": "Shi",
+    "default_script": "Latn"
+  },
+  "sig": {
+    "autonym": "Paasaal",
+    "english_name": "Paasaal",
+    "default_script": "Latn"
+  },
+  "sil": {
+    "autonym": "Tumulung Sisaala",
+    "english_name": "Tumulung Sisaala",
+    "default_script": "Latn"
+  },
+  "sim": {
+    "autonym": "Mende (Papua New Guinea)",
+    "english_name": "Mende (Papua New Guinea)",
+    "default_script": "Latn"
+  },
+  "six": {
+    "autonym": "Sumau",
+    "english_name": "Sumau",
+    "default_script": "Latn"
+  },
+  "sja": {
+    "autonym": "Epena",
+    "english_name": "Epena",
+    "default_script": "Latn"
+  },
+  "sle": {
+    "autonym": "Sholaga",
+    "english_name": "Sholaga",
+    "default_script": "Latn"
+  },
+  "slk": {
+    "autonym": "slovenčina",
+    "english_name": "Slovak",
+    "default_script": "Latn"
+  },
+  "sll": {
+    "autonym": "Salt-Yui",
+    "english_name": "Salt-Yui",
+    "default_script": "Latn"
+  },
+  "slm": {
+    "autonym": "Pangutaran Sama",
+    "english_name": "Pangutaran Sama",
+    "default_script": "Latn"
+  },
+  "slu": {
+    "autonym": "Selaru",
+    "english_name": "Selaru",
+    "default_script": "Latn"
+  },
+  "smk": {
+    "autonym": "Bolinao",
+    "english_name": "Bolinao",
+    "default_script": "Latn"
+  },
+  "sml": {
+    "autonym": "Central Sama",
+    "english_name": "Central Sama",
+    "default_script": "Latn"
+  },
+  "sna": {
+    "autonym": "chiShona",
+    "english_name": "Shona",
+    "default_script": "Latn"
+  },
+  "snc": {
+    "autonym": "Sinaugoro",
+    "english_name": "Sinaugoro",
+    "default_script": "Latn"
+  },
+  "snf": {
+    "autonym": "Noon",
+    "english_name": "Noon",
+    "default_script": "Latn"
+  },
+  "snn": {
+    "autonym": "Siona",
+    "english_name": "Siona",
+    "default_script": "Latn"
+  },
+  "snp": {
+    "autonym": "Siane",
+    "english_name": "Siane",
+    "default_script": "Latn"
+  },
+  "snw": {
+    "autonym": "Selee",
+    "english_name": "Selee",
+    "default_script": "Latn"
+  },
+  "snx": {
+    "autonym": "Sam",
+    "english_name": "Sam",
+    "default_script": "Latn"
+  },
+  "sny": {
+    "autonym": "Saniyo-Hiyewe",
+    "english_name": "Saniyo-Hiyewe",
+    "default_script": "Latn"
+  },
+  "som": {
+    "autonym": "Soomaali",
+    "english_name": "Somali",
+    "default_script": "Latn"
+  },
+  "soq": {
+    "autonym": "Kanasi",
+    "english_name": "Kanasi",
+    "default_script": "Latn"
+  },
+  "sor": {
+    "autonym": "Somrai",
+    "english_name": "Somrai",
+    "default_script": "Latn"
+  },
+  "soy": {
+    "autonym": "Miyobe",
+    "english_name": "Miyobe",
+    "default_script": "Latn"
+  },
+  "spa": {
+    "autonym": "español",
+    "english_name": "Spanish",
+    "default_script": "Latn"
+  },
+  "spl": {
+    "autonym": "Selepet",
+    "english_name": "Selepet",
+    "default_script": "Latn"
+  },
+  "spm": {
+    "autonym": "Akukem",
+    "english_name": "Akukem",
+    "default_script": "Latn"
+  },
+  "spp": {
+    "autonym": "Supyire Senoufo",
+    "english_name": "Supyire Senoufo",
+    "default_script": "Latn"
+  },
+  "sps": {
+    "autonym": "Saposa",
+    "english_name": "Saposa",
+    "default_script": "Latn"
+  },
+  "spy": {
+    "autonym": "Kalenjin",
+    "english_name": "Sabaot",
+    "default_script": "Latn"
+  },
+  "sri": {
+    "autonym": "Siriano",
+    "english_name": "Siriano",
+    "default_script": "Latn"
+  },
+  "srm": {
+    "autonym": "Saramaccan",
+    "english_name": "Saramaccan",
+    "default_script": "Latn"
+  },
+  "srn": {
+    "autonym": "Sranan Tongo",
+    "english_name": "Sranan Tongo",
+    "default_script": "Latn"
+  },
+  "srp": {
+    "autonym": "српски",
+    "english_name": "Serbian",
+    "default_script": "Cyrl"
+  },
+  "srq": {
+    "autonym": "Sirionó",
+    "english_name": "Sirionó",
+    "default_script": "Latn"
+  },
+  "ssd": {
+    "autonym": "Siroi",
+    "english_name": "Siroi",
+    "default_script": "Latn"
+  },
+  "ssg": {
+    "autonym": "Seimat",
+    "english_name": "Seimat",
+    "default_script": "Latn"
+  },
+  "ssx": {
+    "autonym": "Samberigi",
+    "english_name": "Samberigi",
+    "default_script": "Latn"
+  },
+  "stb": {
+    "autonym": "Northern Subanen",
+    "english_name": "Northern Subanen",
+    "default_script": "Latn"
+  },
+  "stp": {
+    "autonym": "Southeastern Tepehuan",
+    "english_name": "Southeastern Tepehuan",
+    "default_script": "Latn"
+  },
+  "stw": {
+    "autonym": "Satawalese",
+    "english_name": "Satawalese",
+    "default_script": "Latn"
+  },
+  "sua": {
+    "autonym": "Sulka",
+    "english_name": "Sulka",
+    "default_script": "Latn"
+  },
+  "suc": {
+    "autonym": "Western Subanon",
+    "english_name": "Western Subanon",
+    "default_script": "Latn"
+  },
+  "sue": {
+    "autonym": "Suena",
+    "english_name": "Suena",
+    "default_script": "Latn"
+  },
+  "sur": {
+    "autonym": "Mwaghavul",
+    "english_name": "Mwaghavul",
+    "default_script": "Latn"
+  },
+  "sus": {
+    "autonym": "Susu",
+    "english_name": "Susu",
+    "default_script": "Latn"
+  },
+  "suz": {
+    "autonym": "Sunwar",
+    "english_name": "Sunwar",
+    "default_script": "Latn"
+  },
+  "swe": {
+    "autonym": "svenska",
+    "english_name": "Swedish",
+    "default_script": "Latn"
+  },
+  "swh": {
+    "autonym": "Kiswahili",
+    "english_name": "Swahili (individual language)",
+    "default_script": "Latn"
+  },
+  "swp": {
+    "autonym": "Suau",
+    "english_name": "Suau",
+    "default_script": "Latn"
+  },
+  "sxb": {
+    "autonym": "Suba",
+    "english_name": "Suba",
+    "default_script": "Latn"
+  },
+  "syb": {
+    "autonym": "Central Subanen",
+    "english_name": "Central Subanen",
+    "default_script": "Latn"
+  },
+  "syl": {
+    "autonym": "Sylheti",
+    "english_name": "Sylheti",
+    "default_script": "Beng"
+  },
+  "tac": {
+    "autonym": "Lowland Tarahumara",
+    "english_name": "Lowland Tarahumara",
+    "default_script": "Latn"
+  },
+  "taj": {
+    "autonym": "Eastern Tamang",
+    "english_name": "Eastern Tamang",
+    "default_script": "Deva"
+  },
+  "tam": {
+    "autonym": "தமிழ்",
+    "english_name": "Tamil",
+    "default_script": "Taml"
+  },
+  "tap": {
+    "autonym": "Taabwa",
+    "english_name": "Taabwa",
+    "default_script": "Latn"
+  },
+  "taq": {
+    "autonym": "Tamasheq",
+    "english_name": "Tamasheq",
+    "default_script": "Latn"
+  },
+  "tav": {
+    "autonym": "Tatuyo",
+    "english_name": "Tatuyo",
+    "default_script": "Latn"
+  },
+  "taw": {
+    "autonym": "Kalam-Tai",
+    "english_name": "Kalam-Tai",
+    "default_script": "Latn"
+  },
+  "tbc": {
+    "autonym": "Takia",
+    "english_name": "Takia",
+    "default_script": "Latn"
+  },
+  "tbf": {
+    "autonym": "Mandara",
+    "english_name": "Mandara",
+    "default_script": "Latn"
+  },
+  "tbg": {
+    "autonym": "North Tairora",
+    "english_name": "North Tairora",
+    "default_script": "Latn"
+  },
+  "tbk": {
+    "autonym": "Calamian Tagbanwa",
+    "english_name": "Calamian Tagbanwa",
+    "default_script": "Latn"
+  },
+  "tbl": {
+    "autonym": "Tboli",
+    "english_name": "Tboli",
+    "default_script": "Latn"
+  },
+  "tbo": {
+    "autonym": "Tawala",
+    "english_name": "Tawala",
+    "default_script": "Latn"
+  },
+  "tbx": {
+    "autonym": "Kapin",
+    "english_name": "Kapin",
+    "default_script": "Latn"
+  },
+  "tbz": {
+    "autonym": "Ditammari",
+    "english_name": "Ditammari",
+    "default_script": "Latn"
+  },
+  "tca": {
+    "autonym": "Ticuna",
+    "english_name": "Ticuna",
+    "default_script": "Latn"
+  },
+  "tcn": {
+    "autonym": "Tichurong",
+    "english_name": "Tichurong",
+    "default_script": "Latn"
+  },
+  "tcs": {
+    "autonym": "Torres Strait Creole",
+    "english_name": "Torres Strait Creole",
+    "default_script": "Latn"
+  },
+  "tcz": {
+    "autonym": "Thado Chin",
+    "english_name": "Thado Chin",
+    "default_script": "Latn"
+  },
+  "tdt": {
+    "autonym": "Tetun Dili",
+    "english_name": "Tetun Dili",
+    "default_script": "Latn"
+  },
+  "tdx": {
+    "autonym": "Tandroy-Mahafaly Malagasy",
+    "english_name": "Tandroy-Mahafaly Malagasy",
+    "default_script": "Latn"
+  },
+  "ted": {
+    "autonym": "Tepo Krumen",
+    "english_name": "Tepo Krumen",
+    "default_script": "Latn"
+  },
+  "tee": {
+    "autonym": "Huehuetla Tepehua",
+    "english_name": "Huehuetla Tepehua",
+    "default_script": "Latn"
+  },
+  "tel": {
+    "autonym": "తెలుగు",
+    "english_name": "Telugu",
+    "default_script": "Telu"
+  },
+  "ter": {
+    "autonym": "Tereno",
+    "english_name": "Tereno",
+    "default_script": "Latn"
+  },
+  "tet": {
+    "autonym": "Tetum",
+    "english_name": "Tetum",
+    "default_script": "Latn"
+  },
+  "tew": {
+    "autonym": "Tewa (USA)",
+    "english_name": "Tewa (USA)",
+    "default_script": "Latn"
+  },
+  "tfr": {
+    "autonym": "Teribe",
+    "english_name": "Teribe",
+    "default_script": "Latn"
+  },
+  "tgj": {
+    "autonym": "Tagin",
+    "english_name": "Tagin",
+    "default_script": "Latn"
+  },
+  "tgk": {
+    "autonym": "тоҷикӣ",
+    "english_name": "Tajik",
+    "default_script": "Cyrl"
+  },
+  "tgl": {
+    "autonym": "Filipino",
+    "english_name": "Filipino",
+    "default_script": "Latn"
+  },
+  "tgo": {
+    "autonym": "Sudest",
+    "english_name": "Sudest",
+    "default_script": "Latn"
+  },
+  "tgp": {
+    "autonym": "Tangoa",
+    "english_name": "Tangoa",
+    "default_script": "Latn"
+  },
+  "tha": {
+    "autonym": "ไทย",
+    "english_name": "Thai",
+    "default_script": "Thai"
+  },
+  "thd": {
+    "autonym": "Kuuk Thaayorre",
+    "english_name": "Kuuk Thaayorre",
+    "default_script": "Latn"
+  },
+  "thr": {
+    "autonym": "Rana Tharu",
+    "english_name": "Rana Tharu",
+    "default_script": "Deva"
+  },
+  "thv": {
+    "autonym": "Tahaggart Tamahaq",
+    "english_name": "Tahaggart Tamahaq",
+    "default_script": "Latn"
+  },
+  "tif": {
+    "autonym": "Tifal",
+    "english_name": "Tifal",
+    "default_script": "Latn"
+  },
+  "tim": {
+    "autonym": "Timbe",
+    "english_name": "Timbe",
+    "default_script": "Latn"
+  },
+  "tiw": {
+    "autonym": "Tiwi",
+    "english_name": "Tiwi",
+    "default_script": "Latn"
+  },
+  "tiy": {
+    "autonym": "Tiruray",
+    "english_name": "Tiruray",
+    "default_script": "Latn"
+  },
+  "tke": {
+    "autonym": "Takwane",
+    "english_name": "Takwane",
+    "default_script": "Latn"
+  },
+  "tkr": {
+    "autonym": "Tsakhur",
+    "english_name": "Tsakhur",
+    "default_script": "Latn"
+  },
+  "tku": {
+    "autonym": "Upper Necaxa Totonac",
+    "english_name": "Upper Necaxa Totonac",
+    "default_script": "Latn"
+  },
+  "tlf": {
+    "autonym": "Telefol",
+    "english_name": "Telefol",
+    "default_script": "Latn"
+  },
+  "tlj": {
+    "autonym": "Talinga-Bwisi",
+    "english_name": "Talinga-Bwisi",
+    "default_script": "Latn"
+  },
+  "tmd": {
+    "autonym": "Haruai",
+    "english_name": "Haruai",
+    "default_script": "Latn"
+  },
+  "tna": {
+    "autonym": "Tacana",
+    "english_name": "Tacana",
+    "default_script": "Latn"
+  },
+  "tnc": {
+    "autonym": "Tanimuca-Retuarã",
+    "english_name": "Tanimuca-Retuarã",
+    "default_script": "Latn"
+  },
+  "tnk": {
+    "autonym": "Kwamera",
+    "english_name": "Kwamera",
+    "default_script": "Latn"
+  },
+  "tnn": {
+    "autonym": "North Tanna",
+    "english_name": "North Tanna",
+    "default_script": "Latn"
+  },
+  "tnp": {
+    "autonym": "Whitesands",
+    "english_name": "Whitesands",
+    "default_script": "Latn"
+  },
+  "toc": {
+    "autonym": "Coyutla Totonac",
+    "english_name": "Coyutla Totonac",
+    "default_script": "Latn"
+  },
+  "tod": {
+    "autonym": "Toma",
+    "english_name": "Toma",
+    "default_script": "Latn"
+  },
+  "tof": {
+    "autonym": "Gizrra",
+    "english_name": "Gizrra",
+    "default_script": "Latn"
+  },
+  "toj": {
+    "autonym": "Tojolabal",
+    "english_name": "Tojolabal",
+    "default_script": "Latn"
+  },
+  "ton": {
+    "autonym": "lea fakatonga",
+    "english_name": "Tongan",
+    "default_script": "Latn"
+  },
+  "too": {
+    "autonym": "Xicotepec De Juárez Totonac",
+    "english_name": "Xicotepec De Juárez Totonac",
+    "default_script": "Latn"
+  },
+  "top": {
+    "autonym": "Papantla Totonac",
+    "english_name": "Papantla Totonac",
+    "default_script": "Latn"
+  },
+  "tos": {
+    "autonym": "Highland Totonac",
+    "english_name": "Highland Totonac",
+    "default_script": "Latn"
+  },
+  "tpa": {
+    "autonym": "Taupota",
+    "english_name": "Taupota",
+    "default_script": "Latn"
+  },
+  "tpi": {
+    "autonym": "Tok Pisin",
+    "english_name": "Tok Pisin",
+    "default_script": "Latn"
+  },
+  "tpp": {
+    "autonym": "Pisaflores Tepehua",
+    "english_name": "Pisaflores Tepehua",
+    "default_script": "Latn"
+  },
+  "tpt": {
+    "autonym": "Tlachichilco Tepehua",
+    "english_name": "Tlachichilco Tepehua",
+    "default_script": "Latn"
+  },
+  "tpu": {
+    "autonym": "Tampuan",
+    "english_name": "Tampuan",
+    "default_script": "Latn"
+  },
+  "tpx": {
+    "autonym": "Acatepec Me'phaa",
+    "english_name": "Acatepec Me'phaa",
+    "default_script": "Latn"
+  },
+  "tpz": {
+    "autonym": "Tinputz",
+    "english_name": "Tinputz",
+    "default_script": "Latn"
+  },
+  "trc": {
+    "autonym": "Copala Triqui",
+    "english_name": "Copala Triqui",
+    "default_script": "Latn"
+  },
+  "trq": {
+    "autonym": "San Martín Itunyoso Triqui",
+    "english_name": "San Martín Itunyoso Triqui",
+    "default_script": "Latn"
+  },
+  "tsg": {
+    "autonym": "Tausug",
+    "english_name": "Tausug",
+    "default_script": "Latn"
+  },
+  "tsn": {
+    "autonym": "Setswana",
+    "english_name": "Tswana",
+    "default_script": "Latn"
+  },
+  "tsw": {
+    "autonym": "Tsishingini",
+    "english_name": "Tsishingini",
+    "default_script": "Latn"
+  },
+  "ttc": {
+    "autonym": "Tektiteko",
+    "english_name": "Tektiteko",
+    "default_script": "Latn"
+  },
+  "tte": {
+    "autonym": "Bwanabwana",
+    "english_name": "Bwanabwana",
+    "default_script": "Latn"
+  },
+  "ttq": {
+    "autonym": "Tamashek",
+    "english_name": "Tawallammat Tamajaq",
+    "default_script": "Latn"
+  },
+  "tuc": {
+    "autonym": "Mutu",
+    "english_name": "Mutu",
+    "default_script": "Latn"
+  },
+  "tue": {
+    "autonym": "Tuyuca",
+    "english_name": "Tuyuca",
+    "default_script": "Latn"
+  },
+  "tuf": {
+    "autonym": "Central Tunebo",
+    "english_name": "Central Tunebo",
+    "default_script": "Latn"
+  },
+  "tuo": {
+    "autonym": "Tucano",
+    "english_name": "Tucano",
+    "default_script": "Latn"
+  },
+  "tur": {
+    "autonym": "Türkçe",
+    "english_name": "Turkish",
+    "default_script": "Latn"
+  },
+  "tvk": {
+    "autonym": "Southeast Ambrym",
+    "english_name": "Southeast Ambrym",
+    "default_script": "Latn"
+  },
+  "tvn": {
+    "autonym": "Tavoyan",
+    "english_name": "Tavoyan",
+    "default_script": "Latn"
+  },
+  "tvt": {
+    "autonym": "Tutsa Naga",
+    "english_name": "Tutsa Naga",
+    "default_script": "Latn"
+  },
+  "twi": {
+    "autonym": "Akan",
+    "english_name": "Twi",
+    "default_script": "Latn"
+  },
+  "txq": {
+    "autonym": "Tii",
+    "english_name": "Tii",
+    "default_script": "Latn"
+  },
+  "txu": {
+    "autonym": "Kayapó",
+    "english_name": "Kayapó",
+    "default_script": "Latn"
+  },
+  "tyx": {
+    "autonym": "Teke-Tyee",
+    "english_name": "Teke-Tyee",
+    "default_script": "Latn"
+  },
+  "tzj": {
+    "autonym": "Tz'utujil",
+    "english_name": "Tz'utujil",
+    "default_script": "Latn"
+  },
+  "tzo": {
+    "autonym": "Tzotzil",
+    "english_name": "Tzotzil",
+    "default_script": "Latn"
+  },
+  "ubr": {
+    "autonym": "Ubir",
+    "english_name": "Ubir",
+    "default_script": "Latn"
+  },
+  "ubu": {
+    "autonym": "Umbu-Ungu",
+    "english_name": "Umbu-Ungu",
+    "default_script": "Latn"
+  },
+  "udi": {
+    "autonym": "Udi",
+    "english_name": "Udi",
+    "default_script": "Aghb"
+  },
+  "udu": {
+    "autonym": "Uduk",
+    "english_name": "Uduk",
+    "default_script": "Latn"
+  },
+  "uig": {
+    "autonym": "ئۇيغۇرچە",
+    "english_name": "Uyghur",
+    "default_script": "Arab"
+  },
+  "ukr": {
+    "autonym": "українська",
+    "english_name": "Ukrainian",
+    "default_script": "Cyrl"
+  },
+  "uli": {
+    "autonym": "Ulithian",
+    "english_name": "Ulithian",
+    "default_script": "Latn"
+  },
+  "ulk": {
+    "autonym": "Meriam Mir",
+    "english_name": "Meriam Mir",
+    "default_script": "Latn"
+  },
+  "unx": {
+    "autonym": "Munda",
+    "english_name": "Munda",
+    "default_script": "Beng"
+  },
+  "upv": {
+    "autonym": "Uripiv-Wala-Rano-Atchin",
+    "english_name": "Uripiv-Wala-Rano-Atchin",
+    "default_script": "Latn"
+  },
+  "ura": {
+    "autonym": "Urarina",
+    "english_name": "Urarina",
+    "default_script": "Latn"
+  },
+  "urb": {
+    "autonym": "Urubú-Kaapor",
+    "english_name": "Urubú-Kaapor",
+    "default_script": "Latn"
+  },
+  "urd": {
+    "autonym": "اردو",
+    "english_name": "Urdu",
+    "default_script": "Arab"
+  },
+  "uri": {
+    "autonym": "Urim",
+    "english_name": "Urim",
+    "default_script": "Latn"
+  },
+  "uro": {
+    "autonym": "Ura (Papua New Guinea)",
+    "english_name": "Ura (Papua New Guinea)",
+    "default_script": "Latn"
+  },
+  "urt": {
+    "autonym": "Urat",
+    "english_name": "Urat",
+    "default_script": "Latn"
+  },
+  "urw": {
+    "autonym": "Sop",
+    "english_name": "Sop",
+    "default_script": "Latn"
+  },
+  "ury": {
+    "autonym": "Orya",
+    "english_name": "Orya",
+    "default_script": "Latn"
+  },
+  "usa": {
+    "autonym": "Usarufa",
+    "english_name": "Usarufa",
+    "default_script": "Latn"
+  },
+  "usp": {
+    "autonym": "Uspanteco",
+    "english_name": "Uspanteco",
+    "default_script": "Latn"
+  },
+  "uth": {
+    "autonym": "ut-Hun",
+    "english_name": "ut-Hun",
+    "default_script": "Latn"
+  },
+  "utr": {
+    "autonym": "Etulo",
+    "english_name": "Etulo",
+    "default_script": "Latn"
+  },
+  "uvh": {
+    "autonym": "Uri",
+    "english_name": "Uri",
+    "default_script": "Latn"
+  },
+  "uvl": {
+    "autonym": "Lote",
+    "english_name": "Lote",
+    "default_script": "Latn"
+  },
+  "vaa": {
+    "autonym": "Vaagri Booli",
+    "english_name": "Vaagri Booli",
+    "default_script": "Latn"
+  },
+  "var": {
+    "autonym": "Huarijio",
+    "english_name": "Huarijio",
+    "default_script": "Latn"
+  },
+  "vgr": {
+    "autonym": "Vaghri",
+    "english_name": "Vaghri",
+    "default_script": "Latn"
+  },
+  "vid": {
+    "autonym": "Vidunda",
+    "english_name": "Vidunda",
+    "default_script": "Latn"
+  },
+  "vie": {
+    "autonym": "Tiếng Việt",
+    "english_name": "Vietnamese",
+    "default_script": "Latn"
+  },
+  "viv": {
+    "autonym": "Iduna",
+    "english_name": "Iduna",
+    "default_script": "Latn"
+  },
+  "vmy": {
+    "autonym": "Ayautla Mazatec",
+    "english_name": "Ayautla Mazatec",
+    "default_script": "Latn"
+  },
+  "waj": {
+    "autonym": "Waffa",
+    "english_name": "Waffa",
+    "default_script": "Latn"
+  },
+  "wal": {
+    "autonym": "Wolaytta",
+    "english_name": "Wolaytta",
+    "default_script": "Ethi"
+  },
+  "wap": {
+    "autonym": "Wapishana",
+    "english_name": "Wapishana",
+    "default_script": "Latn"
+  },
+  "wat": {
+    "autonym": "Kaninuwa",
+    "english_name": "Kaninuwa",
+    "default_script": "Latn"
+  },
+  "wbi": {
+    "autonym": "Vwanji",
+    "english_name": "Vwanji",
+    "default_script": "Latn"
+  },
+  "wbp": {
+    "autonym": "Warlpiri",
+    "english_name": "Warlpiri",
+    "default_script": "Latn"
+  },
+  "wbq": {
+    "autonym": "Waddar",
+    "english_name": "Waddar",
+    "default_script": "Telu"
+  },
+  "wed": {
+    "autonym": "Wedau",
+    "english_name": "Wedau",
+    "default_script": "Latn"
+  },
+  "wer": {
+    "autonym": "Weri",
+    "english_name": "Weri",
+    "default_script": "Latn"
+  },
+  "wib": {
+    "autonym": "Southern Toussian",
+    "english_name": "Southern Toussian",
+    "default_script": "Latn"
+  },
+  "wim": {
+    "autonym": "Wik-Mungkan",
+    "english_name": "Wik-Mungkan",
+    "default_script": "Latn"
+  },
+  "wiu": {
+    "autonym": "Wiru",
+    "english_name": "Wiru",
+    "default_script": "Latn"
+  },
+  "wiv": {
+    "autonym": "Vitu",
+    "english_name": "Vitu",
+    "default_script": "Latn"
+  },
+  "wja": {
+    "autonym": "Waja",
+    "english_name": "Waja",
+    "default_script": "Latn"
+  },
+  "wlg": {
+    "autonym": "Kunbarlang",
+    "english_name": "Kunbarlang",
+    "default_script": "Latn"
+  },
+  "wlo": {
+    "autonym": "Wolio",
+    "english_name": "Wolio",
+    "default_script": "Latn"
+  },
+  "wmt": {
+    "autonym": "Walmajarri",
+    "english_name": "Walmajarri",
+    "default_script": "Latn"
+  },
+  "wmw": {
+    "autonym": "Mwani",
+    "english_name": "Mwani",
+    "default_script": "Latn"
+  },
+  "wnc": {
+    "autonym": "Wantoat",
+    "english_name": "Wantoat",
+    "default_script": "Latn"
+  },
+  "wnu": {
+    "autonym": "Usan",
+    "english_name": "Usan",
+    "default_script": "Latn"
+  },
+  "wob": {
+    "autonym": "Wè Northern",
+    "english_name": "Wè Northern",
+    "default_script": "Latn"
+  },
+  "wol": {
+    "autonym": "Wolof",
+    "english_name": "Wolof",
+    "default_script": "Latn"
+  },
+  "wos": {
+    "autonym": "Hanga Hundi",
+    "english_name": "Hanga Hundi",
+    "default_script": "Latn"
+  },
+  "wrk": {
+    "autonym": "Garrwa",
+    "english_name": "Garrwa",
+    "default_script": "Latn"
+  },
+  "wro": {
+    "autonym": "Worrorra",
+    "english_name": "Worrorra",
+    "default_script": "Latn"
+  },
+  "wrs": {
+    "autonym": "Waris",
+    "english_name": "Waris",
+    "default_script": "Latn"
+  },
+  "wsk": {
+    "autonym": "Waskia",
+    "english_name": "Waskia",
+    "default_script": "Latn"
+  },
+  "wuv": {
+    "autonym": "Wuvulu-Aua",
+    "english_name": "Wuvulu-Aua",
+    "default_script": "Latn"
+  },
+  "xav": {
+    "autonym": "Xavánte",
+    "english_name": "Xavánte",
+    "default_script": "Latn"
+  },
+  "xbi": {
+    "autonym": "Kombio",
+    "english_name": "Kombio",
+    "default_script": "Latn"
+  },
+  "xed": {
+    "autonym": "Hdi",
+    "english_name": "Hdi",
+    "default_script": "Latn"
+  },
+  "xla": {
+    "autonym": "Kamula",
+    "english_name": "Kamula",
+    "default_script": "Latn"
+  },
+  "xnj": {
+    "autonym": "Ngoni (Tanzania)",
+    "english_name": "Ngoni (Tanzania)",
+    "default_script": "Latn"
+  },
+  "xnn": {
+    "autonym": "Northern Kankanay",
+    "english_name": "Northern Kankanay",
+    "default_script": "Latn"
+  },
+  "xon": {
+    "autonym": "Konkomba",
+    "english_name": "Konkomba",
+    "default_script": "Latn"
+  },
+  "xrb": {
+    "autonym": "Eastern Karaboro",
+    "english_name": "Eastern Karaboro",
+    "default_script": "Latn"
+  },
+  "xsb": {
+    "autonym": "Sambal",
+    "english_name": "Sambal",
+    "default_script": "Latn"
+  },
+  "xsi": {
+    "autonym": "Sio",
+    "english_name": "Sio",
+    "default_script": "Latn"
+  },
+  "xsm": {
+    "autonym": "Kasem",
+    "english_name": "Kasem",
+    "default_script": "Latn"
+  },
+  "xsn": {
+    "autonym": "Sanga (Nigeria)",
+    "english_name": "Sanga (Nigeria)",
+    "default_script": "Latn"
+  },
+  "xsr": {
+    "autonym": "Sherpa",
+    "english_name": "Sherpa",
+    "default_script": "Deva"
+  },
+  "xtc": {
+    "autonym": "Katcha-Kadugli-Miri",
+    "english_name": "Katcha-Kadugli-Miri",
+    "default_script": "Latn"
+  },
+  "xtd": {
+    "autonym": "Diuxi-Tilantongo Mixtec",
+    "english_name": "Diuxi-Tilantongo Mixtec",
+    "default_script": "Latn"
+  },
+  "xtm": {
+    "autonym": "Magdalena Peñasco Mixtec",
+    "english_name": "Magdalena Peñasco Mixtec",
+    "default_script": "Latn"
+  },
+  "xtn": {
+    "autonym": "Northern Tlaxiaco Mixtec",
+    "english_name": "Northern Tlaxiaco Mixtec",
+    "default_script": "Latn"
+  },
+  "xuo": {
+    "autonym": "Kuo",
+    "english_name": "Kuo",
+    "default_script": "Latn"
+  },
+  "yaa": {
+    "autonym": "Yaminahua",
+    "english_name": "Yaminahua",
+    "default_script": "Latn"
+  },
+  "yad": {
+    "autonym": "Yagua",
+    "english_name": "Yagua",
+    "default_script": "Latn"
+  },
+  "yaf": {
+    "autonym": "Yaka (Democratic Republic of Congo)",
+    "english_name": "Yaka (Democratic Republic of Congo)",
+    "default_script": "Latn"
+  },
+  "yal": {
+    "autonym": "Yalunka",
+    "english_name": "Yalunka",
+    "default_script": "Latn"
+  },
+  "yam": {
+    "autonym": "Yamba",
+    "english_name": "Yamba",
+    "default_script": "Latn"
+  },
+  "yao": {
+    "autonym": "Yao",
+    "english_name": "Yao",
+    "default_script": "Latn"
+  },
+  "yap": {
+    "autonym": "Yapese",
+    "english_name": "Yapese",
+    "default_script": "Latn"
+  },
+  "yaq": {
+    "autonym": "Yaqui",
+    "english_name": "Yaqui",
+    "default_script": "Latn"
+  },
+  "yby": {
+    "autonym": "Yaweyuha",
+    "english_name": "Yaweyuha",
+    "default_script": "Latn"
+  },
+  "ycn": {
+    "autonym": "Yucuna",
+    "english_name": "Yucuna",
+    "default_script": "Latn"
+  },
+  "ydd": {
+    "autonym": "ייִדיש",
+    "english_name": "Eastern Yiddish",
+    "default_script": "Hebr"
+  },
+  "yer": {
+    "autonym": "Tarok",
+    "english_name": "Tarok",
+    "default_script": "Latn"
+  },
+  "yij": {
+    "autonym": "Yindjibarndi",
+    "english_name": "Yindjibarndi",
+    "default_script": "Latn"
+  },
+  "yka": {
+    "autonym": "Yakan",
+    "english_name": "Yakan",
+    "default_script": "Latn"
+  },
+  "yle": {
+    "autonym": "Yele",
+    "english_name": "Yele",
+    "default_script": "Latn"
+  },
+  "yml": {
+    "autonym": "Iamalele",
+    "english_name": "Iamalele",
+    "default_script": "Latn"
+  },
+  "ymp": {
+    "autonym": "Yamap",
+    "english_name": "Yamap",
+    "default_script": "Latn"
+  },
+  "yns": {
+    "autonym": "Yansi",
+    "english_name": "Yansi",
+    "default_script": "Latn"
+  },
+  "yom": {
+    "autonym": "Yombe",
+    "english_name": "Yombe",
+    "default_script": "Latn"
+  },
+  "yon": {
+    "autonym": "Yongkom",
+    "english_name": "Yongkom",
+    "default_script": "Latn"
+  },
+  "yor": {
+    "autonym": "Èdè Yorùbá",
+    "english_name": "Yoruba",
+    "default_script": "Latn"
+  },
+  "yrb": {
+    "autonym": "Yareba",
+    "english_name": "Yareba",
+    "default_script": "Latn"
+  },
+  "yre": {
+    "autonym": "Yaouré",
+    "english_name": "Yaouré",
+    "default_script": "Latn"
+  },
+  "yss": {
+    "autonym": "Yessan-Mayo",
+    "english_name": "Yessan-Mayo",
+    "default_script": "Latn"
+  },
+  "yuj": {
+    "autonym": "Karkar-Yuri",
+    "english_name": "Karkar-Yuri",
+    "default_script": "Latn"
+  },
+  "yut": {
+    "autonym": "Yopno",
+    "english_name": "Yopno",
+    "default_script": "Latn"
+  },
+  "yuw": {
+    "autonym": "Yau (Morobe Province)",
+    "english_name": "Yau (Morobe Province)",
+    "default_script": "Latn"
+  },
+  "yva": {
+    "autonym": "Yawa",
+    "english_name": "Yawa",
+    "default_script": "Latn"
+  },
+  "zaa": {
+    "autonym": "Sierra de Juárez Zapotec",
+    "english_name": "Sierra de Juárez Zapotec",
+    "default_script": "Latn"
+  },
+  "zab": {
+    "autonym": "Western Tlacolula Valley Zapotec",
+    "english_name": "Western Tlacolula Valley Zapotec",
+    "default_script": "Latn"
+  },
+  "zac": {
+    "autonym": "Ocotlán Zapotec",
+    "english_name": "Ocotlán Zapotec",
+    "default_script": "Latn"
+  },
+  "zad": {
+    "autonym": "Cajonos Zapotec",
+    "english_name": "Cajonos Zapotec",
+    "default_script": "Latn"
+  },
+  "zae": {
+    "autonym": "Yareni Zapotec",
+    "english_name": "Yareni Zapotec",
+    "default_script": "Latn"
+  },
+  "zai": {
+    "autonym": "Zapotec",
+    "english_name": "Isthmus Zapotec",
+    "default_script": "Latn"
+  },
+  "zaj": {
+    "autonym": "Zaramo",
+    "english_name": "Zaramo",
+    "default_script": "Latn"
+  },
+  "zak": {
+    "autonym": "Zanaki",
+    "english_name": "Zanaki",
+    "default_script": "Latn"
+  },
+  "zam": {
+    "autonym": "Miahuatlán Zapotec",
+    "english_name": "Miahuatlán Zapotec",
+    "default_script": "Latn"
+  },
+  "zao": {
+    "autonym": "Ozolotepec Zapotec",
+    "english_name": "Ozolotepec Zapotec",
+    "default_script": "Latn"
+  },
+  "zar": {
+    "autonym": "Rincón Zapotec",
+    "english_name": "Rincón Zapotec",
+    "default_script": "Latn"
+  },
+  "zas": {
+    "autonym": "Santo Domingo Albarradas Zapotec",
+    "english_name": "Santo Domingo Albarradas Zapotec",
+    "default_script": "Latn"
+  },
+  "zat": {
+    "autonym": "Tabaa Zapotec",
+    "english_name": "Tabaa Zapotec",
+    "default_script": "Latn"
+  },
+  "zav": {
+    "autonym": "Yatzachi Zapotec",
+    "english_name": "Yatzachi Zapotec",
+    "default_script": "Latn"
+  },
+  "zaw": {
+    "autonym": "Mitla Zapotec",
+    "english_name": "Mitla Zapotec",
+    "default_script": "Latn"
+  },
+  "zbu": {
+    "autonym": "Bu (Bauchi State)",
+    "english_name": "Bu (Bauchi State)",
+    "default_script": "Latn"
+  },
+  "zca": {
+    "autonym": "Coatecas Altas Zapotec",
+    "english_name": "Coatecas Altas Zapotec",
+    "default_script": "Latn"
+  },
+  "zga": {
+    "autonym": "Kinga",
+    "english_name": "Kinga",
+    "default_script": "Latn"
+  },
+  "zia": {
+    "autonym": "Zia",
+    "english_name": "Zia",
+    "default_script": "Latn"
+  },
+  "zin": {
+    "autonym": "Zinza",
+    "english_name": "Zinza",
+    "default_script": "Latn"
+  },
+  "ziw": {
+    "autonym": "Zigula",
+    "english_name": "Zigula",
+    "default_script": "Latn"
+  },
+  "zlm": {
+    "autonym": "Malay (individual language)",
+    "english_name": "Malay (individual language)",
+    "default_script": "Latn"
+  },
+  "zos": {
+    "autonym": "Francisco León Zoque",
+    "english_name": "Francisco León Zoque",
+    "default_script": "Latn"
+  },
+  "zpc": {
+    "autonym": "Choapan Zapotec",
+    "english_name": "Choapan Zapotec",
+    "default_script": "Latn"
+  },
+  "zpg": {
+    "autonym": "Guevea De Humboldt Zapotec",
+    "english_name": "Guevea De Humboldt Zapotec",
+    "default_script": "Latn"
+  },
+  "zpi": {
+    "autonym": "Santa María Quiegolani Zapotec",
+    "english_name": "Santa María Quiegolani Zapotec",
+    "default_script": "Latn"
+  },
+  "zpl": {
+    "autonym": "Lachixío Zapotec",
+    "english_name": "Lachixío Zapotec",
+    "default_script": "Latn"
+  },
+  "zpm": {
+    "autonym": "Mixtepec Zapotec",
+    "english_name": "Mixtepec Zapotec",
+    "default_script": "Latn"
+  },
+  "zpo": {
+    "autonym": "Amatlán Zapotec",
+    "english_name": "Amatlán Zapotec",
+    "default_script": "Latn"
+  },
+  "zpq": {
+    "autonym": "Zoogocho Zapotec",
+    "english_name": "Zoogocho Zapotec",
+    "default_script": "Latn"
+  },
+  "zpt": {
+    "autonym": "San Vicente Coatlán Zapotec",
+    "english_name": "San Vicente Coatlán Zapotec",
+    "default_script": "Latn"
+  },
+  "zpu": {
+    "autonym": "Yalálag Zapotec",
+    "english_name": "Yalálag Zapotec",
+    "default_script": "Latn"
+  },
+  "zpv": {
+    "autonym": "Chichicapan Zapotec",
+    "english_name": "Chichicapan Zapotec",
+    "default_script": "Latn"
+  },
+  "zpz": {
+    "autonym": "Texmelucan Zapotec",
+    "english_name": "Texmelucan Zapotec",
+    "default_script": "Latn"
+  },
+  "zsr": {
+    "autonym": "Southern Rincon Zapotec",
+    "english_name": "Southern Rincon Zapotec",
+    "default_script": "Latn"
+  },
+  "ztp": {
+    "autonym": "Loxicha Zapotec",
+    "english_name": "Loxicha Zapotec",
+    "default_script": "Latn"
+  },
+  "ztq": {
+    "autonym": "Quioquitani-Quierí Zapotec",
+    "english_name": "Quioquitani-Quierí Zapotec",
+    "default_script": "Latn"
+  },
+  "zty": {
+    "autonym": "Yatee Zapotec",
+    "english_name": "Yatee Zapotec",
+    "default_script": "Latn"
+  },
+  "zyp": {
+    "autonym": "Zyphe Chin",
+    "english_name": "Zyphe Chin",
+    "default_script": "Latn"
+  }
+}

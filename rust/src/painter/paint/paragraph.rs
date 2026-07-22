@@ -1,6 +1,6 @@
 use usfm::ArchivedParagraph;
 
-use crate::painter::{Painter, Style, layout::Section};
+use crate::painter::{Painter, Style, layout::Section, paint::verse::Verse};
 
 use super::Paint;
 
@@ -11,18 +11,8 @@ impl Paint for ArchivedParagraph {
         painter.push_properties(Style::Normal, Section::Body);
         for content in self.contents.iter() {
             match content {
-                Content::Verse(verse_num) => {
-                    let v = verse_num.to_native();
-                    if v > 1 {
-                        painter
-                            .add_text(" ")
-                            .push_properties(Style::Verse, Section::Body)
-                            .index_verse(v)
-                            .add_text(v.to_string())
-                            .pop_properties();
-                    } else {
-                        painter.index_verse(v);
-                    }
+                Content::Verse(verse) => {
+                    Verse(verse).paint(painter);
                 }
                 Content::Line(text) => {
                     painter.add_text(text);
@@ -30,6 +20,7 @@ impl Paint for ArchivedParagraph {
                 Content::Character(character) => character.paint(painter),
                 Content::Footnote(footnote) => footnote.paint(painter),
                 Content::CrossRef(cross_ref) => cross_ref.paint(painter),
+                _ => (),
             }
         }
         painter.pop_properties();

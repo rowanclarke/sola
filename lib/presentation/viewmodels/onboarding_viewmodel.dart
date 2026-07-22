@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:sola/core/models/language_tag.dart';
 import 'package:sola/core/models/translation.dart';
 import 'package:sola/data/repositories/bible_repository.dart';
 import 'package:sola/data/repositories/language_repository.dart';
@@ -73,7 +74,7 @@ class OnboardingViewModel extends ChangeNotifier {
 
     // Detect device language
     final locale = PlatformDispatcher.instance.locale;
-    _detectedLanguageCode = locale.languageCode;
+    _detectedLanguageCode = locale.toLanguageTag();
     debugPrint(
       '[OnboardingVM] Detected device language: $_detectedLanguageCode',
     );
@@ -109,8 +110,8 @@ class OnboardingViewModel extends ChangeNotifier {
 
     // Restore selected translation from session
     if (session.currentTranslationId != null && _selectedLanguageCode != null) {
-      final translations = await _languageRepository.getTranslationsForLanguage(
-        _selectedLanguageCode!,
+      final translations = await _languageRepository.findTranslations(
+        LanguageTag.parse(_selectedLanguageCode!),
       );
       _selectedTranslation = translations
           .where((t) => t.id == session.currentTranslationId)
@@ -133,7 +134,7 @@ class OnboardingViewModel extends ChangeNotifier {
     _currentStep = 2;
     _translationQuery = '';
     _allTranslationsForLanguage = await _languageRepository
-        .getTranslationsForLanguage(_selectedLanguageCode!);
+        .findTranslations(LanguageTag.parse(_selectedLanguageCode!));
     _filteredTranslations = _allTranslationsForLanguage;
     _selectedTranslation = null;
 
@@ -208,7 +209,6 @@ class OnboardingViewModel extends ChangeNotifier {
     try {
       await _libraryRepository.downloadTranslation(
         translation.id,
-        translation.url,
         cancelToken: _cancelToken,
         onProgress: (progress) {
           _downloadProgress[translation.id] = progress;

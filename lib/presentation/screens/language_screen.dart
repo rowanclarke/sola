@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../data/repositories/language_repository.dart';
 import '../viewmodels/onboarding_viewmodel.dart';
-import '../widgets/selectable_list_row.dart';
+import '../widgets/selectable_list_row.dart' show SelectableListRow, SelectableRow;
 import '../widgets/step_indicator.dart';
 import '../../app/app_routes.dart';
 
@@ -44,8 +44,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
   }
 
   void _measureHeader() {
-    final box =
-        _headerKey.currentContext?.findRenderObject() as RenderBox?;
+    final box = _headerKey.currentContext?.findRenderObject() as RenderBox?;
     if (box != null && box.hasSize && box.size.height != _headerHeight) {
       setState(() => _headerHeight = box.size.height);
     }
@@ -141,13 +140,12 @@ class _LanguageScreenState extends State<LanguageScreen> {
     final info = vm.detectedLanguageInfo;
     if (info == null) return const SizedBox.shrink();
 
-    final isSelected = vm.selectedLanguageCode == info.bcp47;
+    final isSelected = vm.selectedLanguageCode == info.languageCode;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: InkWell(
-        onTap: () => vm.selectLanguage(info.bcp47),
-        borderRadius: BorderRadius.circular(14),
+      child: GestureDetector(
+        onTap: () => vm.selectLanguage(info.languageCode),
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -168,54 +166,13 @@ class _LanguageScreenState extends State<LanguageScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              Row(
-                children: [
-                  _buildLanguageBadge(info.bcp47),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          info.description,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: _ink,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${info.translationCount} translations available',
-                          style: const TextStyle(fontSize: 11.5, color: _mid),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (isSelected)
-                    Container(
-                      width: 24,
-                      height: 24,
-                      decoration: const BoxDecoration(
-                        color: _ink,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.check,
-                        color: Colors.white,
-                        size: 14,
-                      ),
-                    )
-                  else
-                    Container(
-                      width: 24,
-                      height: 24,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: _line, width: 1.5),
-                      ),
-                    ),
-                ],
+              SelectableRow(
+                leading: _buildLanguageBadge(info.baseLanguageCode),
+                title: info.nativeName,
+                subtitle: info.dialectName != null
+                    ? '${info.dialectName} \u00b7 ${info.translationCount} translations'
+                    : '${info.description} \u00b7 ${info.translationCount} translations',
+                isSelected: isSelected,
               ),
             ],
           ),
@@ -293,8 +250,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
                         // Grab handle
                         Center(
                           child: Padding(
-                            padding:
-                                const EdgeInsets.only(top: 10, bottom: 6),
+                            padding: const EdgeInsets.only(top: 10, bottom: 6),
                             child: Container(
                               width: 32,
                               height: 4,
@@ -307,8 +263,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
                         ),
                         // Header
                         Padding(
-                          padding:
-                              const EdgeInsets.fromLTRB(20, 4, 20, 14),
+                          padding: const EdgeInsets.fromLTRB(20, 4, 20, 14),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: const [
@@ -324,16 +279,14 @@ class _LanguageScreenState extends State<LanguageScreen> {
                               SizedBox(height: 4),
                               Text(
                                 'You can change this later in Settings.',
-                                style:
-                                    TextStyle(fontSize: 14, color: _mid),
+                                style: TextStyle(fontSize: 14, color: _mid),
                               ),
                             ],
                           ),
                         ),
                         // Search
                         Padding(
-                          padding:
-                              const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                          padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
                           child: TextField(
                             controller: _searchController,
                             onChanged: (q) => vm.searchLanguages(q),
@@ -363,8 +316,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
                                   : null,
                               filled: true,
                               fillColor: _fill,
-                              contentPadding:
-                                  const EdgeInsets.symmetric(
+                              contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 12,
                                 vertical: 10,
                               ),
@@ -392,14 +344,15 @@ class _LanguageScreenState extends State<LanguageScreen> {
                 itemBuilder: (context, i) {
                   final lang = vm.filteredLanguages[i];
                   final isSelected =
-                      vm.selectedLanguageCode == lang.bcp47;
+                      vm.selectedLanguageCode == lang.languageCode;
                   return SelectableListRow(
-                    leading: _buildLanguageBadge(lang.bcp47),
+                    leading: _buildLanguageBadge(lang.baseLanguageCode),
                     title: lang.nativeName,
-                    subtitle:
-                        '${lang.description} \u00b7 ${lang.translationCount} translations',
+                    subtitle: lang.dialectName != null
+                        ? '${lang.dialectName} \u00b7 ${lang.translationCount} translations'
+                        : '${lang.description} \u00b7 ${lang.translationCount} translations',
                     isSelected: isSelected,
-                    onTap: () => vm.selectLanguage(lang.bcp47),
+                    onTap: () => vm.selectLanguage(lang.languageCode),
                   );
                 },
                 itemCount: vm.filteredLanguages.length,

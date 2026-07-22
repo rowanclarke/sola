@@ -58,14 +58,14 @@ class BibleRepository {
 
   Future<void> serializeTranslation(String translationId) async {
     final files = await _fileService.listDirectory('library/$translationId');
+    debugPrint('Files: $files');
     final usfmFiles = files.where((f) => f.endsWith('.usfm')).toList();
-
-    // Check if already serialized (all books cached or on disk)
-    if (usfmFiles.isEmpty) return;
 
     debugPrint(
       '[BibleRepo] Serializing ${usfmFiles.length} USFM files for $translationId',
     );
+    // Check if already serialized (all books cached or on disk)
+    if (usfmFiles.isEmpty) return;
 
     // Read all USFM files on main isolate (async I/O)
     final usfmContents = <String, String>{};

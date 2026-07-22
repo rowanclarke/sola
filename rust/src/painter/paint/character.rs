@@ -1,7 +1,7 @@
 use usfm::ArchivedCharacter;
 
-use crate::painter::{Painter, Style};
 use crate::painter::layout::Section;
+use crate::painter::{Painter, Style};
 
 use super::Paint;
 
@@ -21,6 +21,7 @@ impl Paint for ArchivedCharacter {
                     painter.add_text(text);
                 }
                 Content::Character(character) => character.paint(painter),
+                _ => (),
             }
         }
 

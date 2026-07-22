@@ -14,12 +14,13 @@ impl Paint for ArchivedFootnote {
         // Footnote content (already in expanded/footer context)
         painter.push_properties(Style::Footnote, Section::Footer);
         for element in self.elements.iter() {
-            match element {
-                Element::Reference(note_ref) => {
-                    painter.add_text(format!("{}: ", note_ref.verse));
-                }
-                Element::Element(note_element) => note_element.paint(painter),
-            }
+            element.paint(painter);
+            // match element {
+            //     Element::Reference(note_ref) => {
+            //         painter.add_text(format!("{}: ", note_ref.verse));
+            //     }
+            //     Element::Element(note_element) => note_element.paint(painter),
+            // }
         }
         painter.pop_properties();
 

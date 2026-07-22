@@ -124,8 +124,8 @@ class CompleteScreen extends StatelessWidget {
                           const SizedBox(height: 2),
                           Text(
                             langInfo != null
-                                ? '${langInfo.description} \u00b7 ${translation.language}'
-                                : translation.language,
+                                ? '${langInfo.description} \u00b7 ${translation.langEn}'
+                                : translation.langEn,
                             style: const TextStyle(
                               fontSize: 11,
                               color: _mid,

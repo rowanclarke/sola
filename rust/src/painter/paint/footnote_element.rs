@@ -1,15 +1,12 @@
 use core::{fmt::Debug, hash::Hash};
 use rkyv::Archive;
-use usfm::ArchivedNoteElement;
+use usfm::ArchivedFootnoteElement;
 
 use crate::painter::Painter;
 
 use super::Paint;
 
-impl<NoteStyle: Archive> Paint for ArchivedNoteElement<NoteStyle>
-where
-    <NoteStyle as Archive>::Archived: Debug + Eq + Hash,
-{
+impl Paint for ArchivedFootnoteElement {
     fn paint(&self, painter: &mut Painter) {
         use usfm::ArchivedCharacterContents as Content;
         for content in self.contents.iter() {
@@ -18,6 +15,7 @@ where
                     painter.add_text(text);
                 }
                 Content::Character(character) => character.paint(painter),
+                _ => (),
             }
         }
     }
