@@ -19,7 +19,4 @@ pub enum SolaError {
 
     #[error("Search failed: {0}")]
     Search(String),
-
-    #[error("Missing index")]
-    MissingIndex,
 }

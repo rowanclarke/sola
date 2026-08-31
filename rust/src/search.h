@@ -30,7 +30,7 @@ void search(
 
 void get_search_result(
   const void* engine,
-  const void* page_map,
+  const void* ref_index,
   size_t id,
   size_t* out_page,
   const char** out_book,
@@ -39,34 +39,6 @@ void get_search_result(
   size_t* out_header_len,
   unsigned short* out_chapter,
   unsigned short* out_verse,
-  char** out_error,
-  size_t* out_error_len
-);
-
-void search_index(
-  const void* page_map,
-  const char* query,
-  size_t query_len,
-  void*** out,
-  size_t* out_len,
-  char** out_error,
-  size_t* out_error_len
-);
-
-void* page_map_builder_new();
-
-void page_map_builder_add(
-  void* builder,
-  const char* data,
-  size_t data_len,
-  char** out_error,
-  size_t* out_error_len
-);
-
-void page_map_builder_finish(
-  void* builder,
-  const char** out,
-  size_t* out_len,
   char** out_error,
   size_t* out_error_len
 );

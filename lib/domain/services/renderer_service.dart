@@ -1,5 +1,4 @@
 import 'dart:ffi';
-import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart' show TextDecoration, TextStyle;
@@ -78,10 +77,6 @@ class RendererService {
     return rust.getArchivedPages(bytes);
   }
 
-  Pointer<Void> getArchivedIndices(Uint8List bytes) {
-    return rust.getArchivedIndices(bytes);
-  }
-
   int getNumPages(Pointer<Void> pages) {
     return rust.getNumPages(pages);
   }
@@ -91,9 +86,6 @@ class RendererService {
   }
 
   String getBookTitle(Uint8List indicesBytes) {
-    final archived = getArchivedIndices(indicesBytes);
-    final entries = rust.searchIndex(archived, '');
-    if (entries.isEmpty) return '';
-    return rust.getIndex(archived, entries[0]).header;
+    return rust.indicesBookTitle(indicesBytes);
   }
 }

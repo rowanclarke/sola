@@ -60,19 +60,5 @@ size_t num_pages(void* archived_pages);
 void page(void* renderer, void* archived_pages, size_t n, const Text** out, size_t* out_len, char** out_error, size_t* out_error_len);
 
 void serialize_indices(void* painter, const char** out, size_t* out_len, char** out_error, size_t* out_error_len);
-void* archived_indices(const char* indices, size_t indices_len, char** out_error, size_t* out_error_len);
-void get_index(
-  void* archived_indices,
-  void* index,
-  size_t* out_page,
-  const char** out_book,
-  size_t* out_book_len,
-  const char** out_header,
-  size_t* out_header_len,
-  unsigned short* out_chapter,
-  unsigned short* out_verse,
-  char** out_error,
-  size_t* out_error_len
-);
 void serialize_verses(void* painter, const char** out, size_t* out_len, char** out_error, size_t* out_error_len);
 void serialize_verse_ranges(void* painter, const char** out, size_t* out_len);

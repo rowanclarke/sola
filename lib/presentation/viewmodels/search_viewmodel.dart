@@ -28,6 +28,9 @@ class SearchViewModel extends ChangeNotifier {
   static const double maxDescent = 150.0;
   static const _debounceDuration = Duration(milliseconds: 400);
 
+  /// How many rows the results panel shows.
+  static const int maxResults = 5;
+
   SearchViewModel({
     required SearchRepository searchRepository,
     required SessionRepository sessionRepository,
@@ -113,34 +116,53 @@ class SearchViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Answers from the reference index immediately, and only falls back to the
+  /// (debounced, off-isolate) semantic search when the query names no book.
   void onQueryChanged(String query) {
     _debounceTimer?.cancel();
 
-    if (query.isEmpty) {
+    if (query.trim().isEmpty) {
       clearSearch();
       return;
     }
 
-    _debounceTimer = Timer(_debounceDuration, () {
-      _executeSearch(query);
-    });
-  }
+    final version = ++_queryVersion;
+    _error = null;
 
-  Future<void> _executeSearch(String query) async {
-    if (!_isModelReady) {
-      debugPrint('[SearchVM] Search attempted but model not ready');
-      _error = _isModelLoading
-          ? 'Search model is still loading. Please try again shortly.'
-          : 'Search model failed to load.';
+    final matches = _searchRepository.lookupReference(query, limit: maxResults);
+    if (matches.isNotEmpty) {
+      debugPrint('[SearchVM] "$query" → ${matches.length} reference matches');
+      _results = [
+        for (final index in matches) SearchResult(index: index, distance: 0),
+      ];
+      _isSearching = false;
       notifyListeners();
       return;
     }
 
+    // Not a reference. Hold the previous rows off the screen and wait for the
+    // typing to settle before paying for an embedding.
     _results = [];
-    final version = ++_queryVersion;
     _isSearching = true;
-    _error = null;
     notifyListeners();
+    _debounceTimer = Timer(
+      _debounceDuration,
+      () => _executeSemanticSearch(query, version),
+    );
+  }
+
+  Future<void> _executeSemanticSearch(String query, int version) async {
+    if (version != _queryVersion) return;
+
+    if (!_isModelReady) {
+      debugPrint('[SearchVM] Semantic search attempted but model not ready');
+      _error = _isModelLoading
+          ? 'Search model is still loading. Please try again shortly.'
+          : 'Search model failed to load.';
+      _isSearching = false;
+      notifyListeners();
+      return;
+    }
 
     debugPrint('[SearchVM] Searching: "$query"');
     try {
@@ -149,7 +171,7 @@ class SearchViewModel extends ChangeNotifier {
         debugPrint('[SearchVM] Stale result for "$query", ignoring');
         return;
       }
-      _results.addAll(searchResults);
+      _results = searchResults;
       if (_results.isNotEmpty) {
         final first = _results[0].index;
         debugPrint(

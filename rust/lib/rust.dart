@@ -49,6 +49,11 @@ class Index {
   return (error: error, errorLen: errorLen);
 }
 
+void _freeError(({Pointer<Pointer<Char>> error, Pointer<Size> errorLen}) e) {
+  malloc.free(e.error);
+  malloc.free(e.errorLen);
+}
+
 /// Checks whether the FFI call wrote an error. If so, reads the message,
 /// frees the Rust-allocated string, and throws an [Exception].
 void _checkError(Pointer<Pointer<Char>> outError, Pointer<Size> outErrorLen) {
@@ -255,53 +260,6 @@ Uint8List serializeIndices(Pointer<Void> painter) {
   return out.value.asTypedList(outLen.value);
 }
 
-Pointer<Void> getArchivedIndices(Uint8List indices) {
-  final indicesPtr = _toNative(indices);
-  final e = _allocError();
-  final result = _bindings.archived_indices(
-    indicesPtr.cast<Char>(),
-    indices.length,
-    e.error,
-    e.errorLen,
-  );
-  _checkError(e.error, e.errorLen);
-  return result;
-}
-
-Index getIndex(Pointer<Void> indices, Pointer<Void> index) {
-  final page = malloc<Size>();
-  final book = malloc<Pointer<Utf8>>();
-  final bookLen = malloc<Size>();
-  final header = malloc<Pointer<Utf8>>();
-  final headerLen = malloc<Size>();
-  final chapter = malloc<UnsignedShort>();
-  final verse = malloc<UnsignedShort>();
-  final e = _allocError();
-  chapter.value = 0;
-  verse.value = 0;
-  _bindings.get_index(
-    indices,
-    index,
-    page,
-    book.cast<Pointer<Char>>(),
-    bookLen,
-    header.cast<Pointer<Char>>(),
-    headerLen,
-    chapter,
-    verse,
-    e.error,
-    e.errorLen,
-  );
-  _checkError(e.error, e.errorLen);
-  return Index(
-    page.value,
-    book.value.toDartString(length: bookLen.value),
-    header.value.toDartString(length: headerLen.value),
-    chapter.value == 0 ? null : chapter.value,
-    verse.value == 0 ? null : verse.value,
-  );
-}
-
 Uint8List serializeVerses(Pointer<Void> painter) {
   final out = malloc<Pointer<Uint8>>();
   final outLen = malloc<Size>();
@@ -396,7 +354,7 @@ Pointer<Void> loadSearchEngine(
 
 Index getSearchResult(
   Pointer<Void> engine,
-  Pointer<Void> pageMap,
+  Pointer<Void> refIndex,
   int id,
 ) {
   final page = malloc<Size>();
@@ -409,79 +367,178 @@ Index getSearchResult(
   final e = _allocError();
   chapter.value = 0;
   verse.value = 0;
-  _bindings.get_search_result(
-    engine,
-    pageMap,
-    id,
-    page,
-    book.cast<Pointer<Char>>(),
-    bookLen,
-    header.cast<Pointer<Char>>(),
-    headerLen,
-    chapter,
-    verse,
-    e.error,
-    e.errorLen,
-  );
-  _checkError(e.error, e.errorLen);
-  return Index(
-    page.value,
-    book.value.toDartString(length: bookLen.value),
-    header.value.toDartString(length: headerLen.value),
-    chapter.value == 0 ? null : chapter.value,
-    verse.value == 0 ? null : verse.value,
-  );
+  try {
+    _bindings.get_search_result(
+      engine,
+      refIndex,
+      id,
+      page,
+      book.cast<Pointer<Char>>(),
+      bookLen,
+      header.cast<Pointer<Char>>(),
+      headerLen,
+      chapter,
+      verse,
+      e.error,
+      e.errorLen,
+    );
+    _checkError(e.error, e.errorLen);
+    return Index(
+      page.value,
+      book.value.toDartString(length: bookLen.value),
+      header.value.toDartString(length: headerLen.value),
+      chapter.value == 0 ? null : chapter.value,
+      verse.value == 0 ? null : verse.value,
+    );
+  } finally {
+    malloc.free(page);
+    malloc.free(book);
+    malloc.free(bookLen);
+    malloc.free(header);
+    malloc.free(headerLen);
+    malloc.free(chapter);
+    malloc.free(verse);
+    _freeError(e);
+  }
 }
 
-List<Pointer<Void>> searchIndex(Pointer<Void> pageMap, String query) {
-  _log('[FFI] searchIndex: "$query"');
-  final queryPtr = query.toNativeUtf8();
-  final out = malloc<Pointer<Pointer<Void>>>();
+/// Fuzzy book → chapter → verse lookup over one translation's rendered pages.
+///
+/// Built from the per-book `indices` files the renderer already writes, so it
+/// costs no extra assets and stays in step with what was actually rendered.
+/// Owns native memory: call [dispose] when the translation is unloaded.
+class ReferenceIndex {
+  final Pointer<Void> _index;
+
+  // Query scratch, allocated once and reused, so a lookup per keystroke does
+  // not allocate.
+  final Pointer<Pointer<bind.RefHit>> _out = malloc<Pointer<bind.RefHit>>();
+  final Pointer<Size> _outLen = malloc<Size>();
+  final _error = _allocError();
+
+  bool _disposed = false;
+
+  ReferenceIndex._(this._index);
+
+  /// Builds an index from each book's serialized `indices` map, in the order
+  /// the books should be listed.
+  static ReferenceIndex build(List<Uint8List> perBookIndices) {
+    _log('[FFI] ReferenceIndex.build: ${perBookIndices.length} books');
+    final builder = _bindings.ref_index_builder_new();
+    final e = _allocError();
+    Object? failure;
+    try {
+      for (final bytes in perBookIndices) {
+        final ptr = _toNative(bytes);
+        try {
+          _bindings.ref_index_builder_add(
+            builder,
+            ptr.cast<Char>(),
+            bytes.length,
+            e.error,
+            e.errorLen,
+          );
+          _checkError(e.error, e.errorLen);
+        } finally {
+          malloc.free(ptr);
+        }
+      }
+    } catch (error) {
+      failure = error;
+    }
+    // finish() consumes the builder either way, so always call it.
+    final index = _bindings.ref_index_builder_finish(builder, e.error, e.errorLen);
+    try {
+      if (failure != null) {
+        _bindings.ref_index_free(index);
+        throw failure;
+      }
+      _checkError(e.error, e.errorLen);
+      return ReferenceIndex._(index);
+    } finally {
+      _freeError(e);
+    }
+  }
+
+  /// The raw handle, for FFI calls that resolve references themselves
+  /// (see [getSearchResult]).
+  Pointer<Void> get handle => _index;
+
+  /// Best [limit] matches for [query], or an empty list when it names no book —
+  /// the caller should then fall back to semantic search.
+  List<Index> lookup(String query, {int limit = 5}) {
+    if (_disposed) throw StateError('ReferenceIndex used after dispose');
+    final queryPtr = query.toNativeUtf8();
+    try {
+      _bindings.ref_index_lookup(
+        _index,
+        queryPtr.cast<Char>(),
+        queryPtr.length,
+        limit,
+        _out,
+        _outLen,
+        _error.error,
+        _error.errorLen,
+      );
+      _checkError(_error.error, _error.errorLen);
+      final hits = _out.value;
+      final count = _outLen.value;
+      try {
+        return List.generate(count, (i) {
+          final hit = (hits + i).ref;
+          return Index(
+            hit.page,
+            hit.book.cast<Utf8>().toDartString(length: hit.book_len),
+            hit.header.cast<Utf8>().toDartString(length: hit.header_len),
+            hit.chapter == 0 ? null : hit.chapter,
+            hit.verse == 0 ? null : hit.verse,
+          );
+        });
+      } finally {
+        _bindings.ref_hits_free(hits, count);
+      }
+    } finally {
+      malloc.free(queryPtr);
+    }
+  }
+
+  void dispose() {
+    if (_disposed) return;
+    _disposed = true;
+    _bindings.ref_index_free(_index);
+    malloc.free(_out);
+    malloc.free(_outLen);
+    _freeError(_error);
+  }
+}
+
+/// Reads a book's display title straight out of its serialized `indices` map.
+String indicesBookTitle(Uint8List indices) {
+  final ptr = _toNative(indices);
+  final out = malloc<Pointer<Utf8>>();
   final outLen = malloc<Size>();
   final e = _allocError();
-  _bindings.search_index(
-    pageMap,
-    queryPtr.cast<Char>(),
-    queryPtr.length,
-    out,
-    outLen,
-    e.error,
-    e.errorLen,
-  );
-  _checkError(e.error, e.errorLen);
-  return List.generate(outLen.value, (i) => out.value[i]);
-}
-
-Pointer<Void> pageMapBuilderNew() {
-  return _bindings.page_map_builder_new();
-}
-
-void pageMapBuilderAdd(Pointer<Void> builder, Uint8List bytes) {
-  final ptr = _toNative(bytes);
-  final e = _allocError();
-  _bindings.page_map_builder_add(
-    builder,
-    ptr.cast<Char>(),
-    bytes.length,
-    e.error,
-    e.errorLen,
-  );
-  _checkError(e.error, e.errorLen);
-}
-
-Uint8List pageMapBuilderFinish(Pointer<Void> builder) {
-  final out = malloc<Pointer<Uint8>>();
-  final outLen = malloc<Size>();
-  final e = _allocError();
-  _bindings.page_map_builder_finish(
-    builder,
-    out.cast<Pointer<Char>>(),
-    outLen,
-    e.error,
-    e.errorLen,
-  );
-  _checkError(e.error, e.errorLen);
-  return out.value.asTypedList(outLen.value);
+  outLen.value = 0;
+  try {
+    _bindings.indices_book_title(
+      ptr.cast<Char>(),
+      indices.length,
+      out.cast<Pointer<Char>>(),
+      outLen,
+      e.error,
+      e.errorLen,
+    );
+    _checkError(e.error, e.errorLen);
+    // Borrowed from `ptr`, so it must be copied before the buffer is freed.
+    return outLen.value == 0
+        ? ''
+        : out.value.toDartString(length: outLen.value);
+  } finally {
+    malloc.free(ptr);
+    malloc.free(out);
+    malloc.free(outLen);
+    _freeError(e);
+  }
 }
 
 Pointer<Uint8> _toNative(Uint8List list) {

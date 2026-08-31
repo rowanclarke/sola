@@ -12,7 +12,7 @@ class _InitMessage {
   final String hnswDir;
   final String hnswBasename;
   final Uint8List idxBytes;
-  final List<Uint8List> pageMapBytesList;
+  final List<Uint8List> indicesBytesList;
   final SendPort replyPort;
 
   _InitMessage({
@@ -21,7 +21,7 @@ class _InitMessage {
     required this.hnswDir,
     required this.hnswBasename,
     required this.idxBytes,
-    required this.pageMapBytesList,
+    required this.indicesBytesList,
     required this.replyPort,
   });
 }
@@ -33,19 +33,17 @@ class _SearchMessage {
   _SearchMessage(this.query, this.replyPort);
 }
 
-class _TextSearchMessage {
-  final String query;
-  final SendPort replyPort;
-
-  _TextSearchMessage(this.query, this.replyPort);
-}
-
 class _IsolateError {
   final String message;
 
   _IsolateError(this.message);
 }
 
+/// Runs semantic (embedding) search off the UI isolate.
+///
+/// Reference lookups deliberately do not go through here — they are fast enough
+/// to run inline, and routing them through this isolate would queue them behind
+/// a model inference that can take hundreds of milliseconds.
 class SearchIsolate {
   final Isolate _isolate;
   final SendPort _commandPort;
@@ -58,7 +56,7 @@ class SearchIsolate {
     required String hnswDir,
     required String hnswBasename,
     required Uint8List idxBytes,
-    required List<Uint8List> pageMapBytesList,
+    required List<Uint8List> indicesBytesList,
   }) async {
     print('[SearchIsolate] Spawning isolate...');
     final initPort = ReceivePort();
@@ -73,7 +71,7 @@ class SearchIsolate {
         hnswDir: hnswDir,
         hnswBasename: hnswBasename,
         idxBytes: idxBytes,
-        pageMapBytesList: pageMapBytesList,
+        indicesBytesList: indicesBytesList,
         replyPort: replyPort.sendPort,
       ),
     );
@@ -91,15 +89,6 @@ class SearchIsolate {
     final result = await replyPort.first;
     if (result is _IsolateError) throw Exception(result.message);
     return (result as List).cast<SearchResult>();
-  }
-
-  Future<List<Index>> searchIndex(String query) async {
-    final replyPort = ReceivePort();
-    _commandPort.send(_TextSearchMessage(query, replyPort.sendPort));
-    final result = await replyPort.first;
-    if (result is _IsolateError) throw Exception(result.message);
-    if (result is List<rust.Index>) return result.map(_toIndex).toList();
-    return [];
   }
 
   void dispose() {
@@ -122,7 +111,7 @@ class SearchIsolate {
     mainPort.send(commandPort.sendPort);
 
     Pointer<Void>? engine;
-    Pointer<Void>? pageMap;
+    rust.ReferenceIndex? references;
 
     commandPort.listen((message) {
       if (message is _InitMessage) {
@@ -137,14 +126,15 @@ class SearchIsolate {
           );
           print('[SearchIsolate] Engine loaded');
 
-          print('[SearchIsolate] Building merged page map from ${message.pageMapBytesList.length} books...');
-          final builder = rust.pageMapBuilderNew();
-          for (final bytes in message.pageMapBytesList) {
-            rust.pageMapBuilderAdd(builder, bytes);
-          }
-          final mergedBytes = rust.pageMapBuilderFinish(builder);
-          pageMap = rust.getArchivedIndices(mergedBytes);
-          print('[SearchIsolate] Page map built');
+          // Its own copy, rather than a pointer shared with the main isolate:
+          // ~200 KB and a few ms to keep the two isolates from touching the
+          // same native memory.
+          print(
+            '[SearchIsolate] Building reference index from '
+            '${message.indicesBytesList.length} books...',
+          );
+          references = rust.ReferenceIndex.build(message.indicesBytesList);
+          print('[SearchIsolate] Reference index built');
 
           message.replyPort.send(true);
         } catch (e) {
@@ -154,41 +144,19 @@ class SearchIsolate {
       } else if (message is _SearchMessage) {
         try {
           print('[SearchIsolate] Query: "${message.query}"');
-
-          // Try text search first
-          final textResults = rust.searchIndex(pageMap!, message.query);
-          if (textResults.isNotEmpty) {
-            print('[SearchIsolate] ${textResults.length} text results');
-            final results = textResults.map((ptr) {
-              final index = rust.getIndex(pageMap!, ptr);
-              return SearchResult(index: _toIndex(index), distance: 0.0);
-            }).toList();
-            message.replyPort.send(results);
-            return;
-          }
-
-          // Fall back to HNSW semantic search
           final (:ids, :distances) = rust.search(engine!, message.query, 10, 50);
-          print('[SearchIsolate] ${ids.length} HNSW results');
+          print('[SearchIsolate] ${ids.length} results');
           final results = List.generate(ids.length, (i) {
-            final index = rust.getSearchResult(engine!, pageMap!, ids[i]);
+            final index = rust.getSearchResult(
+              engine!,
+              references!.handle,
+              ids[i],
+            );
             return SearchResult(index: _toIndex(index), distance: distances[i]);
           });
           message.replyPort.send(results);
         } catch (e) {
           print('[SearchIsolate] Query error: $e');
-          message.replyPort.send(_IsolateError(e.toString()));
-        }
-      } else if (message is _TextSearchMessage) {
-        try {
-          print('[SearchIsolate] Index search: "${message.query}"');
-          final results = rust.searchIndex(pageMap!, message.query);
-          final indexes = results
-              .map((result) => rust.getIndex(pageMap!, result))
-              .toList();
-          message.replyPort.send(indexes);
-        } catch (e) {
-          print('[SearchIsolate] Index search error: $e');
           message.replyPort.send(_IsolateError(e.toString()));
         }
       }

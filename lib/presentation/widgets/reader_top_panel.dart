@@ -194,216 +194,223 @@ class ReaderTopPanelState extends State<ReaderTopPanel>
     final p = _progress;
     final pClamped = p.clamp(0.0, 1.0);
 
-    return AnimatedSize(
-      duration: const Duration(milliseconds: 200),
-      curve: Curves.easeOut,
-      alignment: Alignment.topCenter,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            height: panelHeight,
-            decoration: const BoxDecoration(
-              color: _bg,
-              border: Border(bottom: BorderSide(color: _line)),
-            ),
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                // === Pull-down hint text ===
-                if (_phase == _Phase.pulling && _pullPx > 8)
+    // Counts as part of the text field for "tap outside" purposes. Without
+    // this, a pointer down on a result row unfocuses the field first, which
+    // dismisses the panel and tears the row out of the tree before its tap
+    // resolves — so the tap is silently lost. (Only bites where the framework
+    // drops focus on tap-out: desktop, and mouse/stylus input on mobile.)
+    return TextFieldTapRegion(
+      child: AnimatedSize(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+        alignment: Alignment.topCenter,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              height: panelHeight,
+              decoration: const BoxDecoration(
+                color: _bg,
+                border: Border(bottom: BorderSide(color: _line)),
+              ),
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  // === Pull-down hint text ===
+                  if (_phase == _Phase.pulling && _pullPx > 8)
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      top: panelHeight / 2 + _pullPx + 22,
+                      child: IgnorePointer(
+                        child: Text(
+                          _pullPx >= _pullThreshold
+                              ? 'RELEASE TO SEARCH'
+                              : 'PULL TO SEARCH',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 10,
+                            letterSpacing: 1.5,
+                            fontWeight: FontWeight.w600,
+                            color: _pullPx >= _pullThreshold ? _ink : _mid,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                  // === Focused / dismissing: text field + close button ===
+                  if (_phase == _Phase.focused || _dismissing)
+                    Positioned(
+                      top: 0,
+                      bottom: 0,
+                      left: 58,
+                      right: 16,
+                      child: Opacity(
+                        opacity: pClamped,
+                        child: Transform.translate(
+                          offset: Offset(-8 * (1 - pClamped), 0),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Container(
+                                  height: 34,
+                                  decoration: BoxDecoration(
+                                    color: _fill,
+                                    border: Border.all(color: _line),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: TextField(
+                                    controller: _textController,
+                                    focusNode: _focusNode,
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      color: _ink,
+                                    ),
+                                    decoration: InputDecoration(
+                                      hintText:
+                                          (_searchVm?.isModelLoading ?? false)
+                                          ? 'Loading search...'
+                                          : 'Search verses, books, words...',
+                                      hintStyle: const TextStyle(
+                                        color: _mid,
+                                        fontSize: 14,
+                                      ),
+                                      border: InputBorder.none,
+                                      contentPadding: EdgeInsets.zero,
+                                      isDense: true,
+                                    ),
+                                    onChanged: (query) =>
+                                        _searchVm?.onQueryChanged(query),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              GestureDetector(
+                                onTap: _dismiss,
+                                child: const SizedBox(
+                                  width: 34,
+                                  height: 34,
+                                  child: Center(
+                                    child: Icon(
+                                      Icons.close,
+                                      size: 14,
+                                      color: _mid,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+
+                  // === Settings icon — right side, hidden while focused ===
+                  Positioned(
+                    right: 16,
+                    top: (panelHeight - 34) / 2,
+                    child: Opacity(
+                      opacity: 1.0 - pClamped,
+                      child: IgnorePointer(
+                        ignoring: _phase == _Phase.focused || _dismissing,
+                        child: Container(
+                          width: 34,
+                          height: 34,
+                          decoration: BoxDecoration(
+                            color: _bg,
+                            border: Border.all(color: _line),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Center(
+                            child: Icon(
+                              Icons.settings,
+                              size: 15,
+                              color: Color(0xFF52525B),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // === Single search icon — rendered LAST so it paints on top ===
                   Positioned(
                     left: 0,
-                    right: 0,
-                    top: panelHeight / 2 + _pullPx + 22,
-                    child: IgnorePointer(
-                      child: Text(
-                        _pullPx >= _pullThreshold
-                            ? 'RELEASE TO SEARCH'
-                            : 'PULL TO SEARCH',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 10,
-                          letterSpacing: 1.5,
-                          fontWeight: FontWeight.w600,
-                          color: _pullPx >= _pullThreshold ? _ink : _mid,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                // === Focused / dismissing: text field + close button ===
-                if (_phase == _Phase.focused || _dismissing)
-                  Positioned(
-                    top: 0,
-                    bottom: 0,
-                    left: 58,
-                    right: 16,
-                    child: Opacity(
-                      opacity: pClamped,
-                      child: Transform.translate(
-                        offset: Offset(-8 * (1 - pClamped), 0),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Container(
-                                height: 34,
-                                decoration: BoxDecoration(
-                                  color: _fill,
-                                  border: Border.all(color: _line),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                ),
-                                alignment: Alignment.center,
-                                child: TextField(
-                                  controller: _textController,
-                                  focusNode: _focusNode,
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    color: _ink,
-                                  ),
-                                  decoration: InputDecoration(
-                                    hintText:
-                                        (_searchVm?.isModelLoading ?? false)
-                                        ? 'Loading search...'
-                                        : 'Search verses, books, words...',
-                                    hintStyle: const TextStyle(
-                                      color: _mid,
-                                      fontSize: 14,
-                                    ),
-                                    border: InputBorder.none,
-                                    contentPadding: EdgeInsets.zero,
-                                    isDense: true,
-                                  ),
-                                  onChanged: (query) =>
-                                      _searchVm?.onQueryChanged(query),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            GestureDetector(
-                              onTap: _dismiss,
-                              child: const SizedBox(
-                                width: 34,
-                                height: 34,
-                                child: Center(
-                                  child: Icon(
-                                    Icons.close,
-                                    size: 14,
-                                    color: _mid,
+                    top: (panelHeight - 34) / 2,
+                    child: Builder(
+                      builder: (context) {
+                        final x = centerX + (focusedX - centerX) * p;
+                        final double pullY;
+                        if (_phase == _Phase.pulling) {
+                          pullY = _pullPx;
+                        } else if (_pullAtFocus > 0 &&
+                            _animController.isAnimating &&
+                            _animTo == 1.0) {
+                          pullY = _pullAtFocus * (1 - pClamped);
+                        } else {
+                          pullY = 0;
+                        }
+                        return Transform.translate(
+                          offset: Offset(x, pullY),
+                          child: GestureDetector(
+                            onTap: () {
+                              if (_phase != _Phase.focused && !_dismissing) {
+                                _focusSearch();
+                              }
+                            },
+                            child: Container(
+                              width: 34,
+                              height: 34,
+                              decoration: BoxDecoration(
+                                color: _bg,
+                                border: Border.all(
+                                  color: Color.fromRGBO(
+                                    228,
+                                    228,
+                                    231,
+                                    1.0 - pClamped,
                                   ),
                                 ),
+                                borderRadius: BorderRadius.circular(8),
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-
-                // === Settings icon — right side, hidden while focused ===
-                Positioned(
-                  right: 16,
-                  top: (panelHeight - 34) / 2,
-                  child: Opacity(
-                    opacity: 1.0 - pClamped,
-                    child: IgnorePointer(
-                      ignoring: _phase == _Phase.focused || _dismissing,
-                      child: Container(
-                        width: 34,
-                        height: 34,
-                        decoration: BoxDecoration(
-                          color: _bg,
-                          border: Border.all(color: _line),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Center(
-                          child: Icon(
-                            Icons.settings,
-                            size: 15,
-                            color: Color(0xFF52525B),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                // === Single search icon — rendered LAST so it paints on top ===
-                Positioned(
-                  left: 0,
-                  top: (panelHeight - 34) / 2,
-                  child: Builder(
-                    builder: (context) {
-                      final x = centerX + (focusedX - centerX) * p;
-                      final double pullY;
-                      if (_phase == _Phase.pulling) {
-                        pullY = _pullPx;
-                      } else if (_pullAtFocus > 0 &&
-                          _animController.isAnimating &&
-                          _animTo == 1.0) {
-                        pullY = _pullAtFocus * (1 - pClamped);
-                      } else {
-                        pullY = 0;
-                      }
-                      return Transform.translate(
-                        offset: Offset(x, pullY),
-                        child: GestureDetector(
-                          onTap: () {
-                            if (_phase != _Phase.focused && !_dismissing) {
-                              _focusSearch();
-                            }
-                          },
-                          child: Container(
-                            width: 34,
-                            height: 34,
-                            decoration: BoxDecoration(
-                              color: _bg,
-                              border: Border.all(
-                                color: Color.fromRGBO(
-                                  228,
-                                  228,
-                                  231,
-                                  1.0 - pClamped,
+                              child: const Center(
+                                child: Icon(
+                                  Icons.search,
+                                  size: 16,
+                                  color: Color(0xFF52525B),
                                 ),
-                              ),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Center(
-                              child: Icon(
-                                Icons.search,
-                                size: 16,
-                                color: Color(0xFF52525B),
                               ),
                             ),
                           ),
-                        ),
-                      );
-                    },
+                        );
+                      },
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ),
-
-          // === Search loading indicator ===
-          if (_phase == _Phase.focused &&
-              !_dismissing &&
-              (_searchVm?.isSearching ?? false))
-            Container(
-              color: _bg,
-              child: LinearProgressIndicator(
-                minHeight: 1.5,
-                color: _ink,
-                backgroundColor: _line,
+                ],
               ),
             ),
 
-          // === Search results section ===
-          if (_showResults) _buildResultsSection(),
-        ],
+            // === Search loading indicator ===
+            if (_phase == _Phase.focused &&
+                !_dismissing &&
+                (_searchVm?.isSearching ?? false))
+              Container(
+                color: _bg,
+                child: LinearProgressIndicator(
+                  minHeight: 1.5,
+                  color: _ink,
+                  backgroundColor: _line,
+                ),
+              ),
+
+            // === Search results section ===
+            if (_showResults) _buildResultsSection(),
+          ],
+        ),
       ),
     );
   }
