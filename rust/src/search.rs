@@ -1,7 +1,5 @@
-use std::collections::HashMap;
 use std::ffi::{c_char, c_void};
 use std::io::Cursor;
-use std::mem;
 use std::path::Path;
 
 use hnsw_rs::prelude::*;
@@ -11,11 +9,13 @@ use rkyv::rancor::Error as RkyvError;
 use rkyv::vec::ArchivedVec;
 use tokenizers::Tokenizer;
 use tract_onnx::prelude::*;
+use usfm::BookIdentifier;
 
 use crate::error::SolaError;
 use crate::ffi::{read_bytes, read_ref, read_str, run_ffi, write_vec};
 use crate::log;
-use crate::painter::{ArchivedIndex, ArchivedIndices, Index};
+use crate::painter::ArchivedIndex;
+use crate::reference::RefIndex;
 
 // ---------------------------------------------------------------------------
 // Types
@@ -217,10 +217,18 @@ pub extern "C" fn search(
     }
 }
 
+/// Resolves one HNSW result id into the reference it points at, and the page
+/// that reference was rendered on.
+///
+/// The semantic index (`idx_bytes`) is built separately from the rendered
+/// output, so the two are matched on `(book, chapter, verse)` alone — never on
+/// the display name, which the two sides can spell differently. The name shown
+/// to the reader comes from [`RefIndex`], which borrows it for as long as the
+/// index lives, so nothing here needs freeing.
 #[unsafe(no_mangle)]
 pub extern "C" fn get_search_result(
     engine: *const c_void,
-    page_map: *const c_void,
+    ref_index: *const c_void,
     id: usize,
     out_page: *mut usize,
     out_book: *mut *const u8,
@@ -232,43 +240,34 @@ pub extern "C" fn get_search_result(
     out_error: *mut *mut c_char,
     out_error_len: *mut usize,
 ) {
-    let Some((page_val, book_ptr, book_len, header_ptr, header_len, chapter, verse)) = run_ffi(
+    let Some((page, book, header, chapter, verse)) = run_ffi(
         || {
             let engine = unsafe { read_ref::<SearchEngine>(engine) };
-            let page_map = unsafe { read_ref::<ArchivedIndices>(page_map) };
+            let ref_index = unsafe { read_ref::<RefIndex>(ref_index) };
             let verse_refs =
                 rkyv::access::<ArchivedVec<ArchivedIndex>, RkyvError>(&engine.idx_bytes)
                     .map_err(|e| SolaError::Search(e.to_string()))?;
             let verse_ref = verse_refs
                 .get(id)
                 .ok_or(SolaError::Search(format!("Invalid HNSW result id: {}", id)))?;
-            log!(
-                "[FFI] get_search_result: id={} verse_ref={:?}",
-                id,
-                verse_ref
-            );
 
-            let page_val: usize = page_map
-                .get(verse_ref)
-                .and_then(|p| p.to_native().try_into().ok())
-                .unwrap_or(0);
-
-            let deserialized: Index = deserialize::<_, RkyvError>(verse_ref)
+            let book: BookIdentifier = deserialize::<_, RkyvError>(&verse_ref.book)
                 .map_err(|e| SolaError::Search(e.to_string()))?;
-            let book = deserialized.book.to_identifier();
-            let header = deserialized.header;
-            let header_ptr = header.as_ptr();
-            let header_len = header.len();
-            mem::forget(header); // prevent drop — Dart reads this pointer
-            Ok((
-                page_val,
-                book.as_ptr(),
-                book.len(),
-                header_ptr,
-                header_len,
-                deserialized.chapter,
-                deserialized.verse,
-            ))
+            let book = book.to_identifier();
+            let chapter = verse_ref.chapter.as_ref().map(|c| c.to_native());
+            let verse = verse_ref.verse.as_ref().map(|v| v.to_native());
+
+            let page = ref_index.page_or_nearest(book, chapter, verse) as usize;
+            let header = ref_index.book_name(book).unwrap_or("");
+            log!(
+                "[FFI] get_search_result: id={} {} {:?}:{:?} page={}",
+                id,
+                book,
+                chapter,
+                verse,
+                page
+            );
+            Ok((page, book, header, chapter, verse))
         },
         out_error,
         out_error_len,
@@ -276,11 +275,11 @@ pub extern "C" fn get_search_result(
         return;
     };
     unsafe {
-        *out_page = page_val;
-        *out_book = book_ptr;
-        *out_book_len = book_len;
-        *out_header = header_ptr;
-        *out_header_len = header_len;
+        *out_page = page;
+        *out_book = book.as_ptr();
+        *out_book_len = book.len();
+        *out_header = header.as_ptr();
+        *out_header_len = header.len();
         if let Some(chapter) = chapter {
             *out_chapter = chapter;
         }
@@ -288,111 +287,4 @@ pub extern "C" fn get_search_result(
             *out_verse = verse;
         }
     }
-}
-
-// ---------------------------------------------------------------------------
-// FFI: Text search
-// ---------------------------------------------------------------------------
-
-#[unsafe(no_mangle)]
-pub extern "C" fn search_index(
-    page_map: *const c_void,
-    query: *const u8,
-    query_len: usize,
-    out: *mut *const *const c_void,
-    out_len: *mut usize,
-    out_error: *mut *mut c_char,
-    out_error_len: *mut usize,
-) {
-    let matches: Vec<_> = run_ffi(
-        || {
-            let page_map = unsafe { read_ref::<ArchivedIndices>(page_map) };
-            let query = unsafe { read_str(query, query_len) }.trim();
-            let matches: Vec<*const c_void> = page_map
-                .keys()
-                .filter(|i| i.verse.is_none() && i.chapter.is_none())
-                .filter(|i| i.header.to_lowercase().contains(&query.to_lowercase()))
-                .map(|i: &ArchivedIndex| i as *const ArchivedIndex as *const c_void)
-                .take(5)
-                .collect();
-            Ok(matches)
-        },
-        out_error,
-        out_error_len,
-    )
-    .unwrap_or(vec![]);
-    unsafe { write_vec(matches, out, out_len) };
-}
-
-// ---------------------------------------------------------------------------
-// FFI: Page map builder
-// ---------------------------------------------------------------------------
-
-struct PageMapBuilder {
-    map: HashMap<Index, usize>,
-}
-
-#[unsafe(no_mangle)]
-pub extern "C" fn page_map_builder_new() -> *mut c_void {
-    log!("[FFI] page_map_builder_new");
-    Box::into_raw(Box::new(PageMapBuilder {
-        map: HashMap::new(),
-    })) as *mut c_void
-}
-
-#[unsafe(no_mangle)]
-pub extern "C" fn page_map_builder_add(
-    builder: *mut c_void,
-    data: *const u8,
-    data_len: usize,
-    out_error: *mut *mut c_char,
-    out_error_len: *mut usize,
-) {
-    let Some(()) = run_ffi(
-        || {
-            let builder = unsafe { &mut *(builder as *mut PageMapBuilder) };
-            let bytes = unsafe { read_bytes(data, data_len) };
-            let archived = rkyv::access::<ArchivedIndices, RkyvError>(bytes)
-                .map_err(|e| SolaError::Deserialization(e.to_string()))?;
-            let indices: HashMap<Index, usize> = deserialize::<_, RkyvError>(archived)
-                .map_err(|e| SolaError::Deserialization(e.to_string()))?;
-            log!("[FFI] page_map_builder_add: {} entries", indices.len());
-            builder.map.extend(indices);
-            Ok(())
-        },
-        out_error,
-        out_error_len,
-    ) else {
-        return;
-    };
-}
-
-#[unsafe(no_mangle)]
-pub extern "C" fn page_map_builder_finish(
-    builder: *mut c_void,
-    out: *mut *const u8,
-    out_len: *mut usize,
-    out_error: *mut *mut c_char,
-    out_error_len: *mut usize,
-) {
-    let Some(bytes) = run_ffi(
-        || {
-            let builder = unsafe { Box::from_raw(builder as *mut PageMapBuilder) };
-            log!(
-                "[FFI] page_map_builder_finish: {} total entries",
-                builder.map.len()
-            );
-            rkyv::to_bytes::<RkyvError>(&builder.map)
-                .map_err(|e| SolaError::Serialization(e.to_string()))
-        },
-        out_error,
-        out_error_len,
-    ) else {
-        return;
-    };
-    unsafe {
-        *out = bytes.as_ptr();
-        *out_len = bytes.len();
-    }
-    mem::forget(bytes);
 }

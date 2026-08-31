@@ -409,99 +409,6 @@ class RustBindings {
         )
       >();
 
-  ffi.Pointer<ffi.Void> archived_indices(
-    ffi.Pointer<ffi.Char> indices,
-    int indices_len,
-    ffi.Pointer<ffi.Pointer<ffi.Char>> out_error,
-    ffi.Pointer<ffi.Size> out_error_len,
-  ) {
-    return _archived_indices(indices, indices_len, out_error, out_error_len);
-  }
-
-  late final _archived_indicesPtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Pointer<ffi.Void> Function(
-            ffi.Pointer<ffi.Char>,
-            ffi.Size,
-            ffi.Pointer<ffi.Pointer<ffi.Char>>,
-            ffi.Pointer<ffi.Size>,
-          )
-        >
-      >('archived_indices');
-  late final _archived_indices = _archived_indicesPtr
-      .asFunction<
-        ffi.Pointer<ffi.Void> Function(
-          ffi.Pointer<ffi.Char>,
-          int,
-          ffi.Pointer<ffi.Pointer<ffi.Char>>,
-          ffi.Pointer<ffi.Size>,
-        )
-      >();
-
-  void get_index(
-    ffi.Pointer<ffi.Void> archived_indices,
-    ffi.Pointer<ffi.Void> index,
-    ffi.Pointer<ffi.Size> out_page,
-    ffi.Pointer<ffi.Pointer<ffi.Char>> out_book,
-    ffi.Pointer<ffi.Size> out_book_len,
-    ffi.Pointer<ffi.Pointer<ffi.Char>> out_header,
-    ffi.Pointer<ffi.Size> out_header_len,
-    ffi.Pointer<ffi.UnsignedShort> out_chapter,
-    ffi.Pointer<ffi.UnsignedShort> out_verse,
-    ffi.Pointer<ffi.Pointer<ffi.Char>> out_error,
-    ffi.Pointer<ffi.Size> out_error_len,
-  ) {
-    return _get_index(
-      archived_indices,
-      index,
-      out_page,
-      out_book,
-      out_book_len,
-      out_header,
-      out_header_len,
-      out_chapter,
-      out_verse,
-      out_error,
-      out_error_len,
-    );
-  }
-
-  late final _get_indexPtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Void Function(
-            ffi.Pointer<ffi.Void>,
-            ffi.Pointer<ffi.Void>,
-            ffi.Pointer<ffi.Size>,
-            ffi.Pointer<ffi.Pointer<ffi.Char>>,
-            ffi.Pointer<ffi.Size>,
-            ffi.Pointer<ffi.Pointer<ffi.Char>>,
-            ffi.Pointer<ffi.Size>,
-            ffi.Pointer<ffi.UnsignedShort>,
-            ffi.Pointer<ffi.UnsignedShort>,
-            ffi.Pointer<ffi.Pointer<ffi.Char>>,
-            ffi.Pointer<ffi.Size>,
-          )
-        >
-      >('get_index');
-  late final _get_index = _get_indexPtr
-      .asFunction<
-        void Function(
-          ffi.Pointer<ffi.Void>,
-          ffi.Pointer<ffi.Void>,
-          ffi.Pointer<ffi.Size>,
-          ffi.Pointer<ffi.Pointer<ffi.Char>>,
-          ffi.Pointer<ffi.Size>,
-          ffi.Pointer<ffi.Pointer<ffi.Char>>,
-          ffi.Pointer<ffi.Size>,
-          ffi.Pointer<ffi.UnsignedShort>,
-          ffi.Pointer<ffi.UnsignedShort>,
-          ffi.Pointer<ffi.Pointer<ffi.Char>>,
-          ffi.Pointer<ffi.Size>,
-        )
-      >();
-
   void serialize_verses(
     ffi.Pointer<ffi.Void> painter,
     ffi.Pointer<ffi.Pointer<ffi.Char>> out,
@@ -690,7 +597,7 @@ class RustBindings {
 
   void get_search_result(
     ffi.Pointer<ffi.Void> engine,
-    ffi.Pointer<ffi.Void> page_map,
+    ffi.Pointer<ffi.Void> ref_index,
     int id,
     ffi.Pointer<ffi.Size> out_page,
     ffi.Pointer<ffi.Pointer<ffi.Char>> out_book,
@@ -704,7 +611,7 @@ class RustBindings {
   ) {
     return _get_search_result(
       engine,
-      page_map,
+      ref_index,
       id,
       out_page,
       out_book,
@@ -755,72 +662,25 @@ class RustBindings {
         )
       >();
 
-  void search_index(
-    ffi.Pointer<ffi.Void> page_map,
-    ffi.Pointer<ffi.Char> query,
-    int query_len,
-    ffi.Pointer<ffi.Pointer<ffi.Pointer<ffi.Void>>> out,
-    ffi.Pointer<ffi.Size> out_len,
-    ffi.Pointer<ffi.Pointer<ffi.Char>> out_error,
-    ffi.Pointer<ffi.Size> out_error_len,
-  ) {
-    return _search_index(
-      page_map,
-      query,
-      query_len,
-      out,
-      out_len,
-      out_error,
-      out_error_len,
-    );
+  ffi.Pointer<ffi.Void> ref_index_builder_new() {
+    return _ref_index_builder_new();
   }
 
-  late final _search_indexPtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Void Function(
-            ffi.Pointer<ffi.Void>,
-            ffi.Pointer<ffi.Char>,
-            ffi.Size,
-            ffi.Pointer<ffi.Pointer<ffi.Pointer<ffi.Void>>>,
-            ffi.Pointer<ffi.Size>,
-            ffi.Pointer<ffi.Pointer<ffi.Char>>,
-            ffi.Pointer<ffi.Size>,
-          )
-        >
-      >('search_index');
-  late final _search_index = _search_indexPtr
-      .asFunction<
-        void Function(
-          ffi.Pointer<ffi.Void>,
-          ffi.Pointer<ffi.Char>,
-          int,
-          ffi.Pointer<ffi.Pointer<ffi.Pointer<ffi.Void>>>,
-          ffi.Pointer<ffi.Size>,
-          ffi.Pointer<ffi.Pointer<ffi.Char>>,
-          ffi.Pointer<ffi.Size>,
-        )
-      >();
-
-  ffi.Pointer<ffi.Void> page_map_builder_new() {
-    return _page_map_builder_new();
-  }
-
-  late final _page_map_builder_newPtr =
+  late final _ref_index_builder_newPtr =
       _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Void> Function()>>(
-        'page_map_builder_new',
+        'ref_index_builder_new',
       );
-  late final _page_map_builder_new = _page_map_builder_newPtr
+  late final _ref_index_builder_new = _ref_index_builder_newPtr
       .asFunction<ffi.Pointer<ffi.Void> Function()>();
 
-  void page_map_builder_add(
+  void ref_index_builder_add(
     ffi.Pointer<ffi.Void> builder,
     ffi.Pointer<ffi.Char> data,
     int data_len,
     ffi.Pointer<ffi.Pointer<ffi.Char>> out_error,
     ffi.Pointer<ffi.Size> out_error_len,
   ) {
-    return _page_map_builder_add(
+    return _ref_index_builder_add(
       builder,
       data,
       data_len,
@@ -829,7 +689,7 @@ class RustBindings {
     );
   }
 
-  late final _page_map_builder_addPtr =
+  late final _ref_index_builder_addPtr =
       _lookup<
         ffi.NativeFunction<
           ffi.Void Function(
@@ -840,8 +700,8 @@ class RustBindings {
             ffi.Pointer<ffi.Size>,
           )
         >
-      >('page_map_builder_add');
-  late final _page_map_builder_add = _page_map_builder_addPtr
+      >('ref_index_builder_add');
+  late final _ref_index_builder_add = _ref_index_builder_addPtr
       .asFunction<
         void Function(
           ffi.Pointer<ffi.Void>,
@@ -852,15 +712,59 @@ class RustBindings {
         )
       >();
 
-  void page_map_builder_finish(
+  ffi.Pointer<ffi.Void> ref_index_builder_finish(
     ffi.Pointer<ffi.Void> builder,
-    ffi.Pointer<ffi.Pointer<ffi.Char>> out,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> out_error,
+    ffi.Pointer<ffi.Size> out_error_len,
+  ) {
+    return _ref_index_builder_finish(builder, out_error, out_error_len);
+  }
+
+  late final _ref_index_builder_finishPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<ffi.Void> Function(
+            ffi.Pointer<ffi.Void>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+            ffi.Pointer<ffi.Size>,
+          )
+        >
+      >('ref_index_builder_finish');
+  late final _ref_index_builder_finish = _ref_index_builder_finishPtr
+      .asFunction<
+        ffi.Pointer<ffi.Void> Function(
+          ffi.Pointer<ffi.Void>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          ffi.Pointer<ffi.Size>,
+        )
+      >();
+
+  void ref_index_free(ffi.Pointer<ffi.Void> index) {
+    return _ref_index_free(index);
+  }
+
+  late final _ref_index_freePtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
+        'ref_index_free',
+      );
+  late final _ref_index_free = _ref_index_freePtr
+      .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
+
+  void ref_index_lookup(
+    ffi.Pointer<ffi.Void> index,
+    ffi.Pointer<ffi.Char> query,
+    int query_len,
+    int limit,
+    ffi.Pointer<ffi.Pointer<RefHit>> out,
     ffi.Pointer<ffi.Size> out_len,
     ffi.Pointer<ffi.Pointer<ffi.Char>> out_error,
     ffi.Pointer<ffi.Size> out_error_len,
   ) {
-    return _page_map_builder_finish(
-      builder,
+    return _ref_index_lookup(
+      index,
+      query,
+      query_len,
+      limit,
       out,
       out_len,
       out_error,
@@ -868,22 +772,82 @@ class RustBindings {
     );
   }
 
-  late final _page_map_builder_finishPtr =
+  late final _ref_index_lookupPtr =
       _lookup<
         ffi.NativeFunction<
           ffi.Void Function(
             ffi.Pointer<ffi.Void>,
+            ffi.Pointer<ffi.Char>,
+            ffi.Size,
+            ffi.Size,
+            ffi.Pointer<ffi.Pointer<RefHit>>,
+            ffi.Pointer<ffi.Size>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+            ffi.Pointer<ffi.Size>,
+          )
+        >
+      >('ref_index_lookup');
+  late final _ref_index_lookup = _ref_index_lookupPtr
+      .asFunction<
+        void Function(
+          ffi.Pointer<ffi.Void>,
+          ffi.Pointer<ffi.Char>,
+          int,
+          int,
+          ffi.Pointer<ffi.Pointer<RefHit>>,
+          ffi.Pointer<ffi.Size>,
+          ffi.Pointer<ffi.Pointer<ffi.Char>>,
+          ffi.Pointer<ffi.Size>,
+        )
+      >();
+
+  void ref_hits_free(ffi.Pointer<RefHit> hits, int len) {
+    return _ref_hits_free(hits, len);
+  }
+
+  late final _ref_hits_freePtr =
+      _lookup<
+        ffi.NativeFunction<ffi.Void Function(ffi.Pointer<RefHit>, ffi.Size)>
+      >('ref_hits_free');
+  late final _ref_hits_free = _ref_hits_freePtr
+      .asFunction<void Function(ffi.Pointer<RefHit>, int)>();
+
+  void indices_book_title(
+    ffi.Pointer<ffi.Char> data,
+    int data_len,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> out,
+    ffi.Pointer<ffi.Size> out_len,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> out_error,
+    ffi.Pointer<ffi.Size> out_error_len,
+  ) {
+    return _indices_book_title(
+      data,
+      data_len,
+      out,
+      out_len,
+      out_error,
+      out_error_len,
+    );
+  }
+
+  late final _indices_book_titlePtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(
+            ffi.Pointer<ffi.Char>,
+            ffi.Size,
             ffi.Pointer<ffi.Pointer<ffi.Char>>,
             ffi.Pointer<ffi.Size>,
             ffi.Pointer<ffi.Pointer<ffi.Char>>,
             ffi.Pointer<ffi.Size>,
           )
         >
-      >('page_map_builder_finish');
-  late final _page_map_builder_finish = _page_map_builder_finishPtr
+      >('indices_book_title');
+  late final _indices_book_title = _indices_book_titlePtr
       .asFunction<
         void Function(
-          ffi.Pointer<ffi.Void>,
+          ffi.Pointer<ffi.Char>,
+          int,
           ffi.Pointer<ffi.Pointer<ffi.Char>>,
           ffi.Pointer<ffi.Size>,
           ffi.Pointer<ffi.Pointer<ffi.Char>>,
@@ -910,7 +874,7 @@ final class TextStyle extends ffi.Struct {
   @ffi.Float()
   external double word_spacing;
 
-  @ffi.Int32()
+  @ffi.Int()
   external int underline;
 }
 
@@ -977,4 +941,30 @@ final class Dimensions extends ffi.Struct {
 
   @ffi.Float()
   external double drop_cap_padding;
+}
+
+/// One reference-search hit. `book` and `header` point into the RefIndex that
+/// produced the hit and stay valid for as long as it lives; only the array
+/// itself needs freeing, via ref_hits_free.
+/// A `chapter` or `verse` of 0 means the hit stops at the level above: a book
+/// hit carries neither, a chapter hit carries only a chapter.
+final class RefHit extends ffi.Struct {
+  @ffi.Size()
+  external int page;
+
+  external ffi.Pointer<ffi.Char> book;
+
+  @ffi.Size()
+  external int book_len;
+
+  external ffi.Pointer<ffi.Char> header;
+
+  @ffi.Size()
+  external int header_len;
+
+  @ffi.UnsignedShort()
+  external int chapter;
+
+  @ffi.UnsignedShort()
+  external int verse;
 }
