@@ -1,13 +1,13 @@
 import 'package:flutter/foundation.dart';
-import 'package:sola/core/models/page_model.dart';
 import 'package:sola/data/repositories/renderer_repository.dart';
 import 'package:sola/data/repositories/session_repository.dart';
+import 'package:sola/domain/services/book_pages.dart';
 
 class ReaderViewModel extends ChangeNotifier {
   final RendererRepository _rendererRepository;
   final SessionRepository _sessionRepository;
 
-  List<PageModel> _pages = [];
+  BookPages? _book;
   int _currentPageIndex = 0;
   bool _isLoading = false;
   bool _isRendering = false;
@@ -15,7 +15,7 @@ class ReaderViewModel extends ChangeNotifier {
   String? _error;
   double _lastWidth = 0;
   double _lastHeight = 0;
-  Map<String, ({int pageCount, String title, List<String> verseRanges})> _bookData = {};
+  Map<String, BookData> _bookData = {};
 
   ReaderViewModel({
     required RendererRepository rendererRepository,
@@ -23,12 +23,15 @@ class ReaderViewModel extends ChangeNotifier {
   }) : _rendererRepository = rendererRepository,
        _sessionRepository = sessionRepository;
 
-  List<PageModel> get pages => _pages;
+  /// The open book, or null before the first load. Pages come off it one at a
+  /// time; nothing here holds the whole book.
+  BookPages? get book => _book;
+  int get pageCount => _book?.pageCount ?? 0;
   int get currentPageIndex => _currentPageIndex;
   bool get isLoading => _isLoading;
   bool get isRendering => _isRendering;
   String? get error => _error;
-  Map<String, ({int pageCount, String title, List<String> verseRanges})> get bookData => _bookData;
+  Map<String, BookData> get bookData => _bookData;
 
   String get currentBookId =>
       _sessionRepository.currentSession.currentBookId ?? 'GEN';
@@ -72,7 +75,7 @@ class ReaderViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _pages = await _rendererRepository.renderAndLoadPages(
+      final book = await _rendererRepository.openBook(
         translationId: translationId,
         bookId: bookId,
         width: width,
@@ -82,9 +85,15 @@ class ReaderViewModel extends ChangeNotifier {
       _currentCacheKey = cacheKey;
       final savedPage =
           _sessionRepository.currentSession.currentPageNumber ?? 0;
-      _currentPageIndex = savedPage.clamp(0, _pages.length - 1);
+      _currentPageIndex =
+          book.pageCount == 0 ? 0 : savedPage.clamp(0, book.pageCount - 1);
+      // Only the page being opened and the two either side of it are read;
+      // the rest of the book stays on disk until it is swiped to.
+      book.warm(_currentPageIndex);
+      _book = book;
       debugPrint(
-        '[ReaderVM] Loaded ${_pages.length} pages, starting at page $_currentPageIndex',
+        '[ReaderVM] Opened book of ${book.pageCount} pages, '
+        'starting at page $_currentPageIndex',
       );
     } catch (e) {
       debugPrint('[ReaderVM] Error loading pages: $e');
@@ -124,6 +133,7 @@ class ReaderViewModel extends ChangeNotifier {
 
   Future<void> setPage(int index) async {
     _currentPageIndex = index;
+    _book?.prefetchAround(index);
     await _sessionRepository.setCurrentPage(index);
     notifyListeners();
   }
@@ -139,7 +149,10 @@ class ReaderViewModel extends ChangeNotifier {
       _currentCacheKey = null;
       await loadPages(_lastWidth, _lastHeight);
     } else {
-      _currentPageIndex = pageNumber.clamp(0, _pages.length - 1);
+      _currentPageIndex = pageCount == 0 ? 0 : pageNumber.clamp(0, pageCount - 1);
+      // A jump lands somewhere the reader has not been: read the target and
+      // its neighbours so the swipe away from it is ready too.
+      _book?.warm(_currentPageIndex);
       notifyListeners();
     }
   }

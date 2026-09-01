@@ -37,6 +37,17 @@ class RustBindings {
   late final _free_error = _free_errorPtr
       .asFunction<void Function(ffi.Pointer<ffi.Char>, int)>();
 
+  void bytes_free(ffi.Pointer<ffi.Char> bytes, int len) {
+    return _bytes_free(bytes, len);
+  }
+
+  late final _bytes_freePtr =
+      _lookup<
+        ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Char>, ffi.Size)>
+      >('bytes_free');
+  late final _bytes_free = _bytes_freePtr
+      .asFunction<void Function(ffi.Pointer<ffi.Char>, int)>();
+
   ffi.Pointer<ffi.Void> renderer() {
     return _renderer();
   }
@@ -259,10 +270,20 @@ class RustBindings {
     ffi.Pointer<ffi.Void> painter,
     ffi.Pointer<ffi.Pointer<ffi.Char>> out,
     ffi.Pointer<ffi.Size> out_len,
+    ffi.Pointer<ffi.Pointer<ffi.Char>> out_index,
+    ffi.Pointer<ffi.Size> out_index_len,
     ffi.Pointer<ffi.Pointer<ffi.Char>> out_error,
     ffi.Pointer<ffi.Size> out_error_len,
   ) {
-    return _serialize_pages(painter, out, out_len, out_error, out_error_len);
+    return _serialize_pages(
+      painter,
+      out,
+      out_len,
+      out_index,
+      out_index_len,
+      out_error,
+      out_error_len,
+    );
   }
 
   late final _serialize_pagesPtr =
@@ -270,6 +291,8 @@ class RustBindings {
         ffi.NativeFunction<
           ffi.Void Function(
             ffi.Pointer<ffi.Void>,
+            ffi.Pointer<ffi.Pointer<ffi.Char>>,
+            ffi.Pointer<ffi.Size>,
             ffi.Pointer<ffi.Pointer<ffi.Char>>,
             ffi.Pointer<ffi.Size>,
             ffi.Pointer<ffi.Pointer<ffi.Char>>,
@@ -285,63 +308,24 @@ class RustBindings {
           ffi.Pointer<ffi.Size>,
           ffi.Pointer<ffi.Pointer<ffi.Char>>,
           ffi.Pointer<ffi.Size>,
-        )
-      >();
-
-  ffi.Pointer<ffi.Void> archived_pages(
-    ffi.Pointer<ffi.Char> pages,
-    int pages_len,
-    ffi.Pointer<ffi.Pointer<ffi.Char>> out_error,
-    ffi.Pointer<ffi.Size> out_error_len,
-  ) {
-    return _archived_pages(pages, pages_len, out_error, out_error_len);
-  }
-
-  late final _archived_pagesPtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Pointer<ffi.Void> Function(
-            ffi.Pointer<ffi.Char>,
-            ffi.Size,
-            ffi.Pointer<ffi.Pointer<ffi.Char>>,
-            ffi.Pointer<ffi.Size>,
-          )
-        >
-      >('archived_pages');
-  late final _archived_pages = _archived_pagesPtr
-      .asFunction<
-        ffi.Pointer<ffi.Void> Function(
-          ffi.Pointer<ffi.Char>,
-          int,
           ffi.Pointer<ffi.Pointer<ffi.Char>>,
           ffi.Pointer<ffi.Size>,
         )
       >();
 
-  int num_pages(ffi.Pointer<ffi.Void> archived_pages) {
-    return _num_pages(archived_pages);
-  }
-
-  late final _num_pagesPtr =
-      _lookup<ffi.NativeFunction<ffi.Size Function(ffi.Pointer<ffi.Void>)>>(
-        'num_pages',
-      );
-  late final _num_pages = _num_pagesPtr
-      .asFunction<int Function(ffi.Pointer<ffi.Void>)>();
-
-  void page(
+  void page_from_bytes(
     ffi.Pointer<ffi.Void> renderer,
-    ffi.Pointer<ffi.Void> archived_pages,
-    int n,
+    ffi.Pointer<ffi.Char> page,
+    int page_len,
     ffi.Pointer<ffi.Pointer<Text>> out,
     ffi.Pointer<ffi.Size> out_len,
     ffi.Pointer<ffi.Pointer<ffi.Char>> out_error,
     ffi.Pointer<ffi.Size> out_error_len,
   ) {
-    return _page(
+    return _page_from_bytes(
       renderer,
-      archived_pages,
-      n,
+      page,
+      page_len,
       out,
       out_len,
       out_error,
@@ -349,12 +333,12 @@ class RustBindings {
     );
   }
 
-  late final _pagePtr =
+  late final _page_from_bytesPtr =
       _lookup<
         ffi.NativeFunction<
           ffi.Void Function(
             ffi.Pointer<ffi.Void>,
-            ffi.Pointer<ffi.Void>,
+            ffi.Pointer<ffi.Char>,
             ffi.Size,
             ffi.Pointer<ffi.Pointer<Text>>,
             ffi.Pointer<ffi.Size>,
@@ -362,12 +346,12 @@ class RustBindings {
             ffi.Pointer<ffi.Size>,
           )
         >
-      >('page');
-  late final _page = _pagePtr
+      >('page_from_bytes');
+  late final _page_from_bytes = _page_from_bytesPtr
       .asFunction<
         void Function(
           ffi.Pointer<ffi.Void>,
-          ffi.Pointer<ffi.Void>,
+          ffi.Pointer<ffi.Char>,
           int,
           ffi.Pointer<ffi.Pointer<Text>>,
           ffi.Pointer<ffi.Size>,
@@ -375,6 +359,17 @@ class RustBindings {
           ffi.Pointer<ffi.Size>,
         )
       >();
+
+  void page_free(ffi.Pointer<Text> page, int len) {
+    return _page_free(page, len);
+  }
+
+  late final _page_freePtr =
+      _lookup<
+        ffi.NativeFunction<ffi.Void Function(ffi.Pointer<Text>, ffi.Size)>
+      >('page_free');
+  late final _page_free = _page_freePtr
+      .asFunction<void Function(ffi.Pointer<Text>, int)>();
 
   void serialize_indices(
     ffi.Pointer<ffi.Void> painter,

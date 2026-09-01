@@ -15,7 +15,7 @@ pub mod template;
 
 use std::collections::HashMap;
 
-use rkyv::{Archive, Deserialize, Serialize, vec::ArchivedVec};
+use rkyv::{Archive, Deserialize, Serialize};
 use usfm::BookIdentifier;
 
 // Re-exports
@@ -60,9 +60,7 @@ impl Index {
     }
 }
 
-#[allow(dead_code)]
-pub type ArchivedPages = ArchivedVec<ArchivedPage>;
-#[allow(dead_code)]
+/// One page's own archive: what a single segment of the `pages` blob holds.
 pub type ArchivedPage = <Page as Archive>::Archived;
 pub type Page = Vec<TextFragment>;
 #[allow(dead_code)]

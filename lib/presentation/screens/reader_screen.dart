@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/models/page_model.dart';
+import '../../domain/services/book_pages.dart';
 import '../viewmodels/reader_viewmodel.dart';
 import '../viewmodels/search_viewmodel.dart';
 import '../widgets/page_view_widget.dart';
@@ -17,7 +18,7 @@ class ReaderScreen extends StatefulWidget {
 
 class _ReaderScreenState extends State<ReaderScreen> {
   PageController _pageController = PageController();
-  List<PageModel>? _lastPages;
+  BookPages? _lastBook;
   Key _pageViewKey = UniqueKey();
   double? _lastWidth;
   double? _lastHeight;
@@ -49,12 +50,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
     _lastHeight = height;
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
-      final bookIds = await context.read<ReaderViewModel>().loadAll(
-        width,
-        height,
-      );
+      final readerVm = context.read<ReaderViewModel>();
+      // The book being read comes first: it is all the reader needs to paint.
+      // Page counts for the rest of the translation are only wanted by the
+      // scrubber, and search only afterwards, so both run behind the reader.
+      await readerVm.loadPages(width, height);
       if (!mounted) return;
-      await context.read<ReaderViewModel>().loadPages(width, height);
+      final bookIds = await readerVm.loadAll(width, height);
       if (!mounted) return;
       context.read<SearchViewModel>().initSearch(
         bookIds: bookIds,
@@ -130,19 +132,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
         _triggerLoad(contentWidth, contentHeight);
 
-        if (readerVm.isRendering) {
-          return const Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('Rendering'),
-              ],
-            ),
-          );
-        }
-
         if (readerVm.error != null) {
           return Center(
             child: Padding(
@@ -156,13 +145,29 @@ class _ReaderScreenState extends State<ReaderScreen> {
           );
         }
 
-        if (readerVm.isLoading || readerVm.pages.isEmpty) {
+        final book = readerVm.book;
+        if (book == null || book.pageCount == 0) {
+          // Only the book being read has to be laid out before anything shows;
+          // the rest of the translation renders behind the reader.
+          return const Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Rendering'),
+              ],
+            ),
+          );
+        }
+
+        if (readerVm.isLoading) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        // Detect if pages array changed (new book loaded)
-        if (!identical(readerVm.pages, _lastPages)) {
-          _lastPages = readerVm.pages;
+        // Detect if a different book was opened
+        if (!identical(book, _lastBook)) {
+          _lastBook = book;
           _pageController.dispose();
           _pageController = PageController(
             initialPage: readerVm.currentPageIndex,
@@ -221,7 +226,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
             child: PageView.builder(
               key: _pageViewKey,
               controller: _pageController,
-              itemCount: readerVm.pages.length,
+              itemCount: book.pageCount,
               onPageChanged: (i) => readerVm.setPage(i),
               itemBuilder: (_, i) => Padding(
                 padding: const EdgeInsets.symmetric(
@@ -229,8 +234,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   vertical: _verticalPadding,
                 ),
                 child: Center(
-                  child: PageViewWidget(
-                    page: readerVm.pages[i],
+                  child: _PageSlot(
+                    book: book,
+                    index: i,
                     width: contentWidth,
                     height: contentHeight,
                   ),
@@ -240,6 +246,71 @@ class _ReaderScreenState extends State<ReaderScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+/// Holds one page for exactly as long as Flutter keeps its widget alive.
+///
+/// PageView builds the pages around the current one and disposes them once they
+/// scroll out of range. That disposal is the signal that the rendered page can
+/// go, so the slot pins its page on the way in and hands it back on the way
+/// out — [BookPages] then keeps a few of the released ones and drops the rest.
+class _PageSlot extends StatefulWidget {
+  final BookPages book;
+  final int index;
+  final double width;
+  final double height;
+
+  const _PageSlot({
+    required this.book,
+    required this.index,
+    required this.width,
+    required this.height,
+  });
+
+  @override
+  State<_PageSlot> createState() => _PageSlotState();
+}
+
+class _PageSlotState extends State<_PageSlot> {
+  late PageModel _page;
+
+  @override
+  void initState() {
+    super.initState();
+    _page = _acquire(widget.book, widget.index);
+  }
+
+  @override
+  void didUpdateWidget(_PageSlot oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.book != widget.book || oldWidget.index != widget.index) {
+      oldWidget.book.release(oldWidget.index);
+      _page = _acquire(widget.book, widget.index);
+    }
+  }
+
+  PageModel _acquire(BookPages book, int index) {
+    book.retain(index);
+    final page = book.page(index);
+    // Whichever way this page was reached, the next swipe is one either side.
+    book.prefetchAround(index);
+    return page;
+  }
+
+  @override
+  void dispose() {
+    widget.book.release(widget.index);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PageViewWidget(
+      page: _page,
+      width: widget.width,
+      height: widget.height,
     );
   }
 }

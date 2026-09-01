@@ -24,9 +24,22 @@ class Dimensions {
   });
 }
 
+/// A fragment's box, copied out of native memory.
+///
+/// [Text] has to be free of pointers into the archive it came from: the page
+/// buffer is released as soon as a page is materialized.
+class TextRect {
+  final double top;
+  final double left;
+  final double width;
+  final double height;
+
+  const TextRect(this.top, this.left, this.width, this.height);
+}
+
 class Text {
   final String text;
-  final bind.Rectangle rect;
+  final TextRect rect;
   final TextStyle style;
 
   Text(this.text, this.rect, this.style);
@@ -65,6 +78,18 @@ void _checkError(Pointer<Pointer<Char>> outError, Pointer<Size> outErrorLen) {
     _log('[FFI] Error from Rust: $msg');
     throw Exception('Rust error: $msg');
   }
+}
+
+/// Copies a buffer Rust handed over and releases the Rust-side allocation.
+///
+/// Every `serialize_*` export allocates with `write_bytes_out`, so the bytes
+/// have to come back to Dart before the caller drops them on the floor.
+Uint8List _takeBytes(Pointer<Pointer<Uint8>> out, Pointer<Size> outLen) {
+  final len = outLen.value;
+  if (len == 0 || out.value == nullptr) return Uint8List(0);
+  final bytes = Uint8List.fromList(out.value.asTypedList(len));
+  _bindings.bytes_free(out.value.cast<Char>(), len);
+  return bytes;
 }
 
 Pointer<Void> getRenderer() {
@@ -133,17 +158,24 @@ Uint8List serializeUsfm(String usfm) {
   final out = malloc<Pointer<Uint8>>();
   final outLen = malloc<Size>();
   final e = _allocError();
-
-  _bindings.serialize_usfm(
-    usfmPtr.cast<Char>(),
-    usfmPtr.length,
-    out.cast<Pointer<Char>>(),
-    outLen,
-    e.error,
-    e.errorLen,
-  );
-  _checkError(e.error, e.errorLen);
-  return out.value.asTypedList(outLen.value);
+  outLen.value = 0;
+  try {
+    _bindings.serialize_usfm(
+      usfmPtr.cast<Char>(),
+      usfmPtr.length,
+      out.cast<Pointer<Char>>(),
+      outLen,
+      e.error,
+      e.errorLen,
+    );
+    _checkError(e.error, e.errorLen);
+    return _takeBytes(out, outLen);
+  } finally {
+    malloc.free(usfmPtr);
+    malloc.free(out);
+    malloc.free(outLen);
+    _freeError(e);
+  }
 }
 
 Pointer<Void> getArchivedBook(Uint8List book) {
@@ -191,101 +223,145 @@ Pointer<Void> layout(
   return result;
 }
 
-Uint8List serializePages(Pointer<Void> painter) {
+/// The rendered pages of one book: every page archived on its own, back to
+/// back, plus the offset table that says where each one starts.
+///
+/// Written to disk as `pages` and `page_offsets` so a reader can seek to a
+/// single page instead of loading the book.
+({Uint8List pages, Uint8List offsets}) serializePages(Pointer<Void> painter) {
   final out = malloc<Pointer<Uint8>>();
   final outLen = malloc<Size>();
+  final outIndex = malloc<Pointer<Uint8>>();
+  final outIndexLen = malloc<Size>();
   final e = _allocError();
-
-  _bindings.serialize_pages(
-    painter,
-    out.cast<Pointer<Char>>(),
-    outLen,
-    e.error,
-    e.errorLen,
-  );
-  _checkError(e.error, e.errorLen);
-  return out.value.asTypedList(outLen.value);
+  outLen.value = 0;
+  outIndexLen.value = 0;
+  try {
+    _bindings.serialize_pages(
+      painter,
+      out.cast<Pointer<Char>>(),
+      outLen,
+      outIndex.cast<Pointer<Char>>(),
+      outIndexLen,
+      e.error,
+      e.errorLen,
+    );
+    _checkError(e.error, e.errorLen);
+    return (pages: _takeBytes(out, outLen), offsets: _takeBytes(outIndex, outIndexLen));
+  } finally {
+    malloc.free(out);
+    malloc.free(outLen);
+    malloc.free(outIndex);
+    malloc.free(outIndexLen);
+    _freeError(e);
+  }
 }
 
-Pointer<Void> getArchivedPages(Uint8List pages) {
-  final ptr = malloc<Uint8>(pages.length);
-  final bytePtr = ptr.asTypedList(pages.length);
-  bytePtr.setAll(0, pages);
-  final e = _allocError();
-  final result = _bindings.archived_pages(
-    ptr.cast<Char>(),
-    pages.length,
-    e.error,
-    e.errorLen,
-  );
-  _checkError(e.error, e.errorLen);
-  return result;
-}
-
-int getNumPages(Pointer<Void> pages) {
-  return _bindings.num_pages(pages);
-}
-
-List<Text> getPage(Pointer<Void> renderer, Pointer<Void> pages, int pageIndex) {
+/// Materializes one page from its own slice of the `pages` blob.
+///
+/// [page] must be exactly the bytes the offset table delimits for that page:
+/// each segment is a self-contained archive. Everything the returned fragments
+/// hold is copied into Dart, so both the native page list and the scratch
+/// buffer are released before this returns.
+List<Text> pageFromBytes(Pointer<Void> renderer, Uint8List page) {
+  final pagePtr = _toNative(page);
   final out = malloc<Pointer<bind.Text>>();
   final outLen = malloc<Size>();
   final e = _allocError();
-
-  _bindings.page(renderer, pages, pageIndex, out, outLen, e.error, e.errorLen);
-  _checkError(e.error, e.errorLen);
-
-  return List.generate(outLen.value, (i) {
-    final text = (out.value + i).ref;
-    return Text(
-      text.text.cast<Utf8>().toDartString(length: text.len),
-      text.rect,
-      toTextStyle(text.style),
+  outLen.value = 0;
+  try {
+    _bindings.page_from_bytes(
+      renderer,
+      pagePtr.cast<Char>(),
+      page.length,
+      out,
+      outLen,
+      e.error,
+      e.errorLen,
     );
-  });
+    _checkError(e.error, e.errorLen);
+    final fragments = out.value;
+    final count = outLen.value;
+    try {
+      return List.generate(count, (i) {
+        final text = (fragments + i).ref;
+        final rect = text.rect;
+        return Text(
+          text.text.cast<Utf8>().toDartString(length: text.len),
+          TextRect(rect.top, rect.left, rect.width, rect.height),
+          toTextStyle(text.style),
+        );
+      });
+    } finally {
+      _bindings.page_free(fragments, count);
+    }
+  } finally {
+    malloc.free(pagePtr);
+    malloc.free(out);
+    malloc.free(outLen);
+    _freeError(e);
+  }
 }
 
 Uint8List serializeIndices(Pointer<Void> painter) {
   final out = malloc<Pointer<Uint8>>();
   final outLen = malloc<Size>();
   final e = _allocError();
-
-  _bindings.serialize_indices(
-    painter,
-    out.cast<Pointer<Char>>(),
-    outLen,
-    e.error,
-    e.errorLen,
-  );
-  _checkError(e.error, e.errorLen);
-  return out.value.asTypedList(outLen.value);
+  outLen.value = 0;
+  try {
+    _bindings.serialize_indices(
+      painter,
+      out.cast<Pointer<Char>>(),
+      outLen,
+      e.error,
+      e.errorLen,
+    );
+    _checkError(e.error, e.errorLen);
+    return _takeBytes(out, outLen);
+  } finally {
+    malloc.free(out);
+    malloc.free(outLen);
+    _freeError(e);
+  }
 }
 
 Uint8List serializeVerses(Pointer<Void> painter) {
   final out = malloc<Pointer<Uint8>>();
   final outLen = malloc<Size>();
   final e = _allocError();
-
-  _bindings.serialize_verses(
-    painter,
-    out.cast<Pointer<Char>>(),
-    outLen,
-    e.error,
-    e.errorLen,
-  );
-  _checkError(e.error, e.errorLen);
-  return out.value.asTypedList(outLen.value);
+  outLen.value = 0;
+  try {
+    _bindings.serialize_verses(
+      painter,
+      out.cast<Pointer<Char>>(),
+      outLen,
+      e.error,
+      e.errorLen,
+    );
+    _checkError(e.error, e.errorLen);
+    return _takeBytes(out, outLen);
+  } finally {
+    malloc.free(out);
+    malloc.free(outLen);
+    _freeError(e);
+  }
 }
 
 Uint8List serializeVerseRanges(Pointer<Void> painter) {
   final out = malloc<Pointer<Uint8>>();
   final outLen = malloc<Size>();
-
-  _bindings.serialize_verse_ranges(
-    painter,
-    out.cast<Pointer<Char>>(),
-    outLen,
-  );
-  return out.value.asTypedList(outLen.value);
+  outLen.value = 0;
+  try {
+    _bindings.serialize_verse_ranges(
+      painter,
+      out.cast<Pointer<Char>>(),
+      outLen,
+    );
+    return _takeBytes(out, outLen);
+  } finally {
+    malloc.free(out);
+    malloc.free(outLen);
+  }
 }
 
 Pointer<Void> loadSearchEngine(

@@ -44,6 +44,7 @@ typedef struct {
 } Dimensions;
 
 void free_error(char* error, size_t error_len);
+void bytes_free(char* bytes, size_t len);
 
 void* renderer();
 void register_font_family(void* renderer, char* family, size_t family_len, char* data, size_t len, char** out_error, size_t* out_error_len);
@@ -54,10 +55,9 @@ void* archived_book(const char* book, size_t book_len, char** out_error, size_t*
 void book_identifier(void* usfm, const char** out, size_t* out_len, char** out_error, size_t* out_error_len);
 
 void* layout(void* renderer, void* usfm, Dimensions* dim, char** out_error, size_t* out_error_len);
-void serialize_pages(void* painter, const char** out, size_t* out_len, char** out_error, size_t* out_error_len);
-void* archived_pages(const char* pages, size_t pages_len, char** out_error, size_t* out_error_len);
-size_t num_pages(void* archived_pages);
-void page(void* renderer, void* archived_pages, size_t n, const Text** out, size_t* out_len, char** out_error, size_t* out_error_len);
+void serialize_pages(void* painter, const char** out, size_t* out_len, const char** out_index, size_t* out_index_len, char** out_error, size_t* out_error_len);
+void page_from_bytes(void* renderer, const char* page, size_t page_len, const Text** out, size_t* out_len, char** out_error, size_t* out_error_len);
+void page_free(Text* page, size_t len);
 
 void serialize_indices(void* painter, const char** out, size_t* out_len, char** out_error, size_t* out_error_len);
 void serialize_verses(void* painter, const char** out, size_t* out_len, char** out_error, size_t* out_error_len);

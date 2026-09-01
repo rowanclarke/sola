@@ -17,6 +17,7 @@ This document describes the clean MVVM architecture of the Sola Flutter Bible ap
   - `translation.dart` - Represents a Bible translation with metadata (id, title, language, url)
   - `book.dart` - Structured Bible data (Book, Chapter, Verse, VerseData)
   - `page_model.dart` - Represents a single rendered page (wraps Rust `Text` objects)
+  - `page_index.dart` - Offset table over a book's `pages` file, so one page can be read without the rest
   - `session_model.dart` - Persistent session state (currentLanguageCode, currentTranslationId, currentBookId, currentPageNumber)
 
 - **Session State** (`lib/core/session/`)
@@ -32,7 +33,7 @@ This document describes the clean MVVM architecture of the Sola Flutter Bible ap
 - `language_repository.dart` - Language metadata and translation listings from bundled assets
 - `library_repository.dart` - Translation metadata caching and download management
 - `bible_repository.dart` - Serialized book data caching
-- `renderer_repository.dart` - Rendered pages caching (index handling is done on the Rust backend)
+- `renderer_repository.dart` - Renders books to disk, opens them for page-at-a-time reads, and caches per-book totals in a manifest
 - `search_repository.dart` - Embeddings and search results caching
 
 **Key Pattern:** All repositories use internal caching maps and coordinate with Services to avoid recomputation.
@@ -45,6 +46,7 @@ This document describes the clean MVVM architecture of the Sola Flutter Bible ap
 - `file_service.dart` - File I/O (string and binary via readBytes/writeBytes)
 - `bible_service.dart` - USFM parsing and serialization
 - `renderer_service.dart` - Page rendering
+- `book_pages.dart` - One open book: reads a page off disk on demand, pins what is on screen, drops the rest
 - `search_service.dart` - Embedding generation and semantic search
 
 ### 4. Presentation Layer (`lib/presentation/`)
@@ -111,8 +113,8 @@ ReaderScreen observes SessionViewModel
   → User swipes to change page
     → ReaderViewModel.goToPage()
       → SessionRepository.setCurrentPage()
-      → ReaderViewModel fetches page from RendererRepository
-      → Page displayed via PageView
+      → PageView builds the slot for that page, which reads it from BookPages
+      → Pages scrolled out of range are disposed, and BookPages drops them
 
   → User swipes down for search
     → SearchScreen appears
@@ -166,6 +168,7 @@ Services and repositories are concrete classes (not abstract interfaces). This k
 ### 3. Caching Strategy
 - Repositories cache computed results in in-memory maps
 - Rendered pages binary and renderer binary are stored via FileService (not the in-memory page cache)
+- A book's pages are never loaded whole: each page is archived on its own inside `pages`, `page_offsets` says where it starts, and `BookPages` reads only the page being displayed and its neighbours
 - Caches are invalidated on demand
 - Large binary data is encoded via Rust backend for zero-copy deserialisation
 

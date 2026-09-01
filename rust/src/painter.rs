@@ -5,7 +5,7 @@ mod renderer;
 
 use std::{ffi::c_char, mem};
 
-pub use layout::{Alignment, ArchivedIndex, ArchivedIndices, ArchivedPages, Index, Indices};
+pub use layout::{Alignment, ArchivedIndex, ArchivedIndices, Index, Indices};
 pub use paint::Paint;
 pub use renderer::{Renderer, TextStyle};
 use rkyv::{Archive, Deserialize, Serialize, rancor::Error};
@@ -42,7 +42,7 @@ pub enum Style {
 
 #[derive(Debug)]
 #[repr(C)]
-pub struct Text(*const c_char, usize, Rectangle, TextStyle);
+pub struct Text(pub *const c_char, pub usize, pub Rectangle, pub TextStyle);
 
 #[derive(Archive, Serialize, Deserialize, Debug, Clone, Copy)]
 #[repr(C)]
