@@ -22,16 +22,6 @@ void registerDefaultStyles(Pointer<Void> renderer) {
   }
 }
 
-class RendererResponse {
-  final Pointer<Void> _painter;
-
-  RendererResponse(this._painter);
-
-  Uint8List getPages() => rust.serializePages(_painter);
-  Uint8List getIndices() => rust.serializeIndices(_painter);
-  Uint8List getVerses() => rust.serializeVerses(_painter);
-}
-
 class RendererService {
   final Pointer<Void> renderer = rust.getRenderer();
   bool _fontsRegistered = false;
@@ -57,7 +47,7 @@ class RendererService {
     debugPrint('[RendererSvc] Styles registered');
   }
 
-  RendererResponse layout(Pointer<Void> book, double width, double height) {
+  Pointer<Void> layout(Pointer<Void> book, double width, double height) {
     debugPrint('[RendererSvc] Layout: ${width.toInt()}x${height.toInt()}');
     final painter = rust.layout(
       renderer,
@@ -70,19 +60,12 @@ class RendererService {
       ),
     );
     debugPrint('[RendererSvc] Layout complete');
-    return RendererResponse(painter);
+    return painter;
   }
 
-  Pointer<Void> getArchivedPages(Uint8List bytes) {
-    return rust.getArchivedPages(bytes);
-  }
-
-  int getNumPages(Pointer<Void> pages) {
-    return rust.getNumPages(pages);
-  }
-
-  List<rust.Text> getPage(Pointer<Void> pages, int n) {
-    return rust.getPage(renderer, pages, n);
+  /// Materializes one page from its own segment of a book's `pages` file.
+  List<rust.Text> pageFromBytes(Uint8List bytes) {
+    return rust.pageFromBytes(renderer, bytes);
   }
 
   String getBookTitle(Uint8List indicesBytes) {

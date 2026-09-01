@@ -77,3 +77,27 @@ pub unsafe fn write_vec<T>(vec: Vec<T>, out: *mut *const T, out_len: *mut usize)
     }
     std::mem::forget(vec);
 }
+
+/// Hands a byte buffer to the caller as a boxed slice. Every `serialize_*`
+/// export returns memory this way; the caller must release it with
+/// [`bytes_free`] once it has copied what it needs.
+pub unsafe fn write_bytes_out(bytes: Vec<u8>, out: *mut *const u8, out_len: *mut usize) {
+    let boxed = bytes.into_boxed_slice();
+    let len = boxed.len();
+    unsafe {
+        *out = Box::into_raw(boxed) as *const u8;
+        *out_len = len;
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn bytes_free(bytes: *mut u8, len: usize) {
+    if bytes.is_null() || len == 0 {
+        return;
+    }
+    unsafe {
+        drop(Box::from_raw(std::ptr::slice_from_raw_parts_mut(
+            bytes, len,
+        )));
+    }
+}

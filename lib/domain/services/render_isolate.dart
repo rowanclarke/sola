@@ -19,12 +19,16 @@ class RenderInput {
 
 class RenderOutput {
   final Uint8List pages;
+
+  /// Offset table over [pages], so a reader can pull one page off disk.
+  final Uint8List pageOffsets;
   final Uint8List indices;
   final Uint8List verses;
   final Uint8List verseRanges;
 
   RenderOutput({
     required this.pages,
+    required this.pageOffsets,
     required this.indices,
     required this.verses,
     required this.verseRanges,
@@ -51,8 +55,10 @@ RenderOutput renderInBackground(RenderInput input) {
   );
   print('[Isolate] Serializing pages/indices/verses...');
 
+  final pages = rust.serializePages(painter);
   final output = RenderOutput(
-    pages: rust.serializePages(painter),
+    pages: pages.pages,
+    pageOffsets: pages.offsets,
     indices: rust.serializeIndices(painter),
     verses: rust.serializeVerses(painter),
     verseRanges: rust.serializeVerseRanges(painter),
