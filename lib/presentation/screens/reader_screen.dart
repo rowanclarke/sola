@@ -108,6 +108,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
                       onResultTap: (bookId, page) {
                         readerVm.navigateTo(bookId, page);
                       },
+                      onSettingsTap: () =>
+                          Navigator.pushNamed(context, '/settings'),
                     ),
                   ),
                 ],

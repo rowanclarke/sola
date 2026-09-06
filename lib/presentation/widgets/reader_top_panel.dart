@@ -14,8 +14,14 @@ import '../viewmodels/search_viewmodel.dart';
 class ReaderTopPanel extends StatefulWidget {
   final SearchViewModel? searchViewModel;
   final void Function(String bookId, int page)? onResultTap;
+  final VoidCallback? onSettingsTap;
 
-  const ReaderTopPanel({super.key, this.searchViewModel, this.onResultTap});
+  const ReaderTopPanel({
+    super.key,
+    this.searchViewModel,
+    this.onResultTap,
+    this.onSettingsTap,
+  });
 
   @override
   ReaderTopPanelState createState() => ReaderTopPanelState();
@@ -317,19 +323,22 @@ class ReaderTopPanelState extends State<ReaderTopPanel>
                       opacity: 1.0 - pClamped,
                       child: IgnorePointer(
                         ignoring: _phase == _Phase.focused || _dismissing,
-                        child: Container(
-                          width: 34,
-                          height: 34,
-                          decoration: BoxDecoration(
-                            color: _bg,
-                            border: Border.all(color: _line),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Center(
-                            child: Icon(
-                              Icons.settings,
-                              size: 15,
-                              color: Color(0xFF52525B),
+                        child: GestureDetector(
+                          onTap: widget.onSettingsTap,
+                          child: Container(
+                            width: 34,
+                            height: 34,
+                            decoration: BoxDecoration(
+                              color: _bg,
+                              border: Border.all(color: _line),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Center(
+                              child: Icon(
+                                Icons.settings,
+                                size: 15,
+                                color: Color(0xFF52525B),
+                              ),
                             ),
                           ),
                         ),
