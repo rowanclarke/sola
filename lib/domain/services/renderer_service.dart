@@ -47,8 +47,17 @@ class RendererService {
     debugPrint('[RendererSvc] Styles registered');
   }
 
-  Pointer<Void> layout(Pointer<Void> book, double width, double height) {
-    debugPrint('[RendererSvc] Layout: ${width.toInt()}x${height.toInt()}');
+  Pointer<Void> layout(
+    Pointer<Void> book,
+    double width,
+    double height, {
+    int columns = 1,
+    double gutter = 0,
+  }) {
+    debugPrint(
+      '[RendererSvc] Layout: ${width.toInt()}x${height.toInt()} '
+      'in $columns column(s)',
+    );
     final painter = rust.layout(
       renderer,
       book,
@@ -57,6 +66,8 @@ class RendererService {
         height,
         headerHeight: height / 5,
         dropCapPadding: 20,
+        columns: columns,
+        gutter: gutter,
       ),
     );
     debugPrint('[RendererSvc] Layout complete');

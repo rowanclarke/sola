@@ -46,6 +46,8 @@ class AppBootstrap {
       fileService: fileService,
       rendererService: rendererService,
       bibleRepository: bibleRepository,
+      columns: 2,
+      gutter: 16,
     );
     final modelService = ModelService(fileService: fileService);
     final searchRepository = SearchRepository(

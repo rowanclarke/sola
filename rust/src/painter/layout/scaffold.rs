@@ -10,48 +10,146 @@ use super::{Index, Indices};
 pub struct Scaffold {
     pub width: f32,
     pub height: f32,
-    pub top_cursor: f32,
-    pub bottom_cursor: f32,
+    pub columns: usize,
+    pub gutter: f32,
+    pub col_width: f32,
     pub templates: Vec<Template>,
+    /// `cuts[c]..cuts[c + 1]` is the slice of `templates` held by column `c`.
+    /// Always `columns + 1` long, and always in step with `templates`.
+    cuts: Vec<usize>,
+    /// Full-width band across the top of the page, above every column.
+    span: Vec<TextFragment>,
+    span_height: f32,
 }
 
 impl Scaffold {
-    pub fn new(width: f32, height: f32) -> Self {
+    pub fn new(width: f32, height: f32, columns: usize, gutter: f32) -> Self {
+        let columns = columns.max(1);
+        let col_width = (width - (columns - 1) as f32 * gutter) / columns as f32;
         Self {
             width,
             height,
-            top_cursor: 0.0,
-            bottom_cursor: height,
+            columns,
+            gutter,
+            col_width,
             templates: Vec::new(),
+            cuts: vec![0; columns + 1],
+            span: Vec::new(),
+            span_height: 0.0,
         }
     }
 
-    pub fn remaining(&self) -> f32 {
-        self.bottom_cursor - self.top_cursor
+    pub fn is_empty(&self) -> bool {
+        self.templates.is_empty() && self.span.is_empty()
     }
 
-    /// Try to push a template. Returns Ok on success, Err(template) if scaffold is full.
+    /// Place a full-width band across the top of the page, above every column.
+    ///
+    /// Only valid while the page is still empty. A band part-way down would
+    /// have to cut every column at the same height and restart them below it,
+    /// turning a page into a stack of column regions; that is a much larger
+    /// problem, and nothing needs it while `\h` (the only heading source) is
+    /// the first thing painted in a book.
+    pub fn push_span(&mut self, fragments: Vec<TextFragment>, height: f32) -> Result<(), ()> {
+        if !self.is_empty() {
+            return Err(());
+        }
+        self.span = fragments;
+        self.span_height = height;
+        Ok(())
+    }
+
+    /// Height of the page-wide footer: every note raised by every column.
+    fn footer_height(&self) -> f32 {
+        self.templates.iter().map(|t| t.footer_height()).sum()
+    }
+
+    /// Body height left to each column once the spanning band and the footer
+    /// have taken their share.
+    fn budget(&self) -> f32 {
+        self.height - self.span_height - self.footer_height()
+    }
+
+    /// Greedily pack every template into `columns` columns of `budget` height.
+    /// Returns the cut points, or None if they do not all fit.
+    fn distribute(&self, budget: f32) -> Option<Vec<usize>> {
+        let mut cuts = Vec::with_capacity(self.columns + 1);
+        cuts.push(0);
+        let mut i = 0;
+        for _ in 0..self.columns {
+            let mut used = 0.0f32;
+            while i < self.templates.len() {
+                let h = self.templates[i].body_height();
+                // `used > 0.0` stops an over-tall template being rejected by an
+                // empty column, which would stall the painter.
+                if used > 0.0 && used + h > budget {
+                    break;
+                }
+                used += h;
+                i += 1;
+            }
+            cuts.push(i);
+        }
+        (i == self.templates.len()).then_some(cuts)
+    }
+
+    /// Try to push a template. Returns Ok on success, Err(template) if the page is full.
+    ///
+    /// Nothing is positioned until [`Scaffold::finalize`], so the whole page is
+    /// re-split against the current footer budget on every push. That is what
+    /// keeps a note raised in a later column from silently overflowing an
+    /// earlier one: templates are already shaped and measured, so re-splitting
+    /// is a scan of `f32` adds rather than a re-render.
     pub fn push(&mut self, template: Template) -> Result<(), Template> {
-        let height = template.total_height();
-        if height > self.remaining() && !self.templates.is_empty() {
-            return Err(template);
+        self.templates.push(template);
+        match self.distribute(self.budget()) {
+            Some(cuts) => {
+                self.cuts = cuts;
+                Ok(())
+            }
+            // Popping restores the previous valid state exactly: it takes back
+            // both the body height and the footer height this template added,
+            // so the page breaks at the note that no longer fits.
+            None => Err(self.templates.pop().unwrap()),
+        }
+    }
+
+    /// Even out the columns of a partially filled page. Full pages are already
+    /// balanced (every column was packed to the same budget), so this is only
+    /// worth running on the last page of a book.
+    pub fn balance(&mut self) {
+        if self.columns < 2 || self.templates.is_empty() {
+            return;
         }
 
-        // Advance cursors based on container directions
-        for fill in template.containers.values() {
-            let container_height = fill.total_height();
-            match fill.direction {
-                StackDirection::TopDown => {
-                    self.top_cursor += container_height;
-                }
-                StackDirection::BottomUp => {
-                    self.bottom_cursor -= container_height;
-                }
+        // The page's notes are all known by now, so the footer height is fixed
+        // and `hi` is a budget the invariant guarantees will fit.
+        let mut hi = self.budget();
+        let total: f32 = self.templates.iter().map(|t| t.body_height()).sum();
+        let mut lo = total / self.columns as f32;
+        if lo >= hi {
+            return;
+        }
+        if let Some(cuts) = self.distribute(lo) {
+            self.cuts = cuts;
+            return;
+        }
+
+        // Smallest budget that still holds every template in `columns` columns.
+        for _ in 0..32 {
+            if hi - lo < 0.5 {
+                break;
+            }
+            let mid = 0.5 * (lo + hi);
+            match self.distribute(mid) {
+                Some(_) => hi = mid,
+                None => lo = mid,
             }
         }
 
-        self.templates.push(template);
-        Ok(())
+        if let Some(cuts) = self.distribute(hi) {
+            self.cuts = cuts;
+        }
     }
 
     /// Finalize scaffold into a Page, recording indices.
@@ -63,35 +161,60 @@ impl Scaffold {
     ) -> Vec<TextFragment> {
         let mut all_fragments = Vec::new();
 
-        // Pass 1: TopDown containers (body text, headers, etc.)
-        let mut y_top = 0.0f32;
-        for template in &self.templates {
-            for (_, fill) in template.containers.iter().filter(|(_, f)| f.direction == StackDirection::TopDown) {
-                let h = fill.total_height();
-                let frags = self.extract_container(
-                    fill, y_top, index_registry, page_index, indices,
-                );
-                // Add artefact fragments for this container
-                for artefact in &fill.artefacts {
-                    for frag in &artefact.fragments {
-                        let mut placed = frag.clone();
-                        placed.rect.top += y_top + artefact.padding.top;
-                        all_fragments.push(placed);
+        // Pass 0: the spanning band, already positioned in full-page
+        // coordinates. It sits above every column and takes no column offset.
+        all_fragments.extend(self.span.iter().cloned());
+
+        // Pass 1: TopDown containers (body text, headers, etc.), column by
+        // column. Each column restarts at the top of the page and is shifted
+        // right by its own share of the width.
+        for col in 0..self.columns {
+            let x = col as f32 * (self.col_width + self.gutter);
+            let mut y_top = self.span_height;
+            for template in &self.templates[self.cuts[col]..self.cuts[col + 1]] {
+                for (_, fill) in template
+                    .containers
+                    .iter()
+                    .filter(|(_, f)| f.direction == StackDirection::TopDown)
+                {
+                    let h = fill.total_height();
+                    let mut placed = Vec::new();
+                    // Add artefact fragments for this container
+                    for artefact in &fill.artefacts {
+                        for frag in &artefact.fragments {
+                            let mut frag = frag.clone();
+                            frag.rect.top += y_top + artefact.padding.top;
+                            placed.push(frag);
+                        }
                     }
+                    placed.extend(self.extract_container(
+                        fill,
+                        y_top,
+                        index_registry,
+                        page_index,
+                        indices,
+                    ));
+                    for frag in placed.iter_mut() {
+                        frag.rect.left += x;
+                    }
+                    y_top += h;
+                    all_fragments.extend(placed);
                 }
-                y_top += h;
-                all_fragments.extend(frags);
             }
         }
 
-        // Pass 2: BottomUp containers (footnotes), placed top-to-bottom
-        // within the footer area starting at self.bottom_cursor
-        let mut y_footer = self.bottom_cursor;
+        // Pass 2: BottomUp containers (footnotes) pool into one page-wide block
+        // at the foot, laid out top-to-bottom from where the body stops. No
+        // column offset: the block spans the full width.
+        let mut y_footer = self.height - self.footer_height();
         for template in &self.templates {
-            for (_, fill) in template.containers.iter().filter(|(_, f)| f.direction == StackDirection::BottomUp) {
-                let frags = self.extract_container(
-                    fill, y_footer, index_registry, page_index, indices,
-                );
+            for (_, fill) in template
+                .containers
+                .iter()
+                .filter(|(_, f)| f.direction == StackDirection::BottomUp)
+            {
+                let frags =
+                    self.extract_container(fill, y_footer, index_registry, page_index, indices);
                 // Add artefact fragments for this container
                 for artefact in &fill.artefacts {
                     for frag in &artefact.fragments {
@@ -156,19 +279,28 @@ impl Scaffold {
             let y = y_start + (line_idx as f32 * line_height);
 
             let (left_offset, line_width) = {
-                let ind = if line_idx == 0 { fill.indent.0 } else { fill.indent.1 };
-                let left_artefact: f32 = fill.artefacts
+                let ind = if line_idx == 0 {
+                    fill.indent.0
+                } else {
+                    fill.indent.1
+                };
+                let left_artefact: f32 = fill
+                    .artefacts
                     .iter()
                     .filter(|a| line_idx < a.line_span && a.anchor == ArtefactAnchor::Left)
                     .map(|a| a.total_width())
                     .sum();
                 let left_offset = ind.max(left_artefact);
-                let right_artefact: f32 = fill.artefacts
+                let right_artefact: f32 = fill
+                    .artefacts
                     .iter()
                     .filter(|a| line_idx < a.line_span && a.anchor == ArtefactAnchor::Right)
                     .map(|a| a.total_width())
                     .sum();
-                (left_offset, fill.available_width - left_offset - right_artefact)
+                (
+                    left_offset,
+                    fill.available_width - left_offset - right_artefact,
+                )
             };
 
             // Record indices

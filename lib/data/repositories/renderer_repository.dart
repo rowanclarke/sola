@@ -40,6 +40,14 @@ class RendererRepository {
   final RendererService _rendererService;
   final BibleRepository _bibleRepository;
 
+  /// Number of equal-width body columns each page is laid out in. Part of the
+  /// on-disk key: the same page size rendered at a different column count is a
+  /// different layout, so it must not reuse the cached pages.
+  final int columns;
+
+  /// Horizontal space between adjacent columns.
+  final double gutter;
+
   /// Open books, least recently used first.
   final LinkedHashMap<String, BookPages> _openBooks = LinkedHashMap();
 
@@ -47,15 +55,22 @@ class RendererRepository {
     required FileService fileService,
     required RendererService rendererService,
     required BibleRepository bibleRepository,
+    this.columns = 1,
+    this.gutter = 0,
   }) : _fileService = fileService,
        _rendererService = rendererService,
        _bibleRepository = bibleRepository;
 
+  /// Layout key shared by every rendered path, so a change of page size *or*
+  /// column count lands in its own directory.
+  String _layoutKey(double width, double height) =>
+      '${width.toInt()}-${height.toInt()}-$columns';
+
   String _bookDir(String translationId, String bookId, double width, double height) =>
-      'rendered/$translationId/$bookId-${width.toInt()}-${height.toInt()}';
+      'rendered/$translationId/$bookId-${_layoutKey(width, height)}';
 
   String _manifestPath(String translationId, double width, double height) =>
-      'rendered/$translationId/manifest-${width.toInt()}-${height.toInt()}.json';
+      'rendered/$translationId/manifest-${_layoutKey(width, height)}.json';
 
   /// Lays a book out and writes it to disk, unless that has already been done.
   ///
@@ -77,7 +92,8 @@ class RendererRepository {
     }
 
     debugPrint(
-      '[RendererRepo] Rendering $bookId at ${width.toInt()}x${height.toInt()}',
+      '[RendererRepo] Rendering $bookId at ${width.toInt()}x${height.toInt()} '
+      'in $columns column(s)',
     );
     // Gather inputs on main isolate
     final bookBytes =
@@ -99,6 +115,8 @@ class RendererRepository {
         fontBytes: fontData.buffer.asUint8List(),
         width: width,
         height: height,
+        columns: columns,
+        gutter: gutter,
       ),
     );
 
@@ -124,7 +142,7 @@ class RendererRepository {
     required double width,
     required double height,
   }) async {
-    final key = '$translationId/$bookId-${width.toInt()}-${height.toInt()}';
+    final key = '$translationId/$bookId-${_layoutKey(width, height)}';
 
     final open = _openBooks.remove(key);
     if (open != null && !open.isClosed) {

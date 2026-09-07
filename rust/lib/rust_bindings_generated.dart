@@ -936,6 +936,12 @@ final class Dimensions extends ffi.Struct {
 
   @ffi.Float()
   external double drop_cap_padding;
+
+  @ffi.Uint32()
+  external int columns;
+
+  @ffi.Float()
+  external double gutter;
 }
 
 /// One reference-search hit. `book` and `header` point into the RefIndex that

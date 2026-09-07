@@ -8,12 +8,16 @@ class RenderInput {
   final Uint8List fontBytes;
   final double width;
   final double height;
+  final int columns;
+  final double gutter;
 
   RenderInput({
     required this.bookBytes,
     required this.fontBytes,
     required this.width,
     required this.height,
+    this.columns = 1,
+    this.gutter = 0,
   });
 }
 
@@ -36,7 +40,10 @@ class RenderOutput {
 }
 
 RenderOutput renderInBackground(RenderInput input) {
-  print('[Isolate] Rendering ${input.width.toInt()}x${input.height.toInt()}');
+  print(
+    '[Isolate] Rendering ${input.width.toInt()}x${input.height.toInt()} '
+    'in ${input.columns} column(s)',
+  );
   final renderer = rust.getRenderer();
   rust.registerFontFamily(renderer, 'AveriaSerifLibre', input.fontBytes);
   registerDefaultStyles(renderer);
@@ -51,6 +58,8 @@ RenderOutput renderInBackground(RenderInput input) {
       input.height,
       headerHeight: input.height / 5,
       dropCapPadding: 20,
+      columns: input.columns,
+      gutter: input.gutter,
     ),
   );
   print('[Isolate] Serializing pages/indices/verses...');

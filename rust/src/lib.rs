@@ -544,6 +544,8 @@ mod tests {
             height: 702.0,
             header_height: 702.0 / 5.0,
             drop_cap_padding: 20.0,
+            columns: 2,
+            gutter: 16.0,
         }));
         let result = layout(renderer, book, dim, &mut out.error, &mut out.error_len);
         out.check();

@@ -13,7 +13,7 @@ use usfm::{ArchivedBookIdentifier, BookIdentifier};
 
 use layout::{
     Page, Section, TextFragment,
-    artefact::{Artefact, ArtefactAnchor, ArtefactPadding},
+    artefact::Artefact,
     container::{BufferEntry, StackDirection},
     inline::{ItemKind, StreamItem},
     scaffold::Scaffold,
@@ -60,6 +60,11 @@ pub struct Dimensions {
     pub height: f32,
     pub header_height: f32,
     pub drop_cap_padding: f32,
+    /// Number of equal-width body columns per page. `1` is the single-column
+    /// layout: it reproduces the pre-column output exactly.
+    pub columns: u32,
+    /// Horizontal space between adjacent columns.
+    pub gutter: f32,
 }
 
 // ---------------------------------------------------------------------------
@@ -119,7 +124,12 @@ pub struct Painter {
 
 impl Painter {
     pub fn new(renderer: &Renderer, dim: Dimensions) -> Self {
-        let scaffold = Scaffold::new(dim.width, dim.height);
+        let scaffold = Scaffold::new(
+            dim.width,
+            dim.height,
+            dim.columns.max(1) as usize,
+            dim.gutter,
+        );
         Self {
             renderer: renderer.clone(),
             dim,
@@ -138,6 +148,32 @@ impl Painter {
 
     pub fn get_dimensions(&self) -> &Dimensions {
         &self.dim
+    }
+
+    /// Width of one body column. Every column is the same width, which is what
+    /// lets a shaped, line-broken template sit in any of them unchanged.
+    fn column_width(&self) -> f32 {
+        let columns = self.dim.columns.max(1) as f32;
+        (self.dim.width - (columns - 1.0) * self.dim.gutter) / columns
+    }
+
+    fn new_scaffold(&self) -> Scaffold {
+        Scaffold::new(
+            self.dim.width,
+            self.dim.height,
+            self.dim.columns.max(1) as usize,
+            self.dim.gutter,
+        )
+    }
+
+    /// Close the page under construction and start a fresh one.
+    fn finish_page(&mut self) {
+        let page =
+            self.scaffold
+                .finalize(&self.index_registry, self.pages.len(), &mut self.indices);
+        self.pages.push(page);
+        self.scaffold = self.new_scaffold();
+        self.state.reset();
     }
 
     // --- Style management ---
@@ -328,30 +364,37 @@ impl Painter {
         self.buffer
             .retain(|e| matches!(e, BufferEntry::IndexMarker(_)));
 
-        // Create centered header fragment as a non-wrapping artefact
-        let fragment = self.raw(text.as_ref(), Style::Header);
-        let centered_x = (self.dim.width - fragment.rect.width) / 2.0;
-        let mut centered = fragment;
-        centered.rect.left = centered_x;
-
+        // A heading is a band across the whole page, not a block inside one
+        // column: it is centred on the full width and every column starts below
+        // it. Columns only ever divide the running text.
         let padding = self.dim.header_height / 2.0;
-        let artefact = Artefact::new(
-            ArtefactPadding {
-                top: padding,
-                bottom: padding,
-                left: 0.0,
-                right: 0.0,
-            },
-            self.dim.width,
-            centered.rect.height,
-            ArtefactAnchor::Left,
-            false, // non-wrapping: takes its own vertical space
-            0,
-            vec![centered],
-        );
-        self.pending_artefacts.push((Section::Body, artefact));
+        let mut centered = self.raw(text.as_ref(), Style::Header);
+        centered.rect.left = ((self.dim.width - centered.rect.width) / 2.0).max(0.0);
+        centered.rect.top = padding;
+        let span_height = centered.rect.height + self.dim.header_height;
 
-        self.do_paint_paragraph(Alignment::Center, (0.0, 0.0));
+        // The band only works at the top of a page, so close this one first if
+        // it has already been started.
+        if self
+            .scaffold
+            .push_span(vec![centered.clone()], span_height)
+            .is_err()
+        {
+            self.finish_page();
+            let _ = self.scaffold.push_span(vec![centered], span_height);
+        }
+
+        // Record the heading's index against the page it actually landed on.
+        let buffer = mem::take(&mut self.buffer);
+        for entry in &buffer {
+            if let BufferEntry::IndexMarker(id) = entry {
+                if *id < self.index_registry.len() {
+                    self.indices
+                        .insert(self.index_registry[*id].clone(), self.pages.len());
+                }
+            }
+        }
+        self.pending_artefacts.clear();
     }
 
     pub fn clean(&mut self) {
@@ -396,12 +439,13 @@ impl Painter {
             }
 
             let body_line_height = self.renderer.line_height(&Style::Normal);
+            let column_width = self.column_width();
             let mut template = Template::new();
             template.ensure_container(
                 Section::Body,
                 ContainerFill::new(
                     1,
-                    self.dim.width,
+                    column_width,
                     StackDirection::TopDown,
                     body_line_height,
                     alignment,
@@ -417,14 +461,7 @@ impl Painter {
             match self.scaffold.push(template) {
                 Ok(()) => {}
                 Err(rejected) => {
-                    let page = self.scaffold.finalize(
-                        &self.index_registry,
-                        self.pages.len(),
-                        &mut self.indices,
-                    );
-                    self.pages.push(page);
-                    self.scaffold = Scaffold::new(self.dim.width, self.dim.height);
-                    self.state.reset();
+                    self.finish_page();
                     let _ = self.scaffold.push(rejected);
                 }
             }
@@ -434,6 +471,7 @@ impl Painter {
         // 2. Build template and fill
         let body_line_height = self.renderer.line_height(&Style::Normal);
         let footer_line_height = self.renderer.line_height(&Style::Footnote);
+        let column_width = self.column_width();
 
         let footer_config = ContainerConfig {
             max_lines: usize::MAX,
@@ -463,7 +501,7 @@ impl Painter {
                 Section::Body,
                 ContainerFill::new(
                     1, // max_lines: one line per template for body
-                    self.dim.width,
+                    column_width,
                     StackDirection::TopDown,
                     body_line_height,
                     alignment,
@@ -504,14 +542,7 @@ impl Painter {
                 Ok(()) => {}
                 Err(_rejected) => {
                     // Page break: finalize current scaffold
-                    let page = self.scaffold.finalize(
-                        &self.index_registry,
-                        self.pages.len(),
-                        &mut self.indices,
-                    );
-                    self.pages.push(page);
-                    self.scaffold = Scaffold::new(self.dim.width, self.dim.height);
-                    self.state.reset();
+                    self.finish_page();
 
                     // Find remaining buffer entries and recurse
                     let buf_start = buf_map[cursor_before];
@@ -749,7 +780,10 @@ impl Painter {
 
     pub fn layout(&mut self) -> (Vec<Page>, Indices) {
         // Finalize last scaffold
-        if !self.scaffold.templates.is_empty() {
+        if !self.scaffold.is_empty() {
+            // Every earlier page is balanced by construction; only this one can
+            // be short.
+            self.scaffold.balance();
             let page =
                 self.scaffold
                     .finalize(&self.index_registry, self.pages.len(), &mut self.indices);
@@ -757,5 +791,25 @@ impl Painter {
         }
 
         (mem::take(&mut self.pages), mem::take(&mut self.indices))
+    }
+}
+
+#[cfg(test)]
+mod abi {
+    use super::Dimensions;
+    use std::mem::{align_of, offset_of, size_of};
+
+    /// `Dimensions` crosses the FFI boundary by value, so its layout must match
+    /// the `Dimensions` struct in `src/rust.h` that ffigen reads.
+    #[test]
+    fn dimensions_matches_c_header() {
+        assert_eq!(size_of::<Dimensions>(), 24);
+        assert_eq!(align_of::<Dimensions>(), 4);
+        assert_eq!(offset_of!(Dimensions, width), 0);
+        assert_eq!(offset_of!(Dimensions, height), 4);
+        assert_eq!(offset_of!(Dimensions, header_height), 8);
+        assert_eq!(offset_of!(Dimensions, drop_cap_padding), 12);
+        assert_eq!(offset_of!(Dimensions, columns), 16);
+        assert_eq!(offset_of!(Dimensions, gutter), 20);
     }
 }
