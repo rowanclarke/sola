@@ -3,13 +3,13 @@ import 'package:provider/provider.dart';
 
 import '../viewmodels/onboarding_viewmodel.dart';
 import '../widgets/step_indicator.dart';
+import '../widgets/translation_badge.dart';
 import '../../app/app_routes.dart';
 
 const _ink = Color(0xFF18181b);
 const _mid = Color(0xFF71717a);
 const _bg = Color(0xFFFAFAFA);
 const _line = Color(0xFFE4E4E7);
-const _fill = Color(0xFFF4F4F5);
 
 class CompleteScreen extends StatelessWidget {
   const CompleteScreen({super.key});
@@ -23,7 +23,10 @@ class CompleteScreen extends StatelessWidget {
           builder: (context, vm, _) {
             return Column(
               children: [
-                const StepIndicator(currentStep: 3, totalSteps: 3),
+                if (vm.isOnboarding)
+                  const StepIndicator(currentStep: 3, totalSteps: 3)
+                else
+                  const SizedBox(height: 24),
                 Expanded(child: _buildContent(vm)),
                 _buildButtons(context, vm),
               ],
@@ -85,26 +88,9 @@ class CompleteScreen extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: _fill,
-                        borderRadius: BorderRadius.circular(9),
-                        border: Border.all(color: _line),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        translation.id.length > 6
-                            ? translation.id.substring(0, 6)
-                            : translation.id,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: _ink,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
+                    TranslationBadge(
+                      translationId: translation.id,
+                      size: 44,
                     ),
                     const SizedBox(width: 12),
                     Expanded(

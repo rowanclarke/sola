@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../viewmodels/search_viewmodel.dart';
+import 'translation_switcher.dart';
 
 /// Animated search pull-down panel.
 ///
@@ -15,12 +16,16 @@ class ReaderTopPanel extends StatefulWidget {
   final SearchViewModel? searchViewModel;
   final void Function(String bookId, int page)? onResultTap;
   final VoidCallback? onSettingsTap;
+  final ValueChanged<String>? onTranslationSelected;
+  final VoidCallback? onManageTranslations;
 
   const ReaderTopPanel({
     super.key,
     this.searchViewModel,
     this.onResultTap,
     this.onSettingsTap,
+    this.onTranslationSelected,
+    this.onManageTranslations,
   });
 
   @override
@@ -310,6 +315,26 @@ class ReaderTopPanelState extends State<ReaderTopPanel>
                                 ),
                               ),
                             ],
+                          ),
+                        ),
+                      ),
+                    ),
+
+                  // === Translation switcher — left side, hidden while
+                  // focused. The search icon's focused position is this exact
+                  // spot, so the chip has to be gone by the time it lands. ===
+                  if (widget.onTranslationSelected != null &&
+                      widget.onManageTranslations != null)
+                    Positioned(
+                      left: 16,
+                      top: (panelHeight - 34) / 2,
+                      child: Opacity(
+                        opacity: 1.0 - pClamped,
+                        child: IgnorePointer(
+                          ignoring: _phase == _Phase.focused || _dismissing,
+                          child: TranslationSwitcherButton(
+                            onSelected: widget.onTranslationSelected!,
+                            onManage: widget.onManageTranslations!,
                           ),
                         ),
                       ),

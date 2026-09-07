@@ -151,6 +151,16 @@ class RendererRepository {
     return book;
   }
 
+  /// Every book a translation has been serialized into, in canonical order.
+  ///
+  /// Translations differ in what they contain — plenty are New Testament only —
+  /// so this is what a caller consults before assuming a book exists.
+  Future<List<String>> availableBooks(String translationId) async {
+    return _inCanonicalOrder(
+      await _fileService.listDirectory('serialized/$translationId'),
+    );
+  }
+
   /// Renders every book of a translation that is not on disk yet, and returns
   /// what the reader needs to know about all of them, in canonical order.
   ///
@@ -161,9 +171,7 @@ class RendererRepository {
     required double width,
     required double height,
   }) async {
-    final bookIds = _inCanonicalOrder(
-      await _fileService.listDirectory('serialized/$translationId'),
-    );
+    final bookIds = await availableBooks(translationId);
 
     final cached = await _readManifest(translationId, width, height, bookIds);
     if (cached != null) {

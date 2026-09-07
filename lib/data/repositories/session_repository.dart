@@ -32,14 +32,49 @@ class SessionRepository {
     await _persistSession();
   }
 
+  /// Starts a translation from the beginning. Used by onboarding and by adding
+  /// a translation from settings, where there is no position worth keeping.
   Future<void> setCurrentTranslation(String translationId) async {
     debugPrint('[SessionRepo] Setting translation: $translationId');
     _currentSession = _currentSession.copyWith(
       currentTranslationId: translationId,
       currentBookId: "GEN",
       currentPageNumber: 0,
+      switcherTranslationIds: _withInSwitcher(translationId),
     );
     await _persistSession();
+  }
+
+  /// Swaps the translation under the reader without leaving the book. Page
+  /// breaks do not survive the swap, so the book restarts at its first page.
+  Future<void> switchTranslation(
+    String translationId, {
+    required String bookId,
+  }) async {
+    debugPrint('[SessionRepo] Switching translation: $translationId ($bookId)');
+    _currentSession = _currentSession.copyWith(
+      currentTranslationId: translationId,
+      currentBookId: bookId,
+      currentPageNumber: 0,
+      switcherTranslationIds: _withInSwitcher(translationId),
+    );
+    await _persistSession();
+  }
+
+  Future<void> setSwitcherTranslations(List<String> ids) async {
+    debugPrint('[SessionRepo] Setting switcher translations: $ids');
+    _currentSession = _currentSession.copyWith(
+      switcherTranslationIds: List.unmodifiable(ids),
+    );
+    await _persistSession();
+  }
+
+  /// The switcher list with [translationId] guaranteed present: whatever is
+  /// being read is always reachable from the switcher.
+  List<String> _withInSwitcher(String translationId) {
+    final ids = _currentSession.switcherTranslationIds;
+    if (ids.contains(translationId)) return ids;
+    return List.unmodifiable([...ids, translationId]);
   }
 
   Future<void> setCurrentBook(String bookId) async {

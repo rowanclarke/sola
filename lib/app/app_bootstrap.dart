@@ -16,6 +16,7 @@ import '../presentation/viewmodels/onboarding_viewmodel.dart';
 import '../presentation/viewmodels/reader_viewmodel.dart';
 import '../presentation/viewmodels/search_viewmodel.dart';
 import '../presentation/viewmodels/settings_viewmodel.dart';
+import '../presentation/viewmodels/translations_viewmodel.dart';
 import 'app_routes.dart';
 
 class AppBootstrap {
@@ -68,6 +69,10 @@ class AppBootstrap {
       searchRepository: searchRepository,
       sessionRepository: sessionRepository,
     );
+    final translationsViewModel = TranslationsViewModel(
+      libraryRepository: libraryRepository,
+      sessionRepository: sessionRepository,
+    );
     final settingsViewModel = SettingsViewModel(
       fileService: fileService,
       bibleRepository: bibleRepository,
@@ -91,6 +96,7 @@ class AppBootstrap {
         ChangeNotifierProvider.value(value: readerViewModel),
         ChangeNotifierProvider.value(value: searchViewModel),
         ChangeNotifierProvider.value(value: settingsViewModel),
+        ChangeNotifierProvider.value(value: translationsViewModel),
       ],
       child: SolaApp(initialRoute: initialRoute),
     );
