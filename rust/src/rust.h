@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stdlib.h>
 
 typedef struct {
@@ -41,6 +42,8 @@ typedef struct {
   float height;
   float header_height;
   float drop_cap_padding;
+  uint32_t columns;
+  float gutter;
 } Dimensions;
 
 void free_error(char* error, size_t error_len);

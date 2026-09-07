@@ -1215,7 +1215,7 @@ mod tests {
 
         let mut painter = Painter::new(
             &renderer,
-            Dimensions { width: 344.0, height: 702.0, header_height: 702.0 / 5.0, drop_cap_padding: 20.0 },
+            Dimensions { width: 344.0, height: 702.0, header_height: 702.0 / 5.0, drop_cap_padding: 20.0, columns: 2, gutter: 16.0 },
         );
         archived.paint(&mut painter);
         let (pages, indices) = painter.layout();

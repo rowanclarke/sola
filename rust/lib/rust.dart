@@ -16,11 +16,20 @@ class Dimensions {
   final double headerHeight;
   final double dropCapPadding;
 
+  /// Number of equal-width body columns per page. Footnotes still pool into a
+  /// single page-wide block at the foot, whichever column raised them.
+  final int columns;
+
+  /// Horizontal space between adjacent columns. Ignored when [columns] is 1.
+  final double gutter;
+
   Dimensions(
     this.width,
     this.height, {
     required this.headerHeight,
     required this.dropCapPadding,
+    this.columns = 1,
+    this.gutter = 0,
   });
 }
 
@@ -211,12 +220,17 @@ Pointer<Void> layout(
   Pointer<Void> book,
   Dimensions dim,
 ) {
-  _log('[FFI] layout: ${dim.width.toInt()}x${dim.height.toInt()}');
+  _log(
+    '[FFI] layout: ${dim.width.toInt()}x${dim.height.toInt()} '
+    'in ${dim.columns} column(s)',
+  );
   final cdim = calloc<bind.Dimensions>();
   cdim.ref.width = dim.width;
   cdim.ref.height = dim.height;
   cdim.ref.header_height = dim.headerHeight;
   cdim.ref.drop_cap_padding = dim.dropCapPadding;
+  cdim.ref.columns = dim.columns;
+  cdim.ref.gutter = dim.gutter;
   final e = _allocError();
   final result = _bindings.layout(renderer, book, cdim, e.error, e.errorLen);
   _checkError(e.error, e.errorLen);

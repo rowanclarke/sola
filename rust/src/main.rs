@@ -152,6 +152,8 @@ fn main() {
         height: 702.0,
         header_height: 702.0 / 5.0,
         drop_cap_padding: 20.0,
+        columns: 2,
+        gutter: 16.0,
     };
     let mut painter = Painter::new(&renderer, dim);
 

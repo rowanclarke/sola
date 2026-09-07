@@ -195,9 +195,28 @@ impl Template {
         self.containers.get(&section).map_or(0, |f| f.item_count())
     }
 
+    /// Height of the TopDown containers: what a column must make room for.
+    pub fn body_height(&self) -> f32 {
+        self.containers
+            .values()
+            .filter(|f| f.direction == StackDirection::TopDown)
+            .map(|f| f.total_height())
+            .sum()
+    }
+
+    /// Height of the BottomUp containers: what this template adds to the
+    /// page-wide footer, whichever column it ends up in.
+    pub fn footer_height(&self) -> f32 {
+        self.containers
+            .values()
+            .filter(|f| f.direction == StackDirection::BottomUp)
+            .map(|f| f.total_height())
+            .sum()
+    }
+
     /// Total height across all containers.
     pub fn total_height(&self) -> f32 {
-        self.containers.values().map(|f| f.total_height()).sum()
+        self.body_height() + self.footer_height()
     }
 
     pub fn mark_hot(&mut self) {
