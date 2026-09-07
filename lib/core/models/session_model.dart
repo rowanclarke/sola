@@ -4,11 +4,17 @@ class SessionModel {
   final String? currentBookId;
   final int? currentPageNumber;
 
+  /// Translations offered by the reader's switcher, in the order they appear
+  /// there. Anything downloaded but absent from this list stays on disk and out
+  /// of the way.
+  final List<String> switcherTranslationIds;
+
   const SessionModel({
     this.currentLanguageCode,
     this.currentTranslationId,
     this.currentBookId,
     this.currentPageNumber,
+    this.switcherTranslationIds = const [],
   });
 
   SessionModel copyWith({
@@ -16,12 +22,15 @@ class SessionModel {
     String? currentTranslationId,
     String? currentBookId,
     int? currentPageNumber,
+    List<String>? switcherTranslationIds,
   }) {
     return SessionModel(
       currentLanguageCode: currentLanguageCode ?? this.currentLanguageCode,
       currentTranslationId: currentTranslationId ?? this.currentTranslationId,
       currentBookId: currentBookId ?? this.currentBookId,
       currentPageNumber: currentPageNumber ?? this.currentPageNumber,
+      switcherTranslationIds:
+          switcherTranslationIds ?? this.switcherTranslationIds,
     );
   }
 
@@ -31,6 +40,8 @@ class SessionModel {
       currentTranslationId: json['currentTranslationId'] as String?,
       currentBookId: json['currentBookId'] as String?,
       currentPageNumber: json['currentPageNumber'] as int?,
+      switcherTranslationIds:
+          (json['switcherTranslationIds'] as List?)?.cast<String>() ?? const [],
     );
   }
 
@@ -40,6 +51,7 @@ class SessionModel {
       'currentTranslationId': currentTranslationId,
       'currentBookId': currentBookId,
       'currentPageNumber': currentPageNumber,
+      'switcherTranslationIds': switcherTranslationIds,
     };
   }
 }

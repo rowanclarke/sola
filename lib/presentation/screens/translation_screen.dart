@@ -6,13 +6,13 @@ import '../viewmodels/onboarding_viewmodel.dart';
 import '../widgets/selectable_list_row.dart';
 import '../widgets/searchable_list_view.dart';
 import '../widgets/step_indicator.dart';
+import '../widgets/translation_badge.dart';
 import '../../app/app_routes.dart';
 
 const _ink = Color(0xFF18181b);
 const _mid = Color(0xFF71717a);
 const _bg = Color(0xFFFAFAFA);
 const _line = Color(0xFFE4E4E7);
-const _fill = Color(0xFFF4F4F5);
 
 class TranslationScreen extends StatefulWidget {
   const TranslationScreen({super.key});
@@ -39,7 +39,10 @@ class _TranslationScreenState extends State<TranslationScreen> {
           builder: (context, vm, _) {
             return Column(
               children: [
-                const StepIndicator(currentStep: 2, totalSteps: 3),
+                if (vm.isOnboarding)
+                  const StepIndicator(currentStep: 2, totalSteps: 3)
+                else
+                  _buildBackBar(context),
                 _buildHeader(vm),
                 Expanded(
                   child: SearchableListView<Translation>(
@@ -53,7 +56,10 @@ class _TranslationScreenState extends State<TranslationScreen> {
                       final downloadState =
                           vm.getDownloadState(translation.id);
                       return SelectableListRow(
-                        leading: _buildBadge(translation, isSelected),
+                        leading: TranslationBadge(
+                          translationId: translation.id,
+                          isFilled: isSelected,
+                        ),
                         title: translation.title,
                         subtitle: translation.description,
                         isSelected: isSelected,
@@ -125,31 +131,20 @@ class _TranslationScreenState extends State<TranslationScreen> {
     );
   }
 
-  // --------------- list item helpers ---------------
-
-  Widget _buildBadge(Translation translation, bool isSelected) {
-    return Container(
-      width: 48,
-      height: 48,
-      decoration: BoxDecoration(
-        color: isSelected ? _ink : _fill,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: isSelected ? _ink : _line),
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        translation.id.length > 6
-            ? translation.id.substring(0, 6)
-            : translation.id,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          color: isSelected ? Colors.white : _ink,
+  Widget _buildBackBar(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(4, 4, 0, 0),
+        child: IconButton(
+          icon: const Icon(Icons.arrow_back, size: 20, color: _ink),
+          onPressed: () => context.goBack(),
         ),
-        textAlign: TextAlign.center,
       ),
     );
   }
+
+  // --------------- list item helpers ---------------
 
   Widget? _buildTrailing(
     OnboardingViewModel vm,
@@ -203,7 +198,7 @@ class _TranslationScreenState extends State<TranslationScreen> {
     }
   }
 
-  // --------------- continue button ---------------
+  // --------------- footer ---------------
 
   Widget _buildContinueButton(BuildContext context, OnboardingViewModel vm) {
     return Container(
@@ -212,31 +207,71 @@ class _TranslationScreenState extends State<TranslationScreen> {
         border: Border(top: BorderSide(color: _line, width: 0.5)),
         color: _bg,
       ),
-      child: SizedBox(
-        width: double.infinity,
-        height: 48,
-        child: ElevatedButton(
-          onPressed: vm.selectedTranslation != null
-              ? () async {
-                  await vm.goToCompleteStep();
-                  if (context.mounted) {
-                    context.goToComplete();
-                  }
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildChangeLanguageButton(context, vm),
+          const SizedBox(height: 10),
+          _buildContinue(context, vm),
+        ],
+      ),
+    );
+  }
+
+  /// The list only ever shows one language, so getting to another one needs its
+  /// own way out.
+  Widget _buildChangeLanguageButton(
+    BuildContext context,
+    OnboardingViewModel vm,
+  ) {
+    return SizedBox(
+      width: double.infinity,
+      height: 44,
+      child: OutlinedButton(
+        onPressed: () {
+          vm.goBackToLanguageStep();
+          context.goToLanguage();
+        },
+        style: OutlinedButton.styleFrom(
+          foregroundColor: _ink,
+          side: const BorderSide(color: _line),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        child: const Text(
+          'Change language',
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContinue(BuildContext context, OnboardingViewModel vm) {
+    return SizedBox(
+      width: double.infinity,
+      height: 48,
+      child: ElevatedButton(
+        onPressed: vm.selectedTranslation != null
+            ? () async {
+                await vm.goToCompleteStep();
+                if (context.mounted) {
+                  context.goToComplete();
                 }
-              : null,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: _ink,
-            foregroundColor: Colors.white,
-            disabledBackgroundColor: _line,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            elevation: 0,
+              }
+            : null,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: _ink,
+          foregroundColor: Colors.white,
+          disabledBackgroundColor: _line,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
           ),
-          child: const Text(
-            'Continue',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-          ),
+          elevation: 0,
+        ),
+        child: const Text(
+          'Continue',
+          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
         ),
       ),
     );

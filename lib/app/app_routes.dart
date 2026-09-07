@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../presentation/screens/complete_screen.dart';
 import '../presentation/screens/language_screen.dart';
+import '../presentation/screens/manage_translations_screen.dart';
 import '../presentation/screens/reader_screen.dart';
+import '../presentation/screens/settings_screen.dart';
 import '../presentation/screens/translation_screen.dart';
 
 abstract class AppRoutes {
@@ -10,6 +12,8 @@ abstract class AppRoutes {
   static const String translation = '/translation';
   static const String complete = '/complete';
   static const String reader = '/reader';
+  static const String settings = '/settings';
+  static const String manageTranslations = '/settings/translations';
 }
 
 abstract class AppRouteGenerator {
@@ -23,6 +27,12 @@ abstract class AppRouteGenerator {
         return MaterialPageRoute(builder: (_) => const CompleteScreen());
       case AppRoutes.reader:
         return MaterialPageRoute(builder: (_) => const ReaderScreen());
+      case AppRoutes.settings:
+        return MaterialPageRoute(builder: (_) => const SettingsScreen());
+      case AppRoutes.manageTranslations:
+        return MaterialPageRoute(
+          builder: (_) => const ManageTranslationsScreen(),
+        );
       default:
         return null;
     }
@@ -41,6 +51,12 @@ extension NavigationExtension on BuildContext {
 
   void goToReader() =>
       Navigator.pushNamedAndRemoveUntil(this, AppRoutes.reader, (_) => false);
+
+  void goToSettings() =>
+      Navigator.pushNamed(this, AppRoutes.settings);
+
+  void goToManageTranslations() =>
+      Navigator.pushNamed(this, AppRoutes.manageTranslations);
 
   void goBack() => Navigator.pop(this);
 }

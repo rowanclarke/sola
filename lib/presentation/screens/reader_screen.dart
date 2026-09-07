@@ -3,8 +3,10 @@ import 'package:provider/provider.dart';
 
 import '../../core/models/page_model.dart';
 import '../../domain/services/book_pages.dart';
+import '../../app/app_routes.dart';
 import '../viewmodels/reader_viewmodel.dart';
 import '../viewmodels/search_viewmodel.dart';
+import '../viewmodels/translations_viewmodel.dart';
 import '../widgets/page_view_widget.dart';
 import '../widgets/reader_top_panel.dart';
 import '../widgets/scrubber_widget.dart';
@@ -35,35 +37,62 @@ class _ReaderScreenState extends State<ReaderScreen> {
   static const _horizontalPadding = 48.0;
   static const _verticalPadding = 16.0;
 
+  bool _loadTriggered = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // The switcher chip needs to know what is downloaded before it can offer
+    // anything; nothing else on this screen waits for it.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) context.read<TranslationsViewModel>().load();
+    });
+  }
+
   @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
   }
 
-  bool _loadTriggered = false;
-
   void _triggerLoad(double width, double height) {
     if (_loadTriggered) return;
     _loadTriggered = true;
     _lastWidth = width;
     _lastHeight = height;
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted) return;
-      final readerVm = context.read<ReaderViewModel>();
-      // The book being read comes first: it is all the reader needs to paint.
-      // Page counts for the rest of the translation are only wanted by the
-      // scrubber, and search only afterwards, so both run behind the reader.
-      await readerVm.loadPages(width, height);
-      if (!mounted) return;
-      final bookIds = await readerVm.loadAll(width, height);
-      if (!mounted) return;
-      context.read<SearchViewModel>().initSearch(
-        bookIds: bookIds,
-        width: width,
-        height: height,
-      );
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _runLoad(width, height));
+  }
+
+  /// Brings up everything that depends on the current translation, in the order
+  /// the screen needs it.
+  Future<void> _runLoad(double width, double height) async {
+    if (!mounted) return;
+    final readerVm = context.read<ReaderViewModel>();
+    // The book being read comes first: it is all the reader needs to paint.
+    // Page counts for the rest of the translation are only wanted by the
+    // scrubber, and search only afterwards, so both run behind the reader.
+    await readerVm.loadPages(width, height);
+    if (!mounted) return;
+    final bookIds = await readerVm.loadAll(width, height);
+    if (!mounted) return;
+    context.read<SearchViewModel>().initSearch(
+      bookIds: bookIds,
+      width: width,
+      height: height,
+    );
+  }
+
+  Future<void> _switchTranslation(String translationId) async {
+    final width = _lastWidth;
+    final height = _lastHeight;
+    if (width == null || height == null) return;
+    await context.read<ReaderViewModel>().prepareTranslationSwitch(
+      translationId,
+    );
+    if (!mounted) return;
+    // The chip reads the session, which has just moved under it.
+    context.read<TranslationsViewModel>().refresh();
+    await _runLoad(width, height);
   }
 
   @override
@@ -108,6 +137,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
                       onResultTap: (bookId, page) {
                         readerVm.navigateTo(bookId, page);
                       },
+                      onSettingsTap: () => context.goToSettings(),
+                      onTranslationSelected: _switchTranslation,
+                      onManageTranslations: () =>
+                          context.goToManageTranslations(),
                     ),
                   ),
                 ],

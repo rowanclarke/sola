@@ -37,6 +37,8 @@ class OnboardingViewModel extends ChangeNotifier {
   String? _downloadingId;
 
   bool _isLoading = false;
+  bool _initialized = false;
+  bool _fromSettings = false;
 
   OnboardingViewModel({
     required LanguageRepository languageRepository,
@@ -60,6 +62,10 @@ class OnboardingViewModel extends ChangeNotifier {
   Translation? get selectedTranslation => _selectedTranslation;
   bool get isLoading => _isLoading;
 
+  /// False once the flow has been entered from settings to add a translation,
+  /// where the three-step framing does not apply.
+  bool get isOnboarding => !_fromSettings;
+
   DownloadState getDownloadState(String translationId) {
     return _downloadStates[translationId] ?? DownloadState.idle;
   }
@@ -70,6 +76,9 @@ class OnboardingViewModel extends ChangeNotifier {
 
   Future<void> init() async {
     _isLoading = true;
+    // Reaching the language step is always the full flow, however it was
+    // entered last time.
+    _fromSettings = false;
     notifyListeners();
 
     // Detect device language
@@ -87,12 +96,6 @@ class OnboardingViewModel extends ChangeNotifier {
     _detectedLanguageInfo = await _languageRepository.getLanguageInfo(
       _detectedLanguageCode,
     );
-
-    // Check for downloaded translations to pre-set download states
-    final downloaded = await _libraryRepository.getDownloadedTranslations();
-    for (final t in downloaded) {
-      _downloadStates[t.id] = DownloadState.ready;
-    }
 
     // Restore from persisted session if available
     final session = _sessionRepository.currentSession;
@@ -118,8 +121,22 @@ class OnboardingViewModel extends ChangeNotifier {
           .firstOrNull;
     }
 
+    _initialized = true;
     _isLoading = false;
     notifyListeners();
+  }
+
+  /// Enters the translation step straight from settings, in the language the
+  /// session is already reading.
+  Future<void> startAddTranslation() async {
+    _fromSettings = true;
+    // The reader route never runs onboarding, so the language data may not have
+    // been loaded at all this session.
+    if (!_initialized) {
+      await init();
+      _fromSettings = true;
+    }
+    await goToTranslationStep();
   }
 
   Future<void> selectLanguage(String bcp47) async {
@@ -137,6 +154,13 @@ class OnboardingViewModel extends ChangeNotifier {
         .findTranslations(LanguageTag.parse(_selectedLanguageCode!));
     _filteredTranslations = _allTranslationsForLanguage;
     _selectedTranslation = null;
+
+    // Re-read what is on disk each time in: anything downloaded since should
+    // show as ready rather than offering to download again.
+    final downloaded = await _libraryRepository.getDownloadedTranslations();
+    for (final t in downloaded) {
+      _downloadStates[t.id] = DownloadState.ready;
+    }
 
     // Persist language selection
     await _sessionRepository.setCurrentLanguage(_selectedLanguageCode!);

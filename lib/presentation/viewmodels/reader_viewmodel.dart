@@ -131,6 +131,38 @@ class ReaderViewModel extends ChangeNotifier {
     }
   }
 
+  /// Points the reader at another translation, keeping the book open where the
+  /// new translation has it.
+  ///
+  /// Only the session and the caches are touched here; the caller runs the load
+  /// afterwards, since rendering a translation also feeds the scrubber and the
+  /// search index.
+  Future<void> prepareTranslationSwitch(String translationId) async {
+    final books = await _rendererRepository.availableBooks(translationId);
+    final bookId = books.contains(currentBookId)
+        ? currentBookId
+        : (books.isNotEmpty ? books.first : 'GEN');
+    if (bookId != currentBookId) {
+      debugPrint(
+        '[ReaderVM] $currentBookId is not in $translationId, opening $bookId',
+      );
+    }
+
+    await _sessionRepository.switchTranslation(translationId, bookId: bookId);
+
+    // Drop the old book before closing it, so no page slot is still holding one
+    // when its file handle goes.
+    _currentCacheKey = null;
+    _currentPageIndex = 0;
+    _bookData = {};
+    _book = null;
+    _error = null;
+    notifyListeners();
+
+    // Whatever is still open belongs to the translation being left.
+    await _rendererRepository.invalidateCache();
+  }
+
   Future<void> setPage(int index) async {
     _currentPageIndex = index;
     _book?.prefetchAround(index);
